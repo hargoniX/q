@@ -25,6 +25,15 @@ fn main() {
             )
         })
         .init();
-    log::info!("Parse file: {:?}", args.file);
-    log::info!("Hello, World! {}", qlib::test());
+    log::info!("Path to TPTP problem: '{:?}'", args.file);
+    let tptp_problem = qlib::tptp_parser::parse_file(args.file);
+    for assumption in tptp_problem.axioms {
+        log::info!("Axioms: '{}'", assumption);
+    }
+    for goal in tptp_problem.conjectures {
+        log::info!("Conjectures: '{}'", goal);
+    }
+    for goal in tptp_problem.negated_conjectures {
+        log::info!("Negated Conjectures: '{}'", goal);
+    }
 }
