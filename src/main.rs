@@ -25,6 +25,7 @@ fn main() {
             )
         })
         .init();
-    log::info!("Parse file: {:?}", args.file);
-    log::info!("Hello, World! {}", qlib::test());
+    log::info!("Path to TPTP problem: '{:?}'", args.file);
+    let stree = qlib::tptp_parser::parse_file(args.file);
+    log::info!("Stree: '{:?}'", stree);
 }
