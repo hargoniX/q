@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = "4.5"
+chrono = "0.4.41"
+clap = { version = "4.5", features = ["derive"] }
 env_logger = "0.11.8"
 log = "0.4.27"
 tptp = "0.31.1"
