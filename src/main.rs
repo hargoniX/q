@@ -1,5 +1,6 @@
 use chrono::Local;
 use clap::Parser;
+use env_logger::Env;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -12,7 +13,7 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
-    env_logger::builder()
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .format(|buf, record| {
             let level_style = buf.default_level_style(record.level()).bold();
             writeln!(
