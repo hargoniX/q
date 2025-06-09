@@ -8,7 +8,8 @@ use std::{
     rc::{Rc, Weak},
 };
 
-struct InnerBank<T>
+#[derive(Debug)]
+struct InnerTable<T>
 where
     T: Eq + Hash,
 {
@@ -19,14 +20,15 @@ where
     table: RefCell<HashMap<Rc<T>, Weak<InnerHashConsed<T>>>>,
 }
 
-/// A term bank that can be used to produce `HashConsed` smart pointers.
-pub struct Bank<T>
+/// A term Table that can be used to produce `HashConsed` smart pointers.
+#[derive(Debug)]
+pub struct Table<T>
 where
     T: Eq + Hash,
 {
-    /// We reference count the inner term bank such that the `HashConsed` pointers can identify
+    /// We reference count the inner term Table such that the `HashConsed` pointers can identify
     /// where they are coming from and fast path their equality check.
-    inner: Rc<InnerBank<T>>,
+    inner: Rc<InnerTable<T>>,
 }
 
 struct InnerHashConsed<T>
@@ -36,21 +38,21 @@ where
     /// The ref counted term that the above `HashConsed` is managing, the allocation of `T` will
     /// only get free'd once the entry is removed from `table`.
     term: Rc<T>,
-    /// The term bank containing `term`.
-    table: Rc<InnerBank<T>>,
+    /// The term Table containing `term`.
+    table: Rc<InnerTable<T>>,
 }
 
-/// A hash consed smart pointer, associated with some term bank.
+/// A hash consed smart pointer, associated with some term Table.
 pub struct HashConsed<T>
 where
     T: Eq + Hash,
 {
     /// A `HashConsed` holds an `Rc` to the `InnerHashConsed` so we can know once it is okay to
-    /// free the entry in the term bank.
+    /// free the entry in the term Table.
     inner: Rc<InnerHashConsed<T>>,
 }
 
-impl<T: Eq + Hash> InnerBank<T> {
+impl<T: Eq + Hash> InnerTable<T> {
     pub fn new() -> Self {
         Self {
             table: RefCell::new(HashMap::new()),
@@ -58,7 +60,7 @@ impl<T: Eq + Hash> InnerBank<T> {
     }
 
     fn gc(&self) {
-        // A naive GC loop for the term bank, once we encounter a term where the associated
+        // A naive GC loop for the term Table, once we encounter a term where the associated
         // `InnerHashConsed` has no more references we know we can remove this term. This might in
         // turn free further `InnerHashConsed` if `T` recursively contains `HashConsed`. As such we
         // must repeat this loop until no change happens.
@@ -81,14 +83,14 @@ impl<T: Eq + Hash> InnerBank<T> {
     }
 }
 
-impl<T: Eq + Hash> Bank<T> {
+impl<T: Eq + Hash> Table<T> {
     pub fn new() -> Self {
         Self {
-            inner: Rc::new(InnerBank::new()),
+            inner: Rc::new(InnerTable::new()),
         }
     }
 
-    /// Check if a `term` already exists in the term bank, if it does increment the internal ref
+    /// Check if a `term` already exists in the term Table, if it does increment the internal ref
     /// count to the representant of `term` and return it, otherwise add a new entry and return it.
     /// The internal allocation for `term` will not be free'd until all `HashConsed` pointing to it
     /// are dropped and `gc` is called afterwards.
@@ -127,19 +129,19 @@ impl<T: Eq + Hash> Bank<T> {
         }
     }
 
-    /// Free all hash consed terms that are no longer referenced outside of this term bank.
+    /// Free all hash consed terms that are no longer referenced outside of this term Table.
     pub fn gc(&self) {
         self.inner.gc();
     }
 
-    /// Return the amount of allocations currently kept in the bank. Note that there might be
+    /// Return the amount of allocations currently kept in the Table. Note that there might be
     /// allocations that can be free'd but this needs to be triggered by `gc`.
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 }
 
-impl<T: Eq + Hash> Clone for Bank<T> {
+impl<T: Eq + Hash> Clone for Table<T> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -155,7 +157,7 @@ impl<T: Eq + Hash> Hash for HashConsed<T> {
 
 impl<T: Eq + Hash> PartialEq for HashConsed<T> {
     fn eq(&self, other: &Self) -> bool {
-        // We can fast-path comparison if both `HashConsed` come from the same term bank, this is
+        // We can fast-path comparison if both `HashConsed` come from the same term Table, this is
         // usually going to be the case. We could in principle use
         // [`likely`](https://doc.rust-lang.org/std/hint/fn.likely.html) here.
         if Rc::ptr_eq(&self.inner.table, &other.inner.table) {
@@ -216,29 +218,29 @@ impl<T: Eq + Hash + Ord> Ord for HashConsed<T> {
 
 #[cfg(test)]
 mod test {
-    use super::Bank;
+    use super::Table;
 
     #[test]
     fn basic_test() {
-        let bank = Bank::new();
-        assert_eq!(bank.len(), 0);
-        let s1 = bank.hashcons("hello_world".to_string());
-        let s2 = bank.hashcons("bye_world".to_string());
-        assert_eq!(bank.len(), 2);
+        let table = Table::new();
+        assert_eq!(table.len(), 0);
+        let s1 = table.hashcons("hello_world".to_string());
+        let s2 = table.hashcons("bye_world".to_string());
+        assert_eq!(table.len(), 2);
         assert_ne!(s1, s2);
-        let s3 = bank.hashcons("hello_world".to_string());
+        let s3 = table.hashcons("hello_world".to_string());
         assert_eq!(s1, s3);
-        assert_eq!(bank.len(), 2);
+        assert_eq!(table.len(), 2);
         drop(s2);
-        assert_eq!(bank.len(), 2);
-        bank.gc();
-        assert_eq!(bank.len(), 1);
+        assert_eq!(table.len(), 2);
+        table.gc();
+        assert_eq!(table.len(), 1);
         drop(s1);
-        bank.gc();
-        assert_eq!(bank.len(), 1);
+        table.gc();
+        assert_eq!(table.len(), 1);
         drop(s3);
-        assert_eq!(bank.len(), 1);
-        bank.gc();
-        assert_eq!(bank.len(), 0);
+        assert_eq!(table.len(), 1);
+        table.gc();
+        assert_eq!(table.len(), 0);
     }
 }
