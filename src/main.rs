@@ -26,6 +26,11 @@ fn main() {
         })
         .init();
     log::info!("Path to TPTP problem: '{:?}'", args.file);
-    let stree = qlib::tptp_parser::parse_file(args.file);
-    log::info!("Stree: '{:?}'", stree);
+    let (assumptions, goals) = qlib::tptp_parser::parse_file(args.file);
+    for assumption in assumptions {
+        log::info!("Assumption: '{}'", assumption);
+    }
+    for goal in goals {
+        log::info!("Goal: '{}'", goal);
+    }
 }
