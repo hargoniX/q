@@ -27,12 +27,12 @@ pub struct VariableIdentifier(u32);
 #[derive(Debug, PartialEq, Eq)]
 pub struct TermData {
     hash: u64,
-    ground: bool,
+    var_bloom_filter: u64,
 }
 
 impl TermData {
-    fn new(hash: u64, ground: bool) -> Self {
-        Self { hash, ground }
+    fn new(hash: u64, var_bloom_filter: u64) -> Self {
+        Self { hash, var_bloom_filter }
     }
 }
 
@@ -58,11 +58,17 @@ impl Hash for RawTerm {
 }
 
 impl VariableIdentifier {
+    fn to_bloom_filter(&self) -> u64 {
+        1 << (self.0 % 64) as u64
+    }
+
     pub fn occurs_in(&self, term: &Term) -> bool {
         let mut visited = HashSet::new();
         let mut worklist = vec![term];
+        let bloom_id = self.to_bloom_filter();
+
         while let Some(term) = worklist.pop() {
-            if term.is_ground() || visited.contains(term) {
+            if term.get_data().var_bloom_filter & bloom_id == 0 || visited.contains(term) {
                 continue;
             } else {
                 match term.as_ref() {
@@ -90,7 +96,7 @@ impl RawTerm {
     }
 
     pub fn is_ground(&self) -> bool {
-        self.get_data().ground
+        self.get_data().var_bloom_filter == 0
     }
 
     pub fn get_variable_id(&self) -> Option<VariableIdentifier> {
@@ -160,7 +166,7 @@ impl TermBank {
         hasher.write_u32(id.0);
         let var = RawTerm::Var {
             id,
-            data: TermData::new(hasher.finish(), false),
+            data: TermData::new(hasher.finish(), id.to_bloom_filter()),
         };
         self.hash_cons_table.hashcons(var)
     }
@@ -175,7 +181,7 @@ impl TermBank {
         hasher.write_u32(id.0);
         args.iter().for_each(|arg| arg.hash(&mut hasher));
         let hash = hasher.finish();
-        let ground = args.iter().fold(true, |acc, arg| acc && arg.is_ground());
+        let ground = args.iter().fold(0, |acc, arg| acc | arg.get_data().var_bloom_filter);
         debug_assert_eq!(self.get_function_info(id).arity, args.len());
         let app = RawTerm::App {
             id,
