@@ -6,13 +6,13 @@ use crate::term_manager::{HashConsed, Table};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionInformation {
-    name: String,
-    arity: usize,
+    pub name: String,
+    pub arity: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct VariableInformation {
-    name: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -35,8 +35,15 @@ impl TermData {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RawTerm {
-    Var(VariableIdentifier, TermData),
-    App(FunctionIdentifier, Vec<Term>, TermData),
+    Var {
+        id: VariableIdentifier,
+        data: TermData,
+    },
+    App {
+        id: FunctionIdentifier,
+        args: Vec<Term>,
+        data: TermData,
+    },
 }
 
 pub type Term = HashConsed<RawTerm>;
@@ -50,8 +57,7 @@ impl Hash for RawTerm {
 impl RawTerm {
     fn get_data(&self) -> &TermData {
         match self {
-            RawTerm::Var(_, d) => d,
-            RawTerm::App(_, _, d) => d,
+            RawTerm::Var { data, .. } | RawTerm::App { data, .. } => data,
         }
     }
 
@@ -103,7 +109,10 @@ impl TermBank {
     pub fn mk_variable(&self, id: VariableIdentifier) -> Term {
         let mut hasher = DefaultHasher::new();
         hasher.write_u32(id.0);
-        let var = RawTerm::Var(id, TermData::new(hasher.finish(), false));
+        let var = RawTerm::Var {
+            id,
+            data: TermData::new(hasher.finish(), false),
+        };
         self.hash_cons_table.hashcons(var)
     }
 
@@ -119,7 +128,11 @@ impl TermBank {
         let hash = hasher.finish();
         let ground = args.iter().fold(true, |acc, arg| acc && arg.is_ground());
         debug_assert_eq!(self.get_function_info(id).arity, args.len());
-        let app = RawTerm::App(id, args, TermData::new(hash, ground));
+        let app = RawTerm::App {
+            id,
+            args,
+            data: TermData::new(hash, ground),
+        };
         self.hash_cons_table.hashcons(app)
     }
 
