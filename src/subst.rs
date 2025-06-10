@@ -24,28 +24,53 @@ impl Substitution {
     pub fn get(&self, var: VariableIdentifier) -> Option<Term> {
         self.map.get(&var).cloned()
     }
+}
 
-    pub fn apply_term(&self, term: Term, term_bank: &TermBank) -> Term {
-        if term.is_ground() {
-            return term;
-        }
+pub trait Substitutable {
+    fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self;
+}
 
-        match term.as_ref() {
-            Var { id, .. } => self.get(*id).unwrap_or(term),
-            App { id, args, .. } => {
-                let new_args = args
-                    .iter()
-                    .map(|arg| self.apply_term(arg.clone(), term_bank))
-                    .collect();
-                term_bank.mk_app(*id, new_args)
-            }
+impl Term {
+    fn subst_with_aux(
+        self,
+        subst: &Substitution,
+        term_bank: &TermBank,
+        cache: &mut HashMap<Term, Term>,
+    ) -> Term {
+        if self.is_ground() {
+            self
+        } else if let Some(hit) = cache.get(&self) {
+            hit.clone()
+        } else {
+            let substituted = match self.as_ref() {
+                Var { id, .. } => subst.get(*id).unwrap_or(self.clone()),
+                App { id, args, .. } => {
+                    let new_args = args
+                        .iter()
+                        .map(|arg| arg.clone().subst_with_aux(subst, term_bank, cache))
+                        .collect();
+                    term_bank.mk_app(*id, new_args)
+                }
+            };
+            cache.insert(self, substituted.clone());
+            substituted
         }
+    }
+}
+
+impl Substitutable for Term {
+    fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self {
+        let mut cache = HashMap::new();
+        self.subst_with_aux(subst, term_bank, &mut cache)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::term_bank::{FunctionInformation, TermBank, VariableInformation};
+    use crate::{
+        subst::Substitutable,
+        term_bank::{FunctionInformation, TermBank, VariableInformation},
+    };
 
     use super::Substitution;
 
@@ -85,11 +110,46 @@ mod test {
         let mut sigma1 = Substitution::new();
         sigma1.insert(x_ident, t2.clone());
         sigma1.insert(y_ident, t2.clone());
-        assert_eq!(sigma1.apply_term(t1.clone(), &term_bank), t4);
+        assert_eq!(t1.clone().subst_with(&sigma1, &term_bank), t4);
 
         let mut sigma2 = Substitution::new();
         sigma2.insert(x_ident, t2.clone());
         sigma2.insert(y_ident, t3.clone());
-        assert_eq!(sigma2.apply_term(t1.clone(), &term_bank), t5);
+        assert_eq!(t1.clone().subst_with(&sigma2, &term_bank), t5);
+    }
+
+    #[test]
+    fn subterm_test() {
+        let mut term_bank = TermBank::new();
+        let f = term_bank.add_function(FunctionInformation {
+            name: "f".to_string(),
+            arity: 2,
+        });
+        let x_ident = term_bank.add_variable(VariableInformation {
+            name: "x".to_string(),
+        });
+        let x = term_bank.mk_variable(x_ident);
+        let y_ident = term_bank.add_variable(VariableInformation {
+            name: "y".to_string(),
+        });
+        let y = term_bank.mk_variable(y_ident);
+
+        let t1 = term_bank.mk_app(
+            f,
+            vec![
+                term_bank.mk_app(f, vec![x.clone(), x.clone()]),
+                term_bank.mk_app(f, vec![x.clone(), x.clone()]),
+            ],
+        );
+        let t2 = term_bank.mk_app(
+            f,
+            vec![
+                term_bank.mk_app(f, vec![y.clone(), y.clone()]),
+                term_bank.mk_app(f, vec![y.clone(), y.clone()]),
+            ],
+        );
+        let mut sigma = Substitution::new();
+        sigma.insert(x_ident, y.clone());
+        assert_eq!(t1.subst_with(&sigma, &term_bank), t2);
     }
 }
