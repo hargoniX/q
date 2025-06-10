@@ -1,4 +1,7 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::{
+    collections::HashSet,
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 use crate::term_manager::{HashConsed, Table};
 
@@ -54,6 +57,31 @@ impl Hash for RawTerm {
     }
 }
 
+impl VariableIdentifier {
+    pub fn occurs_in(&self, term: &Term) -> bool {
+        let mut visited = HashSet::new();
+        let mut worklist = vec![term];
+        while let Some(term) = worklist.pop() {
+            if term.is_ground() || visited.contains(term) {
+                continue;
+            } else {
+                match term.as_ref() {
+                    RawTerm::Var { id, .. } => {
+                        if id == self {
+                            return true;
+                        }
+                    }
+                    RawTerm::App { args, .. } => args.iter().for_each(|arg| {
+                        visited.insert(arg);
+                    }),
+                }
+                visited.insert(term);
+            }
+        }
+        false
+    }
+}
+
 impl RawTerm {
     fn get_data(&self) -> &TermData {
         match self {
@@ -63,6 +91,27 @@ impl RawTerm {
 
     pub fn is_ground(&self) -> bool {
         self.get_data().ground
+    }
+
+    pub fn get_variable_id(&self) -> Option<VariableIdentifier> {
+        match self {
+            RawTerm::Var { id, .. } => Some(*id),
+            RawTerm::App { .. } => None,
+        }
+    }
+
+    pub fn get_function_id(&self) -> Option<FunctionIdentifier> {
+        match self {
+            RawTerm::Var { .. } => None,
+            RawTerm::App { id, .. } => Some(*id),
+        }
+    }
+
+    pub fn get_function_args(&self) -> Option<&Vec<Term>> {
+        match self {
+            RawTerm::Var { .. } => None,
+            RawTerm::App { args, .. } => Some(args),
+        }
     }
 }
 
@@ -138,5 +187,29 @@ impl TermBank {
 
     pub fn mk_const(&self, id: FunctionIdentifier) -> Term {
         self.mk_app(id, vec![])
+    }
+
+    fn pretty_print_aux(&self, term: &Term, acc: &mut String) {
+        match &**term {
+            RawTerm::Var { id, .. } => acc.push_str(&self.get_variable_info(*id).name),
+            RawTerm::App { id, args, .. } => {
+                let info = self.get_function_info(*id);
+                acc.push_str(&info.name);
+                if info.arity > 0 {
+                    acc.push_str("(");
+                    args.iter().for_each(|arg| {
+                        self.pretty_print_aux(arg, acc);
+                        acc.push_str(", ");
+                    });
+                    acc.push_str(")");
+                }
+            }
+        }
+    }
+
+    pub fn pretty_print(&self, term: &Term) -> String {
+        let mut str = String::new();
+        self.pretty_print_aux(term, &mut str);
+        str
     }
 }

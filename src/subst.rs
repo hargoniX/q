@@ -24,6 +24,20 @@ impl Substitution {
     pub fn get(&self, var: VariableIdentifier) -> Option<Term> {
         self.map.get(&var).cloned()
     }
+
+    pub fn compose_binding(
+        &mut self,
+        var_id: VariableIdentifier,
+        term: Term,
+        term_bank: &TermBank,
+    ) {
+        let mut new_subst = Substitution::new();
+        new_subst.insert(var_id, term.clone());
+        for (_, value) in self.map.iter_mut() {
+            *value = value.clone().subst_with(&new_subst, &term_bank)
+        }
+        self.map.entry(var_id).or_insert_with(|| term);
+    }
 }
 
 pub trait Substitutable {
