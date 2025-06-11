@@ -32,7 +32,10 @@ pub struct TermData {
 
 impl TermData {
     fn new(hash: u64, var_bloom_filter: u64) -> Self {
-        Self { hash, var_bloom_filter }
+        Self {
+            hash,
+            var_bloom_filter,
+        }
     }
 }
 
@@ -181,7 +184,9 @@ impl TermBank {
         hasher.write_u32(id.0);
         args.iter().for_each(|arg| arg.hash(&mut hasher));
         let hash = hasher.finish();
-        let ground = args.iter().fold(0, |acc, arg| acc | arg.get_data().var_bloom_filter);
+        let ground = args
+            .iter()
+            .fold(0, |acc, arg| acc | arg.get_data().var_bloom_filter);
         debug_assert_eq!(self.get_function_info(id).arity, args.len());
         let app = RawTerm::App {
             id,
