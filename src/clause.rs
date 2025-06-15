@@ -92,7 +92,7 @@ pub struct Clause {
 impl Clause {
     pub fn new() -> Self {
         Self {
-            literals: MultiSet::new()
+            literals: MultiSet::new(),
         }
     }
 
@@ -134,7 +134,9 @@ impl Substitutable for Clause {
 #[cfg(test)]
 mod test {
     use crate::{
-        clause::Clause, subst::{Substitutable, Substitution}, term_bank::{FunctionInformation, TermBank, VariableInformation}
+        clause::Clause,
+        subst::{Substitutable, Substitution},
+        term_bank::{FunctionInformation, TermBank, VariableInformation},
     };
 
     use super::Literal;
@@ -199,7 +201,7 @@ mod test {
         let z_id = term_bank.add_variable(VariableInformation {
             name: "z".to_string(),
         });
-        
+
         let x = term_bank.mk_variable(x_id);
         let y = term_bank.mk_variable(y_id);
         let z = term_bank.mk_variable(z_id);
@@ -226,7 +228,7 @@ mod test {
 
         clause.remove(lit1.clone());
         assert_eq!(clause.len(), 2);
-        
+
         clause.remove(lit1.clone());
         assert_eq!(clause.len(), 1);
         assert!(clause.is_unit());
