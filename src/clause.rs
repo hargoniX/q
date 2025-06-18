@@ -96,8 +96,12 @@ impl Clause {
         }
     }
 
-    // TODO: consider whether this should be amont of literals overall
-    /// Count the amount of unique literals in the clause
+    pub fn of_vec(vec: Vec<Literal>) -> Self {
+        Self {
+            literals: MultiSet::of_vec(vec),
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.literals.len()
     }
@@ -109,14 +113,6 @@ impl Clause {
     pub fn is_unit(&self) -> bool {
         self.len() == 1
     }
-
-    pub fn insert(&mut self, lit: Literal) {
-        self.literals.insert(lit);
-    }
-
-    pub fn remove(&mut self, lit: Literal) {
-        self.literals.remove(lit);
-    }
     // TODO: this will likely need more methods, build them as they come up
 }
 
@@ -125,7 +121,7 @@ impl Substitutable for Clause {
         let new_lits = self
             .literals
             .into_iter()
-            .map(|(lit, count)| (lit.subst_with(subst, term_bank), count))
+            .map(|lit| lit.subst_with(subst, term_bank))
             .collect();
         Self { literals: new_lits }
     }
@@ -206,35 +202,24 @@ mod test {
         let y = term_bank.mk_variable(y_id);
         let z = term_bank.mk_variable(z_id);
 
-        let mut clause = Clause::new();
+        let clause = Clause::new();
         assert_eq!(clause.len(), 0);
         assert!(clause.is_empty());
         assert!(!clause.is_unit());
 
         let lit1 = Literal::mk_eq(x.clone(), y.clone());
-        clause.insert(lit1.clone());
+        let clause = Clause::of_vec(vec![lit1.clone()]);
         assert_eq!(clause.len(), 1);
         assert!(!clause.is_empty());
         assert!(clause.is_unit());
 
         let lit2 = Literal::mk_ne(y.clone(), z.clone());
-        clause.insert(lit2.clone());
+        let clause = Clause::of_vec(vec![lit1.clone(), lit2.clone()]);
         assert_eq!(clause.len(), 2);
         assert!(!clause.is_empty());
         assert!(!clause.is_unit());
 
-        clause.insert(lit1.clone());
-        assert_eq!(clause.len(), 2);
-
-        clause.remove(lit1.clone());
-        assert_eq!(clause.len(), 2);
-
-        clause.remove(lit1.clone());
-        assert_eq!(clause.len(), 1);
-        assert!(clause.is_unit());
-
-        clause.remove(lit2.clone());
-        assert_eq!(clause.len(), 0);
-        assert!(clause.is_empty());
+        let clause = Clause::of_vec(vec![lit1.clone(), lit2.clone(), lit1.clone()]);
+        assert_eq!(clause.len(), 3);
     }
 }
