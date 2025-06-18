@@ -71,7 +71,7 @@ impl Literal {
         }
     }
 
-    pub fn weight(&self) -> u64 {
+    pub fn weight(&self) -> u32 {
         self.lhs.weight() + self.rhs.weight()
     }
 }
@@ -118,7 +118,7 @@ impl Clause {
         self.len() == 1
     }
 
-    pub fn weight(&self) -> u64 {
+    pub fn weight(&self) -> u32 {
         self.literals.iter().map(Literal::weight).sum()
     }
     // TODO: this will likely need more methods, build them as they come up

@@ -28,17 +28,9 @@ pub struct VariableIdentifier(u32);
 pub struct TermData {
     hash: u64,
     var_bloom_filter: u64,
-    weight: u64,
-}
-
-impl TermData {
-    fn new(hash: u64, var_bloom_filter: u64, weight: u64) -> Self {
-        Self {
-            hash,
-            var_bloom_filter,
-            weight,
-        }
-    }
+    var_count: u32,
+    function_count: u32,
+    weight: u32,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -125,7 +117,7 @@ impl RawTerm {
         }
     }
 
-    pub fn weight(&self) -> u64 {
+    pub fn weight(&self) -> u32 {
         self.get_data().weight
     }
 }
@@ -170,14 +162,8 @@ impl TermBank {
         self.hash_cons_table.gc();
     }
 
-    // TODO: find a better weight heuristic
-    fn variable_weight() -> u64 {
-        1
-    }
-
-    fn function_weight(args: &[Term]) -> u64 {
-        let summed: u64 = args.iter().map(|t| t.get_data().weight).sum();
-        summed + 1
+    fn weight_heuristic(var_count: u32, function_count: u32) -> u32 {
+        2 * function_count + var_count
     }
 
     pub fn mk_variable(&self, id: VariableIdentifier) -> Term {
@@ -185,11 +171,13 @@ impl TermBank {
         hasher.write_u32(id.0);
         let var = RawTerm::Var {
             id,
-            data: TermData::new(
-                hasher.finish(),
-                id.to_bloom_filter(),
-                Self::variable_weight(),
-            ),
+            data: TermData {
+                hash: hasher.finish(),
+                var_bloom_filter: id.to_bloom_filter(),
+                var_count: 1,
+                function_count: 0,
+                weight: Self::weight_heuristic(1, 0)
+            },
         };
         self.hash_cons_table.hashcons(var)
     }
@@ -204,11 +192,19 @@ impl TermBank {
         hasher.write_u32(id.0);
         args.iter().for_each(|arg| arg.hash(&mut hasher));
         let hash = hasher.finish();
-        let ground = args
+        let var_bloom_filter = args
             .iter()
             .fold(0, |acc, arg| acc | arg.get_data().var_bloom_filter);
+        let var_count = args.iter().map(|a| a.get_data().var_count).sum();
+        let function_count = args.iter().map(|a| a.get_data().function_count).sum::<u32>() + 1;
         debug_assert_eq!(self.get_function_info(id).arity, args.len());
-        let data = TermData::new(hash, ground, Self::function_weight(&args));
+        let data = TermData {
+            hash,
+            var_bloom_filter,
+            var_count,
+            function_count,
+            weight: Self::weight_heuristic(var_count, function_count),
+        };
         let app = RawTerm::App { id, args, data };
         self.hash_cons_table.hashcons(app)
     }
