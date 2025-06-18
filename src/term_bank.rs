@@ -176,7 +176,7 @@ impl TermBank {
                 var_bloom_filter: id.to_bloom_filter(),
                 var_count: 1,
                 function_count: 0,
-                weight: Self::weight_heuristic(1, 0)
+                weight: Self::weight_heuristic(1, 0),
             },
         };
         self.hash_cons_table.hashcons(var)
@@ -196,7 +196,11 @@ impl TermBank {
             .iter()
             .fold(0, |acc, arg| acc | arg.get_data().var_bloom_filter);
         let var_count = args.iter().map(|a| a.get_data().var_count).sum();
-        let function_count = args.iter().map(|a| a.get_data().function_count).sum::<u32>() + 1;
+        let function_count = args
+            .iter()
+            .map(|a| a.get_data().function_count)
+            .sum::<u32>()
+            + 1;
         debug_assert_eq!(self.get_function_info(id).arity, args.len());
         let data = TermData {
             hash,

@@ -1,4 +1,4 @@
-use std::collections::BinaryHeap;
+use std::{cmp::Ordering, collections::BinaryHeap};
 
 use crate::clause::Clause;
 
@@ -12,9 +12,13 @@ impl PartialEq for WeightedClause {
     }
 }
 
+// reverse ordering as we want minimal clauses to be selected first
 impl PartialOrd for WeightedClause {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.weight().partial_cmp(&other.0.weight())
+        self.0
+            .weight()
+            .partial_cmp(&other.0.weight())
+            .map(Ordering::reverse)
     }
 }
 
@@ -22,7 +26,7 @@ impl Eq for WeightedClause {}
 
 impl Ord for WeightedClause {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.weight().cmp(&other.0.weight())
+        self.0.weight().cmp(&other.0.weight()).reverse()
     }
 }
 
@@ -83,10 +87,10 @@ mod test {
         queue.push(clause3.clone());
         queue.push(clause2.clone());
 
+        assert_eq!(queue.pop(), Some(clause1));
+        assert_eq!(queue.pop(), Some(clause2));
         assert_eq!(queue.pop(), Some(clause3.clone()));
         assert_eq!(queue.pop(), Some(clause3));
-        assert_eq!(queue.pop(), Some(clause2));
-        assert_eq!(queue.pop(), Some(clause1));
         assert_eq!(queue.pop(), None);
     }
 }
