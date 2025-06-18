@@ -18,7 +18,7 @@ impl PartialOrd for WeightedClause {
     }
 }
 
-impl Eq for WeightedClause { }
+impl Eq for WeightedClause {}
 
 impl Ord for WeightedClause {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
@@ -27,13 +27,13 @@ impl Ord for WeightedClause {
 }
 
 pub struct ClauseQueue {
-    queue: BinaryHeap<WeightedClause>
+    queue: BinaryHeap<WeightedClause>,
 }
 
 impl ClauseQueue {
     pub fn new() -> Self {
         Self {
-            queue: BinaryHeap::new()
+            queue: BinaryHeap::new(),
         }
     }
 
@@ -48,7 +48,10 @@ impl ClauseQueue {
 
 #[cfg(test)]
 mod test {
-    use crate::{clause::{Clause, Literal}, term_bank::{FunctionInformation, TermBank, VariableInformation}};
+    use crate::{
+        clause::{Clause, Literal},
+        term_bank::{FunctionInformation, TermBank, VariableInformation},
+    };
 
     use super::ClauseQueue;
 
@@ -77,8 +80,10 @@ mod test {
         let mut queue = ClauseQueue::new();
         queue.push(clause1.clone());
         queue.push(clause3.clone());
+        queue.push(clause3.clone());
         queue.push(clause2.clone());
 
+        assert_eq!(queue.pop(), Some(clause3.clone()));
         assert_eq!(queue.pop(), Some(clause3));
         assert_eq!(queue.pop(), Some(clause2));
         assert_eq!(queue.pop(), Some(clause1));
