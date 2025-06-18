@@ -1,6 +1,6 @@
 use std::slice;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiSet<T> {
     vec: Vec<T>,
 }

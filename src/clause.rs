@@ -70,6 +70,10 @@ impl Literal {
             kind: self.kind.negate(),
         }
     }
+
+    pub fn weight(&self) -> u64 {
+        self.lhs.weight() + self.rhs.weight()
+    }
 }
 
 impl Substitutable for Literal {
@@ -84,7 +88,7 @@ impl Substitutable for Literal {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Clause {
     literals: MultiSet<Literal>,
 }
@@ -112,6 +116,10 @@ impl Clause {
 
     pub fn is_unit(&self) -> bool {
         self.len() == 1
+    }
+
+    pub fn weight(&self) -> u64 {
+        self.literals.iter().map(Literal::weight).sum()
     }
     // TODO: this will likely need more methods, build them as they come up
 }
