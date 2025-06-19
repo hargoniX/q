@@ -75,7 +75,7 @@ impl VariableIdentifier {
                         }
                     }
                     RawTerm::App { args, .. } => args.iter().for_each(|arg| {
-                        visited.insert(arg);
+                        worklist.push(arg);
                     }),
                 }
                 visited.insert(term);
@@ -239,5 +239,17 @@ impl TermBank {
         let mut str = String::new();
         self.pretty_print_aux(term, &mut str);
         str
+    }
+
+    pub fn get_variable_index(&self, ident: VariableIdentifier) -> u32 {
+        ident.0
+    }
+
+    pub fn get_function_index(&self, ident: FunctionIdentifier) -> u32 {
+        ident.0
+    }
+
+    pub fn get_variable_count(&self) -> usize {
+        self.variable_bank.len()
     }
 }
