@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet, hash_map::Entry},
+    collections::{hash_map::Entry, HashMap, HashSet},
     hash::Hash,
     rc::Rc,
 };
@@ -114,6 +114,27 @@ fn skip_to_next_subterm<T: Iterator<Item = DiscrTreeKey>>(iter: &mut T) {
     }
 }
 
+impl<V> Trie<DiscrTreeKey, V> {
+    fn skip_to_next_subterm(&self) -> Vec<&Self> {
+        let mut final_positions: Vec<&Self> = Vec::new();
+        let mut frontier = vec![(self, 1usize)];
+        while let Some((pos, to_skip)) = frontier.pop() {
+            for (child_key, child_pos) in pos.children.iter() {
+                let to_skip = match child_key {
+                    DiscrTreeKey::Star => to_skip - 1,
+                    DiscrTreeKey::App { arity, .. } => (to_skip + *arity) - 1,
+                };
+                if to_skip == 0 {
+                    final_positions.push(&child_pos);
+                } else {
+                    frontier.push((child_pos, to_skip));
+                }
+            }
+        }
+        final_positions
+    }
+}
+
 impl<V: Hash + Eq> DiscriminationTree<V> {
     pub fn new() -> Self {
         Self { trie: Trie::new() }
@@ -128,24 +149,24 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
         let iter = PersistentPreorderTermIterator::new(term).peekable();
         let mut frontier = vec![(iter, &self.trie)];
         let mut set = HashSet::new();
-        while let Some((mut candidate_pos, trie_pos)) = frontier.pop() {
-            match candidate_pos.peek() {
+        while let Some((mut query_pos, trie_pos)) = frontier.pop() {
+            match query_pos.peek() {
                 Some(key @ DiscrTreeKey::Star) => {
                     if let Some(subtrie) = trie_pos.children.get(&key) {
-                        candidate_pos.next();
-                        frontier.push((candidate_pos, subtrie))
+                        query_pos.next();
+                        frontier.push((query_pos, subtrie))
                     }
                 }
                 Some(key @ DiscrTreeKey::App { .. }) => {
                     if let Some(subtrie) = trie_pos.children.get(&key) {
-                        let mut next_candidate_pos = candidate_pos.clone();
-                        next_candidate_pos.next();
-                        frontier.push((next_candidate_pos, subtrie));
+                        let mut next_query_pos = query_pos.clone();
+                        next_query_pos.next();
+                        frontier.push((next_query_pos, subtrie));
                     }
 
                     if let Some(subtrie) = trie_pos.children.get(&DiscrTreeKey::Star) {
-                        skip_to_next_subterm(&mut candidate_pos);
-                        frontier.push((candidate_pos, subtrie));
+                        skip_to_next_subterm(&mut query_pos);
+                        frontier.push((query_pos, subtrie));
                     }
                 }
                 None => trie_pos.values.iter().for_each(|val| {
@@ -153,7 +174,33 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
                 }),
             }
         }
+        set
+    }
 
+    pub fn get_instance_candidates(&self, term: &Term) -> HashSet<&V> {
+        let iter = PersistentPreorderTermIterator::new(term).peekable();
+        let mut frontier = vec![(iter, &self.trie)];
+        let mut set = HashSet::new();
+        while let Some((mut query_pos, trie_pos)) = frontier.pop() {
+            match query_pos.peek() {
+                Some(DiscrTreeKey::Star) => {
+                    let subtries = trie_pos.skip_to_next_subterm();
+                    query_pos.next();
+                    subtries
+                        .iter()
+                        .for_each(|subtrie| frontier.push((query_pos.clone(), subtrie)));
+                }
+                Some(key @ DiscrTreeKey::App { .. }) => {
+                    if let Some(subtrie) = trie_pos.children.get(&key) {
+                        query_pos.next();
+                        frontier.push((query_pos, subtrie));
+                    }
+                }
+                None => trie_pos.values.iter().for_each(|val| {
+                    set.insert(val);
+                }),
+            }
+        }
         set
     }
 }
@@ -174,7 +221,7 @@ mod test {
     fn basic_preorder_iterator_test() {
         let mut term_bank = TermBank::new();
         let b = term_bank.add_function(FunctionInformation {
-            name: "c".to_string(),
+            name: "b".to_string(),
             arity: 0,
         });
         let c = term_bank.add_function(FunctionInformation {
@@ -270,7 +317,7 @@ mod test {
     fn basic_generalisation_test() {
         let mut term_bank = TermBank::new();
         let b = term_bank.add_function(FunctionInformation {
-            name: "c".to_string(),
+            name: "b".to_string(),
             arity: 0,
         });
         let c = term_bank.add_function(FunctionInformation {
@@ -339,6 +386,87 @@ mod test {
 
         for (query_term, expected_query_results) in tests.iter() {
             let query_result = discr_tree.get_generalisation_candidates(query_term);
+            assert_eq!(query_result.len(), expected_query_results.len());
+            for expected in expected_query_results.iter() {
+                assert!(query_result.contains(map.get(expected).unwrap()));
+            }
+        }
+    }
+
+    #[test]
+    fn basic_instance_test() {
+        let mut term_bank = TermBank::new();
+        let b = term_bank.add_function(FunctionInformation {
+            name: "b".to_string(),
+            arity: 0,
+        });
+        let c = term_bank.add_function(FunctionInformation {
+            name: "c".to_string(),
+            arity: 0,
+        });
+        let f = term_bank.add_function(FunctionInformation {
+            name: "f".to_string(),
+            arity: 1,
+        });
+        let h = term_bank.add_function(FunctionInformation {
+            name: "h".to_string(),
+            arity: 2,
+        });
+        let x = term_bank.mk_fresh_variable(VariableInformation {
+            name: "x".to_string(),
+        });
+        let y = term_bank.mk_fresh_variable(VariableInformation {
+            name: "y".to_string(),
+        });
+
+        let q1 = term_bank.mk_app(f, vec![x.clone()]);
+        let q2 = term_bank.mk_app(f, vec![term_bank.mk_const(c)]);
+        let q3 = term_bank.mk_app(f, vec![term_bank.mk_app(f, vec![x.clone()])]);
+        let q4 = term_bank.mk_app(h, vec![x.clone(), y.clone()]);
+        let q5 = term_bank.mk_app(h, vec![term_bank.mk_app(f, vec![x.clone()]), y.clone()]);
+
+        let t1 = term_bank.mk_app(f, vec![x.clone()]);
+        let t2 = term_bank.mk_app(f, vec![term_bank.mk_const(c)]);
+        let t3 = term_bank.mk_app(f, vec![term_bank.mk_app(f, vec![term_bank.mk_const(c)])]);
+        let t4 = term_bank.mk_app(h, vec![term_bank.mk_const(b), term_bank.mk_const(c)]);
+        let t5 = term_bank.mk_app(
+            h,
+            vec![
+                term_bank.mk_app(f, vec![term_bank.mk_const(b)]),
+                term_bank.mk_const(c),
+            ],
+        );
+        let t6 = term_bank.mk_app(
+            h,
+            vec![term_bank.mk_app(f, vec![term_bank.mk_const(b)]), x.clone()],
+        );
+        let mut discr_tree = DiscriminationTree::new();
+
+        let mut map = HashMap::new();
+        map.insert(&t1, 1);
+        map.insert(&t2, 2);
+        map.insert(&t3, 3);
+        map.insert(&t4, 4);
+        map.insert(&t5, 5);
+        map.insert(&t6, 6);
+
+        discr_tree.insert(&t1, 1);
+        discr_tree.insert(&t2, 2);
+        discr_tree.insert(&t3, 3);
+        discr_tree.insert(&t4, 4);
+        discr_tree.insert(&t5, 5);
+        discr_tree.insert(&t6, 6);
+
+        let tests = [
+            (q1, vec![t1.clone(), t2.clone(), t3.clone()]),
+            (q2, vec![t2.clone()]),
+            (q3, vec![t3.clone()]),
+            (q4, vec![t4.clone(), t5.clone(), t6.clone()]),
+            (q5, vec![t5.clone(), t6.clone()]),
+        ];
+
+        for (query_term, expected_query_results) in tests.iter() {
+            let query_result = discr_tree.get_instance_candidates(query_term);
             assert_eq!(query_result.len(), expected_query_results.len());
             for expected in expected_query_results.iter() {
                 assert!(query_result.contains(map.get(expected).unwrap()));
