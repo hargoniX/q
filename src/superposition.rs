@@ -29,11 +29,7 @@ fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermB
     for literal_idx in 0..clause.len() {
         let literal = clause.get_literal(literal_idx);
         if literal.is_negative() {
-            if let Some(subst) = literal
-                .get_lhs()
-                .clone()
-                .unify(literal.get_rhs().clone(), term_bank)
-            {
+            if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), term_bank) {
                 let mut new_literals = Vec::with_capacity(clause.len());
                 let new_lit = literal.clone().subst_with(&subst, term_bank);
                 let larger_idx = (0..clause.len())
