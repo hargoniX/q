@@ -100,14 +100,23 @@ impl UnificationProblem {
 }
 
 impl Term {
-    pub fn unify(self, other: Self, term_bank: &TermBank) -> Option<Substitution> {
+    pub fn unify(&self, other: &Self, term_bank: &TermBank) -> Option<Substitution> {
         info!(
             "Unifying, {} with {}",
-            pretty_print(&self, term_bank),
-            pretty_print(&other, term_bank),
+            pretty_print(self, term_bank),
+            pretty_print(other, term_bank),
         );
-        let problem = UnificationProblem::new(self, other);
-        let res = problem.run(term_bank);
+
+        let res = if self.is_ground() && other.is_ground() {
+            if self == other {
+                Some(Substitution::new())
+            } else {
+                None
+            }
+        } else {
+            let problem = UnificationProblem::new(self.clone(), other.clone());
+            problem.run(term_bank)
+        };
         info!("Unification success? {}", res.is_some());
         res
     }
@@ -144,7 +153,7 @@ mod test {
 
         let lhs = term_bank.mk_app(g, vec![x.clone(), term_bank.mk_app(f, vec![x.clone()])]);
         let rhs = term_bank.mk_app(g, vec![term_bank.mk_const(b), y.clone()]);
-        let subst = lhs.clone().unify(rhs.clone(), &term_bank);
+        let subst = lhs.unify(&rhs, &term_bank);
         assert!(subst.is_some());
         let subst = subst.unwrap();
         assert_eq!(
@@ -188,7 +197,7 @@ mod test {
                 term_bank.mk_app(f, vec![a.clone(), a.clone()]),
             ],
         );
-        let subst = lhs.clone().unify(rhs.clone(), &term_bank);
+        let subst = lhs.unify(&rhs, &term_bank);
         assert!(subst.is_some());
         let subst = subst.unwrap();
         assert_eq!(

@@ -25,6 +25,10 @@ impl Substitution {
         self.map.get(&var).cloned()
     }
 
+    pub fn is_nop(&self) -> bool {
+        self.map.is_empty()
+    }
+
     pub fn compose_binding(
         &mut self,
         var_id: VariableIdentifier,
@@ -74,8 +78,12 @@ impl Term {
 
 impl Substitutable for Term {
     fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self {
-        let mut cache = HashMap::new();
-        self.subst_with_aux(subst, term_bank, &mut cache)
+        if subst.is_nop() {
+            self
+        } else {
+            let mut cache = HashMap::new();
+            self.subst_with_aux(subst, term_bank, &mut cache)
+        }
     }
 }
 
