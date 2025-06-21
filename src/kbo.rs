@@ -1,6 +1,9 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::HashMap};
 
-use crate::term_bank::{FunctionIdentifier, RawTerm, Term, TermBank};
+use crate::{
+    clause::{Literal, Polarity},
+    term_bank::{FunctionIdentifier, RawTerm, Term, TermBank},
+};
 
 /*
 This implementation is the naive version of "Things to Know When Implementing KBO" by Bernd Löchler:
@@ -116,7 +119,7 @@ impl<'a> KboComparator<'a> {
     }
 }
 
-pub fn kbo(lhs: &Term, rhs: &Term, term_bank: &TermBank) -> Option<Ordering> {
+pub fn term_kbo(lhs: &Term, rhs: &Term, term_bank: &TermBank) -> Option<Ordering> {
     if lhs == rhs {
         Some(Ordering::Equal)
     } else if KboComparator::kbo(lhs, rhs, term_bank) {
@@ -128,12 +131,61 @@ pub fn kbo(lhs: &Term, rhs: &Term, term_bank: &TermBank) -> Option<Ordering> {
     }
 }
 
+fn literal_to_multiset(lit: &Literal) -> HashMap<&Term, usize> {
+    match lit.get_kind() {
+        Polarity::Eq => HashMap::from([(lit.get_lhs(), 1), (lit.get_rhs(), 1)]),
+        Polarity::Ne => HashMap::from([(lit.get_lhs(), 2), (lit.get_rhs(), 2)]),
+    }
+}
+
+// precondition lhs != rhs
+fn multiset_gt(
+    lhs: &HashMap<&Term, usize>,
+    rhs: &HashMap<&Term, usize>,
+    term_bank: &TermBank,
+) -> bool {
+    // ∀ m ∈ M, rhs(m) > lhs(m)
+    let iter = rhs
+        .iter()
+        .filter(|(elem, count_r)| **count_r > *lhs.get(*elem).unwrap_or(&0));
+    for (m, _) in iter {
+        // ∃ m_alt ∈ M, lhs(m_alt) > rhs(m_alt) ∧ m_alt > m
+        let larger = lhs.iter().find(|(m_alt, count_l)| {
+            **count_l > *rhs.get(*m_alt).unwrap_or(&0)
+                && term_kbo(m_alt, m, term_bank) == Some(Ordering::Greater)
+        });
+        if larger.is_none() {
+            return false;
+        }
+    }
+    true
+}
+
+pub fn literal_kbo(lhs: &Literal, rhs: &Literal, term_bank: &TermBank) -> Option<Ordering> {
+    if lhs.get_kind() == rhs.get_kind()
+        && ((lhs.get_lhs() == rhs.get_lhs() && lhs.get_rhs() == rhs.get_rhs())
+            || (lhs.get_lhs() == rhs.get_rhs() && lhs.get_rhs() == rhs.get_lhs()))
+    {
+        Some(Ordering::Equal)
+    } else {
+        let lhs_set = literal_to_multiset(lhs);
+        let rhs_set = literal_to_multiset(rhs);
+        if multiset_gt(&lhs_set, &rhs_set, term_bank) {
+            Some(Ordering::Greater)
+        } else if multiset_gt(&rhs_set, &lhs_set, term_bank) {
+            Some(Ordering::Less)
+        } else {
+            None
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::{cmp::Ordering, vec};
 
     use crate::{
-        kbo::kbo,
+        kbo::term_kbo,
         term_bank::{FunctionInformation, TermBank, VariableInformation},
     };
 
@@ -187,40 +239,40 @@ mod test {
             vec![term_bank.mk_app(g, vec![x.clone(), term_bank.mk_const(c)])],
         );
 
-        assert_eq!(kbo(&t1, &t1, &term_bank), Some(Ordering::Equal));
-        assert_eq!(kbo(&t1, &t2, &term_bank), None);
-        assert_eq!(kbo(&t1, &t3, &term_bank), Some(Ordering::Greater));
-        assert_eq!(kbo(&t1, &t4, &term_bank), None);
-        assert_eq!(kbo(&t1, &t5, &term_bank), Some(Ordering::Greater));
+        assert_eq!(term_kbo(&t1, &t1, &term_bank), Some(Ordering::Equal));
+        assert_eq!(term_kbo(&t1, &t2, &term_bank), None);
+        assert_eq!(term_kbo(&t1, &t3, &term_bank), Some(Ordering::Greater));
+        assert_eq!(term_kbo(&t1, &t4, &term_bank), None);
+        assert_eq!(term_kbo(&t1, &t5, &term_bank), Some(Ordering::Greater));
 
-        assert_eq!(kbo(&t2, &t1, &term_bank), None);
-        assert_eq!(kbo(&t2, &t2, &term_bank), Some(Ordering::Equal));
-        assert_eq!(kbo(&t2, &t3, &term_bank), None);
-        assert_eq!(kbo(&t2, &t4, &term_bank), None);
-        assert_eq!(kbo(&t2, &t5, &term_bank), None);
+        assert_eq!(term_kbo(&t2, &t1, &term_bank), None);
+        assert_eq!(term_kbo(&t2, &t2, &term_bank), Some(Ordering::Equal));
+        assert_eq!(term_kbo(&t2, &t3, &term_bank), None);
+        assert_eq!(term_kbo(&t2, &t4, &term_bank), None);
+        assert_eq!(term_kbo(&t2, &t5, &term_bank), None);
 
-        assert_eq!(kbo(&t3, &t1, &term_bank), Some(Ordering::Less));
-        assert_eq!(kbo(&t3, &t2, &term_bank), None);
-        assert_eq!(kbo(&t3, &t3, &term_bank), Some(Ordering::Equal));
-        assert_eq!(kbo(&t3, &t4, &term_bank), None);
-        assert_eq!(kbo(&t3, &t5, &term_bank), Some(Ordering::Greater));
+        assert_eq!(term_kbo(&t3, &t1, &term_bank), Some(Ordering::Less));
+        assert_eq!(term_kbo(&t3, &t2, &term_bank), None);
+        assert_eq!(term_kbo(&t3, &t3, &term_bank), Some(Ordering::Equal));
+        assert_eq!(term_kbo(&t3, &t4, &term_bank), None);
+        assert_eq!(term_kbo(&t3, &t5, &term_bank), Some(Ordering::Greater));
 
-        assert_eq!(kbo(&t4, &t1, &term_bank), None);
-        assert_eq!(kbo(&t4, &t2, &term_bank), None);
-        assert_eq!(kbo(&t4, &t3, &term_bank), None);
-        assert_eq!(kbo(&t4, &t4, &term_bank), Some(Ordering::Equal));
-        assert_eq!(kbo(&t4, &t5, &term_bank), None);
+        assert_eq!(term_kbo(&t4, &t1, &term_bank), None);
+        assert_eq!(term_kbo(&t4, &t2, &term_bank), None);
+        assert_eq!(term_kbo(&t4, &t3, &term_bank), None);
+        assert_eq!(term_kbo(&t4, &t4, &term_bank), Some(Ordering::Equal));
+        assert_eq!(term_kbo(&t4, &t5, &term_bank), None);
 
-        assert_eq!(kbo(&t5, &t1, &term_bank), Some(Ordering::Less));
-        assert_eq!(kbo(&t5, &t2, &term_bank), None);
-        assert_eq!(kbo(&t5, &t3, &term_bank), Some(Ordering::Less));
-        assert_eq!(kbo(&t5, &t4, &term_bank), None);
-        assert_eq!(kbo(&t5, &t5, &term_bank), Some(Ordering::Equal));
+        assert_eq!(term_kbo(&t5, &t1, &term_bank), Some(Ordering::Less));
+        assert_eq!(term_kbo(&t5, &t2, &term_bank), None);
+        assert_eq!(term_kbo(&t5, &t3, &term_bank), Some(Ordering::Less));
+        assert_eq!(term_kbo(&t5, &t4, &term_bank), None);
+        assert_eq!(term_kbo(&t5, &t5, &term_bank), Some(Ordering::Equal));
 
-        assert_eq!(kbo(&x, &y, &term_bank), None);
-        assert_eq!(kbo(&t1, &y, &term_bank), None);
-        assert_eq!(kbo(&t1, &x, &term_bank), Some(Ordering::Greater));
-        assert_eq!(kbo(&x, &t1, &term_bank), Some(Ordering::Less));
-        assert_eq!(kbo(&y, &t1, &term_bank), None);
+        assert_eq!(term_kbo(&x, &y, &term_bank), None);
+        assert_eq!(term_kbo(&t1, &y, &term_bank), None);
+        assert_eq!(term_kbo(&t1, &x, &term_bank), Some(Ordering::Greater));
+        assert_eq!(term_kbo(&x, &t1, &term_bank), Some(Ordering::Less));
+        assert_eq!(term_kbo(&y, &t1, &term_bank), None);
     }
 }

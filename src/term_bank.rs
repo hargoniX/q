@@ -128,7 +128,9 @@ impl HashConsed<RawTerm> {
         let mut front = vec![self];
         while let Some(term) = front.pop() {
             match &**term {
-                RawTerm::Var { id, .. } => { acc.insert(*id); },
+                RawTerm::Var { id, .. } => {
+                    acc.insert(*id);
+                }
                 RawTerm::App { args, .. } => {
                     for arg in args.iter() {
                         if !(arg.is_ground() && visited.contains(arg)) {
@@ -136,7 +138,7 @@ impl HashConsed<RawTerm> {
                         }
                         visited.insert(term);
                     }
-                },
+                }
             }
         }
     }
@@ -146,7 +148,6 @@ impl HashConsed<RawTerm> {
         self.collect_vars_into(&mut set);
         set
     }
-
 }
 
 #[derive(Debug)]

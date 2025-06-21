@@ -1,5 +1,8 @@
 use std::{
-    collections::{BTreeMap, HashSet}, hash::Hash, slice, sync::atomic::{AtomicUsize, Ordering}
+    collections::{BTreeMap, HashSet},
+    hash::Hash,
+    slice,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
 use crate::{
@@ -160,9 +163,12 @@ impl Clause {
 
         let mut subst = Substitution::new();
         for old_var in set.iter() {
-            subst.insert(*old_var, term_bank.mk_fresh_variable(VariableInformation {
-                name: "replacement_variable".to_string(),
-            }));
+            subst.insert(
+                *old_var,
+                term_bank.mk_fresh_variable(VariableInformation {
+                    name: "replacement_variable".to_string(),
+                }),
+            );
         }
 
         self.clone().subst_with(&subst, term_bank)
