@@ -1,13 +1,11 @@
 use std::{
-    collections::BTreeMap,
-    hash::Hash,
-    sync::atomic::{AtomicUsize, Ordering},
+    collections::{BTreeMap, HashSet}, hash::Hash, slice, sync::atomic::{AtomicUsize, Ordering}
 };
 
 use crate::{
     multi_set::MultiSet,
     subst::{Substitutable, Substitution},
-    term_bank::{Term, TermBank},
+    term_bank::{self, Term, TermBank, VariableInformation},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -147,6 +145,27 @@ impl Clause {
 
     pub fn get_id(&self) -> ClauseId {
         self.id
+    }
+
+    pub fn iter(&self) -> slice::Iter<'_, Literal> {
+        self.literals.iter()
+    }
+
+    pub fn fresh_variable_clone(&self, term_bank: &mut TermBank) -> Clause {
+        let mut set = HashSet::new();
+        for lit in self.iter() {
+            lit.get_lhs().collect_vars_into(&mut set);
+            lit.get_rhs().collect_vars_into(&mut set);
+        }
+
+        let mut subst = Substitution::new();
+        for old_var in set.iter() {
+            subst.insert(*old_var, term_bank.mk_fresh_variable(VariableInformation {
+                name: "replacement_variable".to_string(),
+            }));
+        }
+
+        self.clone().subst_with(&subst, term_bank)
     }
 }
 

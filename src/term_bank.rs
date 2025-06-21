@@ -122,6 +122,33 @@ impl RawTerm {
     }
 }
 
+impl HashConsed<RawTerm> {
+    pub fn collect_vars_into(&self, acc: &mut HashSet<VariableIdentifier>) {
+        let mut visited = HashSet::new();
+        let mut front = vec![self];
+        while let Some(term) = front.pop() {
+            match &**term {
+                RawTerm::Var { id, .. } => { acc.insert(*id); },
+                RawTerm::App { args, .. } => {
+                    for arg in args.iter() {
+                        if !(arg.is_ground() && visited.contains(arg)) {
+                            front.push(arg);
+                        }
+                        visited.insert(term);
+                    }
+                },
+            }
+        }
+    }
+
+    pub fn collect_vars(&self) -> HashSet<VariableIdentifier> {
+        let mut set = HashSet::new();
+        self.collect_vars_into(&mut set);
+        set
+    }
+
+}
+
 #[derive(Debug)]
 pub struct TermBank {
     hash_cons_table: Table<RawTerm>,
