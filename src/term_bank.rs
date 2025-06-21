@@ -215,6 +215,12 @@ impl TermBank {
         self.mk_variable(id)
     }
 
+    pub fn mk_replacement_variable(&mut self, old_id: VariableIdentifier) -> Term {
+        let mut info = self.get_variable_info(old_id).clone();
+        info.name.push_str("_rep");
+        self.mk_fresh_variable(info)
+    }
+
     pub fn mk_app(&self, id: FunctionIdentifier, args: Vec<Term>) -> Term {
         let mut hasher = DefaultHasher::new();
         hasher.write_u32(id.0);
@@ -243,30 +249,6 @@ impl TermBank {
 
     pub fn mk_const(&self, id: FunctionIdentifier) -> Term {
         self.mk_app(id, vec![])
-    }
-
-    fn pretty_print_aux(&self, term: &Term, acc: &mut String) {
-        match &**term {
-            RawTerm::Var { id, .. } => acc.push_str(&self.get_variable_info(*id).name),
-            RawTerm::App { id, args, .. } => {
-                let info = self.get_function_info(*id);
-                acc.push_str(&info.name);
-                if info.arity > 0 {
-                    acc.push_str("(");
-                    args.iter().for_each(|arg| {
-                        self.pretty_print_aux(arg, acc);
-                        acc.push_str(", ");
-                    });
-                    acc.push_str(")");
-                }
-            }
-        }
-    }
-
-    pub fn pretty_print(&self, term: &Term) -> String {
-        let mut str = String::new();
-        self.pretty_print_aux(term, &mut str);
-        str
     }
 
     pub fn get_variable_index(&self, ident: VariableIdentifier) -> u32 {

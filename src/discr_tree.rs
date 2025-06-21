@@ -604,7 +604,6 @@ mod test {
 
         for (query_term, expected_query_results) in tests.iter() {
             let query_result = discr_tree.get_unification_candidates(query_term);
-            println!("{:?}", query_result.iter().collect::<Vec<_>>());
             assert_eq!(query_result.len(), expected_query_results.len());
             for expected in expected_query_results.iter() {
                 assert!(query_result.contains(map.get(expected).unwrap()));

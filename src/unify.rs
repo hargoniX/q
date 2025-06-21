@@ -1,6 +1,7 @@
 use log::info;
 
 use crate::{
+    pretty_print::pretty_print,
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
 };
@@ -102,11 +103,13 @@ impl Term {
     pub fn unify(self, other: Self, term_bank: &TermBank) -> Option<Substitution> {
         info!(
             "Unifying, {} with {}",
-            term_bank.pretty_print(&self),
-            term_bank.pretty_print(&other)
+            pretty_print(&self, term_bank),
+            pretty_print(&other, term_bank),
         );
         let problem = UnificationProblem::new(self, other);
-        problem.run(term_bank)
+        let res = problem.run(term_bank);
+        info!("Unification success? {}", res.is_some());
+        res
     }
 }
 
