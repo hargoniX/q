@@ -8,7 +8,7 @@ use std::{
 use crate::{
     multi_set::MultiSet,
     subst::{Substitutable, Substitution},
-    term_bank::{self, Term, TermBank, VariableInformation},
+    term_bank::{Term, TermBank},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

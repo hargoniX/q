@@ -3,6 +3,7 @@ pub mod clause_queue;
 pub mod discr_tree;
 pub mod kbo;
 pub mod multi_set;
+pub mod position;
 pub mod pretty_print;
 pub mod subst;
 pub mod term_bank;
