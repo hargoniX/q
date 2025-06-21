@@ -6,6 +6,7 @@ pub mod multi_set;
 pub mod position;
 pub mod pretty_print;
 pub mod subst;
+pub mod superposition;
 pub mod term_bank;
 pub mod term_manager;
 pub mod tptp_parser;
