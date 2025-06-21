@@ -15,16 +15,43 @@ use tptp::top::{AnnotatedFormula, FormulaSelection, TPTPInput};
 pub struct TPTPProblem {
     pub axioms: Vec<FOLTerm>,
     pub conjectures: Vec<FOLTerm>,
-    pub negated_conjectures: Vec<FOLTerm>, // Not sure yet what is the actual semantic behind that.
-                                           // User wants to prove the opposite of his conjecture?
+    // > "negated_conjecture"s are formed from negation of a "conjecture"
+    // > (usually in a FOF to CNF conversion).
+    // This should always be empty for our use-case but let's keep it just in case for now.
+    pub negated_conjectures: Vec<FOLTerm>,
 }
 
-// We utilitze the '$' for special theory-related keywords from tptp
-// to differentiate the truth values from just regular functions named 'true' and 'false'
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub enum Name {
+    Builtin(String),
+    Parsed(String),
+    Skolem(String),
+}
+
+impl Name {
+    pub fn get_name(&self) -> &str {
+        match self {
+            Name::Builtin(name) => name,
+            Name::Parsed(name) => name,
+            Name::Skolem(name) => name,
+        }
+    }
+}
+
+impl fmt::Display for Name {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Name::Builtin(name) => write!(f, "${}", name),
+            Name::Parsed(name) => write!(f, "P_{}", name),
+            Name::Skolem(name) => write!(f, "S_{}", name),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Term {
-    Variable(String),
-    Function(String, Vec<Term>),
+    Variable(Name),
+    Function(Name, Vec<Term>),
 }
 
 impl fmt::Display for Term {
@@ -64,8 +91,8 @@ pub enum FOLTerm {
     Literal(Literal),
     And(Vec<FOLTerm>),
     Or(Vec<FOLTerm>),
-    Existential(Vec<String>, Box<FOLTerm>),
-    Forall(Vec<String>, Box<FOLTerm>),
+    Exist(Vec<Name>, Box<FOLTerm>),
+    Forall(Vec<Name>, Box<FOLTerm>),
 }
 
 impl fmt::Display for FOLTerm {
@@ -88,10 +115,28 @@ impl fmt::Display for FOLTerm {
                     .collect::<Vec<String>>()
                     .join("|")
             ),
-            FOLTerm::Existential(vars, ts) => {
-                write!(f, "?[{}]:{}", vars.join(","), ts.to_string())
+            FOLTerm::Exist(vars, ts) => {
+                write!(
+                    f,
+                    "?[{}]:{}",
+                    vars.into_iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    ts.to_string()
+                )
             }
-            FOLTerm::Forall(vars, ts) => write!(f, "![{}]:{}", vars.join(","), ts.to_string()),
+            FOLTerm::Forall(vars, ts) => {
+                write!(
+                    f,
+                    "![{}]:{}",
+                    vars.into_iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    ts.to_string()
+                )
+            }
         }
     }
 }
@@ -103,7 +148,7 @@ fn negate(fol: FOLTerm) -> FOLTerm {
         FOLTerm::Literal(Literal::NotEq(t1, t2)) => FOLTerm::Literal(Literal::Eq(t1, t2)),
         FOLTerm::And(ts) => FOLTerm::Or(ts.into_iter().map(negate).collect()),
         FOLTerm::Or(ts) => FOLTerm::And(ts.into_iter().map(negate).collect()),
-        FOLTerm::Existential(n, t) => FOLTerm::Forall(n, Box::new(negate(*t))),
+        FOLTerm::Exist(n, t) => FOLTerm::Forall(n, Box::new(negate(*t))),
         FOLTerm::Forall(n, t) => FOLTerm::Forall(n, t),
     }
 }
@@ -161,7 +206,6 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                         log::info!("Parsed FOLTerm: {}", fol_term);
                         if role == "conjecture" {
                             conjectures.push(fol_term);
-                        // FIXME: What is the semantics behind that? When would a problem ever use it??
                         } else if role == "negated_conjecture" {
                             negated_conjectures.push(fol_term);
                         } else {
@@ -276,7 +320,7 @@ impl From<fof::InfixUnary<'_>> for FOLTerm {
 impl From<fof::Term<'_>> for Term {
     fn from(t: fof::Term) -> Self {
         match t {
-            fof::Term::Variable(v) => Self::Variable(v.to_string()),
+            fof::Term::Variable(v) => Self::Variable(Name::Parsed(v.to_string())),
             fof::Term::Function(f) => Self::from(*f),
         }
     }
@@ -300,10 +344,11 @@ impl From<fof::FunctionTerm<'_>> for Term {
 impl From<fof::PlainTerm<'_>> for Term {
     fn from(t: fof::PlainTerm) -> Self {
         match t {
-            fof::PlainTerm::Constant(c) => Self::Function(c.to_string(), Vec::new()),
-            fof::PlainTerm::Function(f, args) => {
-                Self::Function(f.to_string(), args.0.into_iter().map(Self::from).collect())
-            }
+            fof::PlainTerm::Constant(c) => Self::Function(Name::Parsed(c.to_string()), Vec::new()),
+            fof::PlainTerm::Function(f, args) => Self::Function(
+                Name::Parsed(f.to_string()),
+                args.0.into_iter().map(Self::from).collect(),
+            ),
         }
     }
 }
@@ -326,9 +371,13 @@ impl From<fof::DefinedTerm<'_>> for Term {
 impl From<tptp::common::DefinedTerm<'_>> for Term {
     fn from(t: tptp::common::DefinedTerm) -> Self {
         match t {
-            tptp::common::DefinedTerm::Number(n) => Self::Function(n.to_string(), Vec::new()),
+            tptp::common::DefinedTerm::Number(n) => {
+                Self::Function(Name::Parsed(n.to_string()), Vec::new())
+            }
             // These are double-quoted tokens.
-            tptp::common::DefinedTerm::Distinct(n) => Self::Function(n.to_string(), Vec::new()),
+            tptp::common::DefinedTerm::Distinct(n) => {
+                Self::Function(Name::Parsed(n.to_string()), Vec::new())
+            }
         }
     }
 }
@@ -338,12 +387,22 @@ impl From<fof::QuantifiedFormula<'_>> for FOLTerm {
         match f.quantifier {
             // FIXME: the reference implementation reversed the order, but I dont understand why
             fof::Quantifier::Forall => {
-                let vars = f.bound.0.iter().map(|v| v.to_string()).collect();
+                let vars = f
+                    .bound
+                    .0
+                    .iter()
+                    .map(|v| Name::Parsed(v.to_string()))
+                    .collect();
                 Self::Forall(vars, Box::new(Self::from(*f.formula)))
             }
             fof::Quantifier::Exists => {
-                let vars = f.bound.0.iter().map(|v| v.to_string()).collect();
-                Self::Forall(vars, Box::new(Self::from(*f.formula)))
+                let vars = f
+                    .bound
+                    .0
+                    .iter()
+                    .map(|v| Name::Parsed(v.to_string()))
+                    .collect();
+                Self::Exist(vars, Box::new(Self::from(*f.formula)))
             }
         }
     }
@@ -365,14 +424,14 @@ impl From<fof::DefinedPlainFormula<'_>> for FOLTerm {
         match f.0 {
             fof::DefinedPlainTerm::Constant(c) if c.0.0.0.0.0 == "true" => {
                 FOLTerm::Literal(Literal::Eq(
-                    Term::Function(String::from("$true"), Vec::new()),
-                    Term::Function(String::from("$true"), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("true")), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("true")), Vec::new()),
                 ))
             }
             fof::DefinedPlainTerm::Constant(c) if c.0.0.0.0.0 == "false" => {
                 FOLTerm::Literal(Literal::Eq(
-                    Term::Function(String::from("$false"), Vec::new()),
-                    Term::Function(String::from("$true"), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("false")), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("true")), Vec::new()),
                 ))
             }
             _ => unimplemented!("No other theory is implemented"),
@@ -394,12 +453,15 @@ impl From<fof::PlainAtomicFormula<'_>> for FOLTerm {
     fn from(f: fof::PlainAtomicFormula) -> Self {
         match f.0 {
             fof::PlainTerm::Constant(c) => FOLTerm::Literal(Literal::Eq(
-                Term::Function(c.to_string(), Vec::new()),
-                Term::Function(String::from("$true"), Vec::new()),
+                Term::Function(Name::Parsed(c.to_string()), Vec::new()),
+                Term::Function(Name::Builtin(String::from("true")), Vec::new()),
             )),
             fof::PlainTerm::Function(f, args) => FOLTerm::Literal(Literal::Eq(
-                Term::Function(f.to_string(), args.0.into_iter().map(Term::from).collect()),
-                Term::Function(String::from("$true"), Vec::new()),
+                Term::Function(
+                    Name::Parsed(f.to_string()),
+                    args.0.into_iter().map(Term::from).collect(),
+                ),
+                Term::Function(Name::Builtin(String::from("true")), Vec::new()),
             )),
         }
     }
