@@ -1,3 +1,9 @@
+use std::{
+    collections::BTreeMap,
+    hash::Hash,
+    sync::atomic::{AtomicUsize, Ordering},
+};
+
 use crate::{
     multi_set::MultiSet,
     subst::{Substitutable, Substitution},
@@ -27,6 +33,10 @@ pub struct Literal {
 }
 
 impl Literal {
+    pub fn new(lhs: Term, rhs: Term, kind: Polarity) -> Self {
+        Self { lhs, rhs, kind }
+    }
+
     pub fn mk_eq(lhs: Term, rhs: Term) -> Self {
         Self {
             lhs,
@@ -88,20 +98,25 @@ impl Substitutable for Literal {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+static CLAUSE_ID_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ClauseId(usize);
+
+fn next_clause_id() -> ClauseId {
+    ClauseId(CLAUSE_ID_COUNT.fetch_add(1, Ordering::SeqCst))
+}
+
+#[derive(Debug, Clone)]
 pub struct Clause {
+    id: ClauseId,
     literals: MultiSet<Literal>,
 }
 
 impl Clause {
-    pub fn new() -> Self {
+    pub fn new(vec: Vec<Literal>) -> Self {
         Self {
-            literals: MultiSet::new(),
-        }
-    }
-
-    pub fn of_vec(vec: Vec<Literal>) -> Self {
-        Self {
+            id: next_clause_id(),
             literals: MultiSet::of_vec(vec),
         }
     }
@@ -121,7 +136,44 @@ impl Clause {
     pub fn weight(&self) -> u32 {
         self.literals.iter().map(Literal::weight).sum()
     }
-    // TODO: this will likely need more methods, build them as they come up
+
+    pub fn get_literal(&self, literal_idx: usize) -> &Literal {
+        self.literals.get(literal_idx)
+    }
+
+    pub fn get_literals(&self) -> &MultiSet<Literal> {
+        &self.literals
+    }
+
+    pub fn get_id(&self) -> ClauseId {
+        self.id
+    }
+}
+
+impl PartialEq for Clause {
+    fn eq(&self, other: &Self) -> bool {
+        self.id.eq(&other.id)
+    }
+}
+
+impl Eq for Clause {}
+
+impl PartialOrd for Clause {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.id.partial_cmp(&other.id)
+    }
+}
+
+impl Ord for Clause {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl Hash for Clause {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        Hash::hash(&self.id, state);
+    }
 }
 
 impl Substitutable for Clause {
@@ -131,7 +183,38 @@ impl Substitutable for Clause {
             .into_iter()
             .map(|lit| lit.subst_with(subst, term_bank))
             .collect();
-        Self { literals: new_lits }
+        Self {
+            id: next_clause_id(),
+            literals: new_lits,
+        }
+    }
+}
+
+pub struct ClauseSet {
+    map: BTreeMap<ClauseId, Clause>,
+}
+
+impl ClauseSet {
+    pub fn new() -> Self {
+        Self {
+            map: BTreeMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, clause: Clause) {
+        self.map.insert(clause.id, clause);
+    }
+
+    pub fn get_by_id(&self, id: ClauseId) -> Option<&Clause> {
+        self.map.get(&id)
+    }
+
+    pub fn contains_id(&self, id: ClauseId) -> bool {
+        self.map.contains_key(&id)
+    }
+
+    pub fn contains_clause(&self, clause: &Clause) -> bool {
+        self.map.contains_key(&clause.get_id())
     }
 }
 
@@ -210,24 +293,24 @@ mod test {
         let y = term_bank.mk_variable(y_id);
         let z = term_bank.mk_variable(z_id);
 
-        let clause = Clause::new();
+        let clause = Clause::new(vec![]);
         assert_eq!(clause.len(), 0);
         assert!(clause.is_empty());
         assert!(!clause.is_unit());
 
         let lit1 = Literal::mk_eq(x.clone(), y.clone());
-        let clause = Clause::of_vec(vec![lit1.clone()]);
+        let clause = Clause::new(vec![lit1.clone()]);
         assert_eq!(clause.len(), 1);
         assert!(!clause.is_empty());
         assert!(clause.is_unit());
 
         let lit2 = Literal::mk_ne(y.clone(), z.clone());
-        let clause = Clause::of_vec(vec![lit1.clone(), lit2.clone()]);
+        let clause = Clause::new(vec![lit1.clone(), lit2.clone()]);
         assert_eq!(clause.len(), 2);
         assert!(!clause.is_empty());
         assert!(!clause.is_unit());
 
-        let clause = Clause::of_vec(vec![lit1.clone(), lit2.clone(), lit1.clone()]);
+        let clause = Clause::new(vec![lit1.clone(), lit2.clone(), lit1.clone()]);
         assert_eq!(clause.len(), 3);
     }
 }

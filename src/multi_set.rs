@@ -25,6 +25,10 @@ impl<T> MultiSet<T> {
     pub fn iter(&self) -> slice::Iter<'_, T> {
         self.vec.iter()
     }
+
+    pub fn get(&self, idx: usize) -> &T {
+        &self.vec[idx]
+    }
     // TODO: this will likely need more methods, build them as they come up
 }
 

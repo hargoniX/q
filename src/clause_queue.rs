@@ -77,9 +77,9 @@ mod test {
         let y = term_bank.mk_variable(y_id);
         let f_x = term_bank.mk_app(f_id, vec![x.clone()]);
 
-        let clause1 = Clause::of_vec(vec![Literal::mk_eq(x.clone(), y.clone())]);
-        let clause2 = Clause::of_vec(vec![Literal::mk_eq(f_x.clone(), y.clone())]);
-        let clause3 = Clause::of_vec(vec![Literal::mk_eq(f_x.clone(), f_x.clone())]);
+        let clause1 = Clause::new(vec![Literal::mk_eq(x.clone(), y.clone())]);
+        let clause2 = Clause::new(vec![Literal::mk_eq(f_x.clone(), y.clone())]);
+        let clause3 = Clause::new(vec![Literal::mk_eq(f_x.clone(), f_x.clone())]);
 
         let mut queue = ClauseQueue::new();
         queue.push(clause1.clone());
