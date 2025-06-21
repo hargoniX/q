@@ -19,22 +19,39 @@ pub struct TPTPProblem {
                                            // User wants to prove the opposite of his conjecture?
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub enum Name {
+   Builtin(String),
+   Parsed(String),
+   Skolem(String),
+}
+
+impl Name {
+    pub fn get_name(&self) -> &str {
+        match self {
+            Name::Builtin(name) => name,
+            Name::Parsed(name) => name,
+            Name::Skolem(name) => name,
+        }
+    }
+}
+
 // We utilitze the '$' for special theory-related keywords from tptp
 // to differentiate the truth values from just regular functions named 'true' and 'false'
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Term {
-    Variable(String),
-    Function(String, Vec<Term>),
+    Variable(Name),
+    Function(Name, Vec<Term>),
 }
 
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Variable(name) => write!(f, "{}", name),
+            Term::Variable(name) => write!(f, "{}", name.get_name()),
             Term::Function(name, ts) => write!(
                 f,
                 "{}({})",
-                name,
+                name.get_name(),
                 ts.into_iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<String>>()
@@ -276,7 +293,7 @@ impl From<fof::InfixUnary<'_>> for FOLTerm {
 impl From<fof::Term<'_>> for Term {
     fn from(t: fof::Term) -> Self {
         match t {
-            fof::Term::Variable(v) => Self::Variable(v.to_string()),
+            fof::Term::Variable(v) => Self::Variable(Name::Parsed(v.to_string())),
             fof::Term::Function(f) => Self::from(*f),
         }
     }
@@ -300,9 +317,9 @@ impl From<fof::FunctionTerm<'_>> for Term {
 impl From<fof::PlainTerm<'_>> for Term {
     fn from(t: fof::PlainTerm) -> Self {
         match t {
-            fof::PlainTerm::Constant(c) => Self::Function(c.to_string(), Vec::new()),
+            fof::PlainTerm::Constant(c) => Self::Function(Name::Parsed(c.to_string()), Vec::new()),
             fof::PlainTerm::Function(f, args) => {
-                Self::Function(f.to_string(), args.0.into_iter().map(Self::from).collect())
+                Self::Function(Name::Parsed(f.to_string()), args.0.into_iter().map(Self::from).collect())
             }
         }
     }
@@ -326,9 +343,9 @@ impl From<fof::DefinedTerm<'_>> for Term {
 impl From<tptp::common::DefinedTerm<'_>> for Term {
     fn from(t: tptp::common::DefinedTerm) -> Self {
         match t {
-            tptp::common::DefinedTerm::Number(n) => Self::Function(n.to_string(), Vec::new()),
+            tptp::common::DefinedTerm::Number(n) => Self::Function(Name::Parsed(n.to_string()), Vec::new()),
             // These are double-quoted tokens.
-            tptp::common::DefinedTerm::Distinct(n) => Self::Function(n.to_string(), Vec::new()),
+            tptp::common::DefinedTerm::Distinct(n) => Self::Function(Name::Parsed(n.to_string()), Vec::new()),
         }
     }
 }
@@ -365,14 +382,14 @@ impl From<fof::DefinedPlainFormula<'_>> for FOLTerm {
         match f.0 {
             fof::DefinedPlainTerm::Constant(c) if c.0.0.0.0.0 == "true" => {
                 FOLTerm::Literal(Literal::Eq(
-                    Term::Function(String::from("$true"), Vec::new()),
-                    Term::Function(String::from("$true"), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("true")), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("true")), Vec::new()),
                 ))
             }
             fof::DefinedPlainTerm::Constant(c) if c.0.0.0.0.0 == "false" => {
                 FOLTerm::Literal(Literal::Eq(
-                    Term::Function(String::from("$false"), Vec::new()),
-                    Term::Function(String::from("$true"), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("$false")), Vec::new()),
+                    Term::Function(Name::Builtin(String::from("$true")), Vec::new()),
                 ))
             }
             _ => unimplemented!("No other theory is implemented"),
@@ -394,12 +411,12 @@ impl From<fof::PlainAtomicFormula<'_>> for FOLTerm {
     fn from(f: fof::PlainAtomicFormula) -> Self {
         match f.0 {
             fof::PlainTerm::Constant(c) => FOLTerm::Literal(Literal::Eq(
-                Term::Function(c.to_string(), Vec::new()),
-                Term::Function(String::from("$true"), Vec::new()),
+                Term::Function(Name::Parsed(c.to_string()), Vec::new()),
+                Term::Function(Name::Builtin(String::from("$true")), Vec::new()),
             )),
             fof::PlainTerm::Function(f, args) => FOLTerm::Literal(Literal::Eq(
-                Term::Function(f.to_string(), args.0.into_iter().map(Term::from).collect()),
-                Term::Function(String::from("$true"), Vec::new()),
+                Term::Function(Name::Parsed(f.to_string()), args.0.into_iter().map(Term::from).collect()),
+                Term::Function(Name::Builtin(String::from("$true")), Vec::new()),
             )),
         }
     }
