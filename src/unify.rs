@@ -1,3 +1,8 @@
+//! ## First Order Unification
+//! This module implements the naive rule based first order unification as taught in 
+//! [LMU's ATP course](https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides06-general-resolution.pdf).
+//! The key function is [Term::unify].
+
 use log::info;
 
 use crate::{
@@ -17,8 +22,7 @@ enum UnificationState {
     Next,
 }
 
-// Standard Unification as shown in https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides06-general-resolution.pdf
-// TODO: Polynomial Unification
+// TODO: Polynomial Unification or better
 impl UnificationProblem {
     fn new(lhs: Term, rhs: Term) -> Self {
         let mut equations = Vec::new();
@@ -100,6 +104,9 @@ impl UnificationProblem {
 }
 
 impl Term {
+    /// Try to unify `self` and `other`, returning `Some(subst)` on success and `None` otherwise.
+    /// If both `self` and `other` are ground this operation is `O(1)` otherwise potentially
+    /// expensive.
     pub fn unify(&self, other: &Self, term_bank: &TermBank) -> Option<Substitution> {
         info!(
             "Unifying, {} with {}",

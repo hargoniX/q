@@ -1,3 +1,8 @@
+//! ## Discrimination Tree
+//! This module contains an implementation of an imperfect first order discrimination tree as shown
+//! in [LMU's ATP course](https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides14-efficient-saturation-procedures-outlook.pdf).
+//! The key exported data structure is [DiscriminationTree].
+
 use std::{
     collections::{HashMap, HashSet, hash_map::Entry},
     hash::Hash,
@@ -6,15 +11,21 @@ use std::{
 
 use crate::term_bank::{FunctionIdentifier, RawTerm, Term};
 
+/// Implementation of a [trie](https://en.wikipedia.org/wiki/Trie) with `C` being the characters
+/// from its alphabet and `V` the values in the nodes.
 #[derive(Debug)]
 struct Trie<C, V> {
     values: Vec<V>,
     children: HashMap<C, Box<Trie<C, V>>>,
 }
 
+/// The alphabet of a discrimination tree trie.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 enum DiscrTreeKey {
+    /// Stars for representing variables.
     Star,
+    /// Function applications containing their identifier and the arity of the function, `0` if its
+    /// a constant.
     App {
         id: FunctionIdentifier,
         arity: usize,
@@ -27,12 +38,14 @@ struct PersistentPreorderTermIterator {
     pos: usize,
 }
 
+/// A non perfect discrimination tree with `V` as the values associated with the indexed terms.
 #[derive(Debug)]
 pub struct DiscriminationTree<V> {
     trie: Trie<DiscrTreeKey, V>,
 }
 
 impl<C: Eq + Hash, V> Trie<C, V> {
+    /// Create a new empty try.
     fn new() -> Self {
         Self {
             values: Vec::new(),
@@ -40,6 +53,7 @@ impl<C: Eq + Hash, V> Trie<C, V> {
         }
     }
 
+    /// Insert `value` at the position described by the string produce by `iter`.
     fn insert(&mut self, mut iter: impl Iterator<Item = C>, value: V) {
         match iter.next() {
             Some(char) => match self.children.entry(char) {
@@ -94,7 +108,8 @@ impl Iterator for PersistentPreorderTermIterator {
     }
 }
 
-// Precondition: iter has at least one element remaining and iterates over a well formed term
+/// Skip to the end of the current subterm in an iterator of the discrimination tree alphabet.
+/// Precondition: The iterator has at least one element remaining
 fn skip_to_next_subterm<T: Iterator<Item = DiscrTreeKey>>(iter: &mut T) {
     let mut to_skip = 0;
     match iter.next().unwrap() {
@@ -115,6 +130,7 @@ fn skip_to_next_subterm<T: Iterator<Item = DiscrTreeKey>>(iter: &mut T) {
 }
 
 impl<V> Trie<DiscrTreeKey, V> {
+    /// Skip to the end of the current subterm in a discrimination tree.
     fn skip_to_next_subterm(&self) -> Vec<&Self> {
         let mut final_positions: Vec<&Self> = Vec::new();
         let mut frontier = vec![(self, 1usize)];
@@ -136,15 +152,20 @@ impl<V> Trie<DiscrTreeKey, V> {
 }
 
 impl<V: Hash + Eq> DiscriminationTree<V> {
+    /// Create an empty discrimination tree.
     pub fn new() -> Self {
         Self { trie: Trie::new() }
     }
 
+    /// Insert a new term with some associated value into the discrimination tree.
     pub fn insert(&mut self, term: &Term, value: V) {
         let iter = PersistentPreorderTermIterator::new(term);
         self.trie.insert(iter, value);
     }
 
+    /// Obtain the values associated with all potential generalisations of `term` indexed in `self`,
+    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
+    /// `subst(term) = key`.
     pub fn get_generalisation_candidates(&self, term: &Term) -> HashSet<&V> {
         let iter = PersistentPreorderTermIterator::new(term).peekable();
         let mut frontier = vec![(iter, &self.trie)];
@@ -177,6 +198,9 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
         set
     }
 
+    /// Obtain the values associated with all potential instances of `term` indexed in `self`,
+    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
+    /// `term = subst(key)`.
     pub fn get_instance_candidates(&self, term: &Term) -> HashSet<&V> {
         let iter = PersistentPreorderTermIterator::new(term).peekable();
         let mut frontier = vec![(iter, &self.trie)];
@@ -204,6 +228,9 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
         set
     }
 
+    /// Obtain the values associated with all potential unifications of `term` indexed in `self`,
+    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
+    /// `subst(term) = subst(key)`.
     pub fn get_unification_candidates(&self, term: &Term) -> HashSet<&V> {
         let iter = PersistentPreorderTermIterator::new(term).peekable();
         let mut frontier = vec![(iter, &self.trie)];

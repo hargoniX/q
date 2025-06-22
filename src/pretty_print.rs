@@ -1,12 +1,20 @@
+//! ## Pretty Printing
+//! This module contains the [BankPrettyPrint] trait which can be implemented for types that may
+//! be pretty printed given some information from a term bank.
+
 use crate::{
     clause::{Clause, Literal, Polarity},
     term_bank::{RawTerm, Term, TermBank},
 };
 
+/// Types that can be pretty printed using information from a [TermBank]
 pub trait BankPrettyPrint {
+    /// Print the representation of `self` into `acc` using information from `term_bank`.
     fn print_into(&self, term_bank: &TermBank, acc: &mut String);
 }
 
+/// Pretty print some value that implements [BankPrettyPrint] to a string using information from
+/// `term_bank`.
 pub fn pretty_print<T: BankPrettyPrint>(t: &T, term_bank: &TermBank) -> String {
     let mut acc = String::new();
     t.print_into(term_bank, &mut acc);
@@ -52,7 +60,7 @@ impl BankPrettyPrint for Literal {
     fn print_into(&self, term_bank: &TermBank, acc: &mut String) {
         self.get_lhs().print_into(term_bank, acc);
         acc.push_str(" ");
-        self.get_kind().print_into(term_bank, acc);
+        self.get_pol().print_into(term_bank, acc);
         acc.push_str(" ");
         self.get_rhs().print_into(term_bank, acc);
     }

@@ -1,3 +1,10 @@
+//! ## Substitutions
+//! This module contains an implementation of substitutions on first order constructs, the key
+//! things exposed are:
+//! - [Substitution] which is the representation of a substitution, mapping some variables to new
+//!   terms to replace them with.
+//! - [Substitutable] which may be implemented for types that have some notion of substitution.
+
 use std::collections::HashMap;
 
 use crate::term_bank::{
@@ -5,30 +12,36 @@ use crate::term_bank::{
     Term, TermBank, VariableIdentifier,
 };
 
+/// A first order substitution, mapping variables to terms to replace them with.
 #[derive(Debug)]
 pub struct Substitution {
     map: HashMap<VariableIdentifier, Term>,
 }
 
 impl Substitution {
+    /// Create a new empty substitution.
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
 
+    /// Associate `var` with `term` in the substitution.
     pub fn insert(&mut self, var: VariableIdentifier, term: Term) {
         self.map.insert(var, term);
     }
 
+    /// Obtain the term associated with `var` if it exists.
     pub fn get(&self, var: VariableIdentifier) -> Option<Term> {
         self.map.get(&var).cloned()
     }
 
+    /// Return `true` if the substitution is an identity substitution.
     pub fn is_nop(&self) -> bool {
         self.map.is_empty()
     }
 
+    /// Compose the current substitution with `{ var_id |-> term }`.
     pub fn compose_binding(
         &mut self,
         var_id: VariableIdentifier,
@@ -44,7 +57,9 @@ impl Substitution {
     }
 }
 
+/// A type that has a substitution operation on itself.
 pub trait Substitutable {
+    /// Apply `subst` to `self`, hash consing terms using `term_bank`.
     fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self;
 }
 
@@ -77,6 +92,8 @@ impl Term {
 }
 
 impl Substitutable for Term {
+    /// Apply `subst` to this term, if the substitution fulfills [Substitution::is_nop] or the term
+    /// is ground this is constant time, otherwise up to `O(dag_size(term))`.
     fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self {
         if subst.is_nop() {
             self

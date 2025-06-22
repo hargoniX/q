@@ -1,3 +1,10 @@
+//! ## Clauses
+//! This module provides an implementation of superposition literals and CNF clauses as well as sets
+//! of clauses. The key exported data structures are:
+//! - [Literal] for representing equalities and disequalities
+//! - [Clause] for representing disjunctions of literals
+//! - [ClauseSet] for representing sets of clauses
+
 use std::{
     collections::{BTreeMap, HashSet},
     hash::Hash,
@@ -11,13 +18,17 @@ use crate::{
     term_bank::{Term, TermBank},
 };
 
+/// Whether a literal is `=` or `!=`
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Polarity {
+    /// The literal is `=`.
     Eq,
+    /// The literal is `!=`.
     Ne,
 }
 
 impl Polarity {
+    /// Flip the polarity to the other one.
     fn negate(&self) -> Polarity {
         match self {
             Polarity::Eq => Polarity::Ne,
@@ -26,6 +37,7 @@ impl Polarity {
     }
 }
 
+/// A literal represents either an equality or a disequality between two [Term].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Literal {
     lhs: Term,
@@ -34,10 +46,12 @@ pub struct Literal {
 }
 
 impl Literal {
+    /// Create a new literal with `lhs = rhs` or `lhs != rhs` depending on `kind`.
     pub fn new(lhs: Term, rhs: Term, kind: Polarity) -> Self {
         Self { lhs, rhs, kind }
     }
 
+    /// Create a new literal with `lhs = rhs`.
     pub fn mk_eq(lhs: Term, rhs: Term) -> Self {
         Self {
             lhs,
@@ -46,6 +60,7 @@ impl Literal {
         }
     }
 
+    /// Create a new literal with `lhs != rhs`.
     pub fn mk_ne(lhs: Term, rhs: Term) -> Self {
         Self {
             lhs,
@@ -54,26 +69,32 @@ impl Literal {
         }
     }
 
+    /// Get the left hand side of the literal.
     pub fn get_lhs(&self) -> &Term {
         &self.lhs
     }
 
+    /// Get the right hand side of the literal.
     pub fn get_rhs(&self) -> &Term {
         &self.rhs
     }
 
-    pub fn get_kind(&self) -> Polarity {
+    /// Get the polarity of the literal.
+    pub fn get_pol(&self) -> Polarity {
         self.kind
     }
 
-    pub fn is_negative(&self) -> bool {
+    /// Check whether the literal is a disequality.
+    pub fn is_ne(&self) -> bool {
         self.kind == Polarity::Ne
     }
 
+    /// Check whether the literal is an equality.
     pub fn is_positive(&self) -> bool {
         self.kind == Polarity::Eq
     }
 
+    /// Flip the polarity of the literal.
     pub fn negate(self) -> Self {
         Self {
             lhs: self.lhs,
@@ -82,12 +103,16 @@ impl Literal {
         }
     }
 
+    /// Compute the default weight of the literal for the clause queue.
     pub fn weight(&self) -> u32 {
         self.lhs.weight() + self.rhs.weight()
     }
 }
 
 impl Substitutable for Literal {
+    /// Apply `subst` to the literal, this is constant time if the substitution is a nop
+    /// or lhs and rhs are ground, otherwise the worst case complexity is
+    /// `O(dag_size(lhs) + dag_size(rhs))`.
     fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self {
         let new_lhs = self.lhs.subst_with(subst, term_bank);
         let new_rhs = self.rhs.subst_with(subst, term_bank);
@@ -99,8 +124,11 @@ impl Substitutable for Literal {
     }
 }
 
+// We want to maintain unique clause identifiers for ease of indexing in a [ClauseSet], this
+// counter provides us with these identifiers.
 static CLAUSE_ID_COUNT: AtomicUsize = AtomicUsize::new(0);
 
+/// A unique identifier for clauses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ClauseId(usize);
 
@@ -108,6 +136,7 @@ fn next_clause_id() -> ClauseId {
     ClauseId(CLAUSE_ID_COUNT.fetch_add(1, Ordering::SeqCst))
 }
 
+/// Uniquely identifiable clauses consisting of a multiset of [Literal].
 #[derive(Debug, Clone)]
 pub struct Clause {
     id: ClauseId,
@@ -115,6 +144,7 @@ pub struct Clause {
 }
 
 impl Clause {
+    /// Create a new clause containing the literals from `vec`.
     pub fn new(vec: Vec<Literal>) -> Self {
         Self {
             id: next_clause_id(),
@@ -122,38 +152,44 @@ impl Clause {
         }
     }
 
+    /// Get how many literals are in the clause, counting duplicates, this operation is `O(1)`.
     pub fn len(&self) -> usize {
         self.literals.len()
     }
 
+    /// Check if the clause is empty, this operation is `O(1)`.
     pub fn is_empty(&self) -> bool {
         self.literals.is_empty()
     }
 
+    /// Check if the clause is unit, this operation is `O(1)`.
     pub fn is_unit(&self) -> bool {
         self.len() == 1
     }
 
+    /// Get the default clause weight for the clause queue.
     pub fn weight(&self) -> u32 {
         self.literals.iter().map(Literal::weight).sum()
     }
 
+    /// Obtain a literal from the clause by index.
     pub fn get_literal(&self, literal_idx: usize) -> &Literal {
         self.literals.get(literal_idx)
     }
 
-    pub fn get_literals(&self) -> &MultiSet<Literal> {
-        &self.literals
-    }
-
+    /// Obtain the unique identifier of this clause.
     pub fn get_id(&self) -> ClauseId {
         self.id
     }
 
+    /// Obtain an iterator over the literals in the clause.
     pub fn iter(&self) -> slice::Iter<'_, Literal> {
         self.literals.iter()
     }
 
+    /// Clone the clause and substitute all of its variables with fresh ones to obtain a clause
+    /// with unique variables. For ground clauses this is a very cheap `O(clause.len())`, otherwise
+    /// worst case `O(clause.len() * max(dag_size(lit_i)))`.
     pub fn fresh_variable_clone(&self, term_bank: &mut TermBank) -> Clause {
         let mut set = HashSet::new();
         for lit in self.iter() {
@@ -161,16 +197,21 @@ impl Clause {
             lit.get_rhs().collect_vars_into(&mut set);
         }
 
-        let mut subst = Substitution::new();
-        for old_var in set.iter() {
-            subst.insert(*old_var, term_bank.mk_replacement_variable(*old_var));
-        }
+        if set.is_empty() {
+            self.clone()
+        } else {
+            let mut subst = Substitution::new();
+            for old_var in set.iter() {
+                subst.insert(*old_var, term_bank.mk_replacement_variable(*old_var));
+            }
 
-        self.clone().subst_with(&subst, term_bank)
+            self.clone().subst_with(&subst, term_bank)
+        }
     }
 }
 
 impl PartialEq for Clause {
+    /// Clauses are compared by their unique id so comparison is always `O(1)`
     fn eq(&self, other: &Self) -> bool {
         self.id.eq(&other.id)
     }
@@ -179,18 +220,21 @@ impl PartialEq for Clause {
 impl Eq for Clause {}
 
 impl PartialOrd for Clause {
+    /// Clauses are compared by their unique id so comparison is always `O(1)`
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.id.partial_cmp(&other.id)
     }
 }
 
 impl Ord for Clause {
+    /// Clauses are compared by their unique id so comparison is always `O(1)`
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.id.cmp(&other.id)
     }
 }
 
 impl Hash for Clause {
+    /// Clauses are hashed by their unique id so hashing is always `O(1)`
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         Hash::hash(&self.id, state);
     }
@@ -210,31 +254,27 @@ impl Substitutable for Clause {
     }
 }
 
+/// A set of clauses indexed by unique clause identifiers.
 pub struct ClauseSet {
     map: BTreeMap<ClauseId, Clause>,
 }
 
 impl ClauseSet {
+    /// Create an empty clause set.
     pub fn new() -> Self {
         Self {
             map: BTreeMap::new(),
         }
     }
 
+    /// Insert a new clause into the set.
     pub fn insert(&mut self, clause: Clause) {
         self.map.insert(clause.id, clause);
     }
 
+    /// Get clause by its unique identifier.
     pub fn get_by_id(&self, id: ClauseId) -> Option<&Clause> {
         self.map.get(&id)
-    }
-
-    pub fn contains_id(&self, id: ClauseId) -> bool {
-        self.map.contains_key(&id)
-    }
-
-    pub fn contains_clause(&self, clause: &Clause) -> bool {
-        self.map.contains_key(&clause.get_id())
     }
 }
 
@@ -266,8 +306,8 @@ mod test {
         assert_eq!(l1.get_lhs(), &x);
         assert_eq!(l1.get_rhs(), &y);
         assert!(l1.is_positive());
-        assert!(!l1.is_negative());
-        assert!(l2.is_negative());
+        assert!(!l1.is_ne());
+        assert!(l2.is_ne());
         assert!(!l2.is_positive());
         assert_ne!(l1, l2);
 

@@ -1,18 +1,22 @@
+//! ## Clause Queue
+//! This module contains the implementation of the clause queue used as the passive set in the
+//! given clause procedure. The key exported data structure is [ClauseQueue].
+
 use std::{cmp::Ordering, collections::BinaryHeap};
 
 use crate::clause::Clause;
 
-// We do not implement an Ord instance on clause publicly because it does not fulfill the full
-// invariants demanded by the Ord specification. However it is sufficient for BinaryHeap
+// The public clause ordering instance works with the clause identifier but we want to order it
+// after its weight so we use a zero cost wrapper.
 struct WeightedClause(Clause);
 
 impl PartialEq for WeightedClause {
-    fn eq(&self, _: &Self) -> bool {
-        false
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 
-// reverse ordering as we want minimal clauses to be selected first
+// We use reverse ordering as we want minimal clauses to be selected first.
 impl PartialOrd for WeightedClause {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.0
@@ -30,21 +34,25 @@ impl Ord for WeightedClause {
     }
 }
 
+/// A priority queue for clauses sorted according to some heuristics for given clause selection.
 pub struct ClauseQueue {
     queue: BinaryHeap<WeightedClause>,
 }
 
 impl ClauseQueue {
+    /// Create an empty clause queue.
     pub fn new() -> Self {
         Self {
             queue: BinaryHeap::new(),
         }
     }
 
+    /// Push a clause into the clause queue.
     pub fn push(&mut self, clause: Clause) {
         self.queue.push(WeightedClause(clause));
     }
 
+    /// Obtain the currently best clause from the queue.
     pub fn pop(&mut self) -> Option<Clause> {
         self.queue.pop().map(|c| c.0)
     }
