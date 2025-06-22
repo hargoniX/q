@@ -1,6 +1,6 @@
 //! ## Hash Consed Term Manager
 //! This module contains a generic [hash consing](https://en.wikipedia.org/wiki/Hash_consing)
-//! mechanism based on reference counting. They key data structures are:
+//! mechanism based on reference counting. The key data structures are:
 //! - [Table] which manages the hash consed values and can be used to create new ones using
 //!   [Table::hashcons].
 //! - [HashConsed] which is a hash consed smart pointer, bound to some [Table]
