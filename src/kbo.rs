@@ -8,7 +8,7 @@
 //!   1. If a function has higher arity than another one it wins
 //!   2. If the functions have same arity choose arbitrarily, here we choose to compare by the index
 //!      in the term bank.
-//! 
+//!
 //! The key type exposed is [KboOrd] together with its implementation for terms and literals.
 
 use std::{cmp::Ordering, collections::HashMap};
@@ -191,7 +191,8 @@ mod test {
     use std::{cmp::Ordering, vec};
 
     use crate::{
-        kbo::KboOrd, term_bank::{FunctionInformation, TermBank, VariableInformation}
+        kbo::KboOrd,
+        term_bank::{FunctionInformation, TermBank, VariableInformation},
     };
 
     #[test]

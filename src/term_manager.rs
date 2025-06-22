@@ -9,13 +9,13 @@
 //! 1. All [HashConsed] managed by the same [Table] will be perfectly shared
 //! 2. Assuming constant time hashing and comparison of a `T`, hashconsing a `T` will take constant
 //!    time itself.
-//! 3. Assuming constant time hashing of a `T` a hashconsed `T` will have constant time hashing. 
+//! 3. Assuming constant time hashing of a `T` a hashconsed `T` will have constant time hashing.
 //! 4. Comparing [HashConsed] managed by the same [Table] is constant time.
 
 use std::{
     cell::RefCell,
     cmp::Ordering,
-    collections::{hash_map::Entry, HashMap},
+    collections::{HashMap, hash_map::Entry},
     fmt::{Debug, Display},
     hash::{Hash, Hasher},
     ops::Deref,

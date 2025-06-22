@@ -1,5 +1,5 @@
 //! ## First Order Unification
-//! This module implements the naive rule based first order unification as taught in 
+//! This module implements the naive rule based first order unification as taught in
 //! [LMU's ATP course](https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides06-general-resolution.pdf).
 //! The key function is [Term::unify].
 
