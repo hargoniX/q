@@ -7,20 +7,6 @@ use tptp::common::NonassocConnective;
 use tptp::fof;
 use tptp::top::{AnnotatedFormula, FormulaSelection, TPTPInput};
 
-// These will be converted to an actual problem in CNF form to be proven by saturation:
-// - we conjunct the assumption formulas
-// - we conject those with the negated goals
-// - we show False
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct TPTPProblem {
-    pub axioms: Vec<FOLTerm>,
-    pub conjectures: Vec<FOLTerm>,
-    // > "negated_conjecture"s are formed from negation of a "conjecture"
-    // > (usually in a FOF to CNF conversion).
-    // This should always be empty for our use-case but let's keep it just in case for now.
-    pub negated_conjectures: Vec<FOLTerm>,
-}
-
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Name {
     Builtin(String),
@@ -141,16 +127,28 @@ impl fmt::Display for FOLTerm {
     }
 }
 
-// Distribute a negation over the whole term
-fn negate(fol: FOLTerm) -> FOLTerm {
-    match fol {
-        FOLTerm::Literal(Literal::Eq(t1, t2)) => FOLTerm::Literal(Literal::NotEq(t1, t2)),
-        FOLTerm::Literal(Literal::NotEq(t1, t2)) => FOLTerm::Literal(Literal::Eq(t1, t2)),
-        FOLTerm::And(ts) => FOLTerm::Or(ts.into_iter().map(negate).collect()),
-        FOLTerm::Or(ts) => FOLTerm::And(ts.into_iter().map(negate).collect()),
-        FOLTerm::Exist(n, t) => FOLTerm::Forall(n, Box::new(negate(*t))),
-        FOLTerm::Forall(n, t) => FOLTerm::Forall(n, t),
+impl FOLTerm {
+    // Distribute a negation over the whole term
+    fn negate(self) -> FOLTerm {
+        match self {
+            FOLTerm::Literal(Literal::Eq(t1, t2)) => FOLTerm::Literal(Literal::NotEq(t1, t2)),
+            FOLTerm::Literal(Literal::NotEq(t1, t2)) => FOLTerm::Literal(Literal::Eq(t1, t2)),
+            FOLTerm::And(ts) => FOLTerm::Or(ts.into_iter().map(FOLTerm::negate).collect()),
+            FOLTerm::Or(ts) => FOLTerm::And(ts.into_iter().map(FOLTerm::negate).collect()),
+            FOLTerm::Exist(n, t) => FOLTerm::Forall(n, Box::new(t.negate())),
+            FOLTerm::Forall(n, t) => FOLTerm::Exist(n, t),
+        }
     }
+}
+
+// These will be converted to an actual problem in CNF form to be proven by saturation:
+// - we conjunct the assumption formulas
+// - we conject those with the negated goals
+// - we show False
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct TPTPProblem {
+    pub axioms: Vec<FOLTerm>,
+    pub conjectures: Vec<FOLTerm>,
 }
 
 // Parse into structure consisting of two lists: one with assumptions, one with goals (still FoF)
@@ -163,7 +161,6 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
     let mut parser = TPTPIterator::<()>::new(&vec);
     let mut axioms = Vec::new();
     let mut conjectures = Vec::new();
-    let mut negated_conjectures = Vec::new();
     for result in &mut parser {
         let input = result.expect("Syntax error");
         match input {
@@ -188,7 +185,6 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                 let mut tptp_problem = parse_file(include_path);
                 axioms.append(&mut tptp_problem.axioms);
                 conjectures.append(&mut tptp_problem.conjectures);
-                negated_conjectures.append(&mut tptp_problem.negated_conjectures);
             }
             TPTPInput::Annotated(annotated_formula) => {
                 match *annotated_formula {
@@ -200,14 +196,19 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                         // <https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html#formula_role>
                         // > "assumption"s can be used like axioms, but must be discharged before a derivation is complete.
                         let role = annotated_fof.role.0.0;
+                        // > "negated_conjecture"s are formed from negation of a "conjecture"
+                        // > (usually in a FOF to CNF conversion).
+                        // This should always be empty for our use-case but let's keep it just in case for now.
+                        assert!(
+                            role != "negated_conjecture",
+                            "The 'negated_conjecture'-role doesn't seem to be intended for this provers use-case."
+                        );
                         let formula = *annotated_fof.formula;
                         log::info!("Parse FOF: {}", formula);
                         let fol_term = FOLTerm::from(formula.0);
                         log::info!("Parsed FOLTerm: {}", fol_term);
                         if role == "conjecture" {
                             conjectures.push(fol_term);
-                        } else if role == "negated_conjecture" {
-                            negated_conjectures.push(fol_term);
                         } else {
                             axioms.push(fol_term);
                         }
@@ -225,7 +226,6 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
     TPTPProblem {
         axioms: axioms,
         conjectures: conjectures,
-        negated_conjectures: negated_conjectures,
     }
 }
 
@@ -254,7 +254,7 @@ impl From<fof::BinaryFormula<'_>> for FOLTerm {
 impl From<fof::UnaryFormula<'_>> for FOLTerm {
     fn from(f: fof::UnaryFormula) -> Self {
         match f {
-            fof::UnaryFormula::Unary(_neg, fuf) => negate(Self::from(*fuf)),
+            fof::UnaryFormula::Unary(_neg, fuf) => Self::from(*fuf).negate(),
             fof::UnaryFormula::InfixUnary(i) => Self::from(i),
         }
     }
@@ -275,18 +275,18 @@ impl From<fof::BinaryNonassoc<'_>> for FOLTerm {
         let l = Self::from(*f.left);
         let r = Self::from(*f.right);
         match f.op {
-            NonassocConnective::LRImplies => Self::Or(vec![negate(l), r]),
-            NonassocConnective::RLImplies => Self::Or(vec![negate(r), l]),
+            NonassocConnective::LRImplies => Self::Or(vec![l.negate(), r]),
+            NonassocConnective::RLImplies => Self::Or(vec![r.negate(), l]),
             NonassocConnective::Equivalent => Self::And(vec![
-                Self::Or(vec![negate(l.clone()), r.clone()]),
-                Self::Or(vec![negate(r), l]),
+                Self::Or(vec![l.clone().negate(), r.clone()]),
+                Self::Or(vec![r.negate(), l]),
             ]),
             NonassocConnective::NotEquivalent => Self::Or(vec![
-                Self::And(vec![l.clone(), negate(r.clone())]),
-                Self::And(vec![r, negate(l)]),
+                Self::And(vec![l.clone(), r.clone().negate()]),
+                Self::And(vec![r, l.negate()]),
             ]),
-            NonassocConnective::NotOr => Self::And(vec![negate(l), negate(r)]),
-            NonassocConnective::NotAnd => Self::And(vec![negate(l), negate(r)]),
+            NonassocConnective::NotOr => Self::And(vec![l.negate(), r.negate()]),
+            NonassocConnective::NotAnd => Self::And(vec![l.negate(), r.negate()]),
         }
     }
 }

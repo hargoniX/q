@@ -34,7 +34,4 @@ fn main() {
     for goal in tptp_problem.conjectures {
         log::info!("Conjectures: '{}'", goal);
     }
-    for goal in tptp_problem.negated_conjectures {
-        log::info!("Negated Conjectures: '{}'", goal);
-    }
 }
