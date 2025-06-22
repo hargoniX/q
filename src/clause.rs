@@ -90,7 +90,7 @@ impl Literal {
     }
 
     /// Check whether the literal is an equality.
-    pub fn is_positive(&self) -> bool {
+    pub fn is_eq(&self) -> bool {
         self.kind == Polarity::Eq
     }
 
@@ -305,15 +305,15 @@ mod test {
 
         assert_eq!(l1.get_lhs(), &x);
         assert_eq!(l1.get_rhs(), &y);
-        assert!(l1.is_positive());
+        assert!(l1.is_eq());
         assert!(!l1.is_ne());
         assert!(l2.is_ne());
-        assert!(!l2.is_positive());
+        assert!(!l2.is_eq());
         assert_ne!(l1, l2);
 
         l2 = l2.negate();
         assert_eq!(l1, l2);
-        assert!(l2.is_positive());
+        assert!(l2.is_eq());
 
         let c1_id = term_bank.add_function(FunctionInformation {
             name: "c1".to_string(),

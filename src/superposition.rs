@@ -5,7 +5,7 @@ use log::info;
 use crate::{
     clause::{Clause, ClauseSet, Literal},
     clause_queue::ClauseQueue,
-    kbo::{literal_kbo, term_kbo},
+    kbo::KboOrd,
     pretty_print::pretty_print,
     subst::{Substitutable, Substitution},
     term_bank::TermBank,
@@ -37,7 +37,10 @@ fn maximality_check(
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
     let mut new_literals = Vec::with_capacity(clause.len());
-    let check_lit = clause.get_literal(check_lit_idx).clone().subst_with(&subst, term_bank);
+    let check_lit = clause
+        .get_literal(check_lit_idx)
+        .clone()
+        .subst_with(&subst, term_bank);
     let ok = (0..clause.len())
         .filter(|other_lit_idx| check_lit_idx != *other_lit_idx)
         .all(|other_lit_idx| {
@@ -45,7 +48,7 @@ fn maximality_check(
                 .get_literal(other_lit_idx)
                 .clone()
                 .subst_with(&subst, term_bank);
-            if literal_kbo(&check_lit, &other_lit, term_bank) != Some(Ordering::Greater) {
+            if check_lit.kbo(&other_lit, term_bank) != Some(Ordering::Greater) {
                 new_literals.push(other_lit);
                 true
             } else {
@@ -53,29 +56,24 @@ fn maximality_check(
                 false
             }
         });
-    if ok {
-        Some(new_literals)
-    } else {
-        None
-    }
+    if ok { Some(new_literals) } else { None }
 }
 
 fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBank) {
     info!("ERes working clause: {}", pretty_print(clause, term_bank));
     for literal_idx in 0..clause.len() {
         let literal = clause.get_literal(literal_idx);
-        if literal.is_negative() {
-            if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), term_bank) {
-                if let Some(new_literals) =
-                    maximality_check(clause, literal_idx, &subst, term_bank)
-                {
-                    let new_clause = Clause::new(new_literals);
-                    info!(
-                        "ERes derived clause: {}",
-                        pretty_print(&new_clause, term_bank)
-                    );
-                    acc.push(new_clause);
-                }
+        if literal.is_eq() {
+            continue;
+        }
+        if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), term_bank) {
+            if let Some(new_literals) = maximality_check(clause, literal_idx, &subst, term_bank) {
+                let new_clause = Clause::new(new_literals);
+                info!(
+                    "ERes derived clause: {}",
+                    pretty_print(&new_clause, term_bank)
+                );
+                acc.push(new_clause);
             }
         }
     }
@@ -85,14 +83,14 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
     info!("EFact working clause: {}", pretty_print(clause, term_bank));
     for literal1_idx in 0..clause.len() {
         let lit1 = clause.get_literal(literal1_idx);
-        if lit1.is_negative() {
+        if lit1.is_ne() {
             continue;
         }
         let lit1_terms = [lit1.get_lhs(), lit1.get_rhs()];
 
         for literal2_idx in 0..clause.len() {
             let lit2 = clause.get_literal(literal2_idx);
-            if lit2.is_negative() || literal2_idx == literal1_idx {
+            if lit2.is_ne() || literal2_idx == literal1_idx {
                 continue;
             }
             let lit2_terms = [lit2.get_lhs(), lit2.get_rhs()];
@@ -104,11 +102,11 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
                     let l2_rhs = lit2_terms[1 - t2_idx];
 
                     if let Some(subst) = l1_lhs.unify(l2_lhs, term_bank) {
-                        if term_kbo(
-                            &l1_lhs.clone().subst_with(&subst, term_bank),
-                            &l1_rhs.clone().subst_with(&subst, term_bank),
-                            term_bank,
-                        ) != Some(Ordering::Less)
+                        if l1_lhs
+                            .clone()
+                            .subst_with(&subst, term_bank)
+                            .kbo(&l1_rhs.clone().subst_with(&subst, term_bank), term_bank)
+                            != Some(Ordering::Less)
                         {
                             if let Some(mut new_literals) =
                                 maximality_check(clause, literal1_idx, &subst, term_bank)
