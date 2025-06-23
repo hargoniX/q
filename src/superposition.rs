@@ -8,12 +8,11 @@ use crate::{
     discr_tree::DiscriminationTree,
     kbo::KboOrd,
     position::{
-        ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position,
-        TermPositionIterator,
+        ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position, TermPosition,
     },
     pretty_print::pretty_print,
     subst::{Substitutable, Substitution},
-    term_bank::TermBank,
+    term_bank::{Term, TermBank},
 };
 
 struct SuperpositonState<'a> {
@@ -108,10 +107,15 @@ fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermB
     info!("ERes working clause: {}", pretty_print(clause, term_bank));
     for literal_idx in 0..clause.len() {
         let literal = clause.get_literal(literal_idx);
+
+        // Condition: the literal must be an inequality
         if literal.is_eq() {
             continue;
         }
+
+        // Condition 1: the lhs and rhs of the literal must unify
         if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), term_bank) {
+            // Condition 2: The literal must be maximal in the clause with the mgu applied
             if let Some(new_literals) = maximality_check(clause, literal_idx, &subst, term_bank) {
                 let new_clause = Clause::new(new_literals);
                 info!(
@@ -128,37 +132,45 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
     info!("EFact working clause: {}", pretty_print(clause, term_bank));
     for literal1_idx in 0..clause.len() {
         let lit1 = clause.get_literal(literal1_idx);
+        // Condition: Literal 1 must be an equality
         if lit1.is_ne() {
             continue;
         }
         for literal2_idx in 0..clause.len() {
             let lit2 = clause.get_literal(literal2_idx);
+            // Condition: Literal 2 must be an equality
             if lit2.is_ne() || literal2_idx == literal1_idx {
                 continue;
             }
             for (l1_lhs, l1_rhs) in lit1.symm_term_iter() {
                 for (l2_lhs, l2_rhs) in lit2.symm_term_iter() {
+                    // Condition 1: the lhs of both literals must unify
                     if let Some(subst) = l1_lhs.unify(&l2_lhs, term_bank) {
                         let ord = l1_rhs
                             .clone()
                             .subst_with(&subst, term_bank)
                             .kbo(&l1_lhs.clone().subst_with(&subst, term_bank), term_bank);
-                        if ord != Some(Ordering::Equal) && ord != Some(Ordering::Less) {
-                            if let Some(mut new_literals) =
-                                maximality_check(clause, literal1_idx, &subst, term_bank)
-                            {
-                                let final_lit = Literal::mk_ne(
-                                    l1_rhs.clone().subst_with(&subst, term_bank),
-                                    l2_rhs.clone().subst_with(&subst, term_bank),
-                                );
-                                new_literals.push(final_lit);
-                                let new_clause = Clause::new(new_literals);
-                                info!(
-                                    "EFact derived clause: {}",
-                                    pretty_print(&new_clause, term_bank)
-                                );
-                                acc.push(new_clause);
-                            }
+                        // Condition 2: after applying the mgu the rhs must not be <= than the lhs
+                        if ord == Some(Ordering::Equal) || ord == Some(Ordering::Less) {
+                            continue;
+                        }
+
+                        // Condition 3: The literal must be maximal in the clause with the mgu
+                        // appplied
+                        if let Some(mut new_literals) =
+                            maximality_check(clause, literal1_idx, &subst, term_bank)
+                        {
+                            let final_lit = Literal::mk_ne(
+                                l1_rhs.clone().subst_with(&subst, term_bank),
+                                l2_rhs.clone().subst_with(&subst, term_bank),
+                            );
+                            new_literals.push(final_lit);
+                            let new_clause = Clause::new(new_literals);
+                            info!(
+                                "EFact derived clause: {}",
+                                pretty_print(&new_clause, term_bank)
+                            );
+                            acc.push(new_clause);
                         }
                     }
                 }
@@ -170,11 +182,17 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
 impl<'a> SuperpositonState<'a> {
     fn insert_active(&mut self, clause: Clause) {
         let clause_id = clause.get_id();
+
+        // Insert all sub terms with their position into the term index for superposition
+
+        // TODO: There is a potential optimization here where we keep a second index that contains
+        // just the root terms of all literals. This is useful for superposing when the given
+        // clause is the one being substituted in.
         for literal_idx in 0..clause.len() {
             let literal = clause.get_literal(literal_idx);
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
-                for (term, term_pos) in TermPositionIterator::new(root_term) {
+                for (term, term_pos) in root_term.subterm_iter() {
                     if term.variable_id().is_none() {
                         let pos = ClauseSetPosition::new(
                             ClausePosition::new(
@@ -204,75 +222,132 @@ impl<'a> SuperpositonState<'a> {
         self.passive.push(clause);
     }
 
+    /// The core part of superposition, assuming that:
+    /// - lit1_idx points into a literal in clause1 that is an equality
+    /// - lit2_idx points into a literal in clause2
+    /// - lit2_pol is the polarity of literal 2
+    /// - lit(1|2)_(lhs|rhs) are the respective sides of the literals (recall that literals are
+    ///   considered up to symmetry)
+    /// - subterm_pos is a term position within lit2_lhs that is not a variable (Condition 2)
+    /// - subst is the mgu of the term at subterm_pos and lit1_lhs (Condition 1)
+    ///
+    /// This function will check condition 3 through 6 for both positive and negative superposition
+    /// and add a new clause to acc if applicable.
+    fn superposition_core(
+        &self,
+        clause1: &Clause,
+        clause2: &Clause,
+        lit1_idx: usize,
+        lit2_idx: usize,
+        lit2_pol: Polarity,
+        lit1_lhs: &Term,
+        lit1_rhs: &Term,
+        lit2_lhs: &Term,
+        lit2_rhs: &Term,
+        subterm_pos: &TermPosition,
+        subst: &Substitution,
+        acc: &mut Vec<Clause>,
+        term_bank: &TermBank,
+    ) {
+        let l1_ord = lit1_lhs
+            .clone()
+            .subst_with(&subst, term_bank)
+            .kbo(&lit1_rhs.clone().subst_with(&subst, term_bank), term_bank);
+        // Condition 3: The lhs of the rewriting literal must not be <= the rhs after
+        // applying the substitution.
+        if l1_ord == Some(Ordering::Equal) || l1_ord == Some(Ordering::Less) {
+            return;
+        }
+
+        // Condition 5: The lhs of the literal being rewritten must not be <= the
+        // rhs after applying the substitution.
+        let l2_ord = lit2_lhs
+            .clone()
+            .subst_with(&subst, term_bank)
+            .kbo(&lit2_rhs.clone().subst_with(&subst, term_bank), term_bank);
+        if l2_ord == Some(Ordering::Equal) || l2_ord == Some(Ordering::Less) {
+            return;
+        }
+
+        // Condition 4: The literal being used for rewriting must be maximal after
+        // applying the mgu to its clause.
+        if let Some(mut new_literals1) =
+            strict_maximality_check(clause1, lit1_idx, &subst, term_bank)
+        {
+            // Condition 6: The literal being rewritten must be maximal or strictly
+            // maximal after applying the mgu to its clause.
+            let checker = match lit2_pol {
+                Polarity::Eq => strict_maximality_check,
+                Polarity::Ne => maximality_check,
+            };
+            if let Some(mut new_literals2) = checker(clause2, lit2_idx, &subst, term_bank) {
+                new_literals1.append(&mut new_literals2);
+                let new_rhs = lit2_rhs.clone().subst_with(&subst, term_bank);
+                let new_lhs = subterm_pos
+                    .replace_term_at(lit2_lhs, lit1_rhs.clone(), term_bank)
+                    .subst_with(&subst, term_bank);
+                let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
+                new_literals1.push(new_lit);
+                let new_clause = Clause::new(new_literals1);
+                info!(
+                    "SP derived clause: {}",
+                    pretty_print(&new_clause, term_bank)
+                );
+                acc.push(new_clause);
+            }
+        }
+    }
+
     fn superposition(&self, given_clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBank) {
-        //info!("SP working clause: {}", pretty_print(clause1, term_bank));
+        info!(
+            "SP working clause: {}",
+            pretty_print(given_clause, term_bank)
+        );
 
         let clause1 = given_clause;
         // Part 1: given_clause is the one being used for rewriting.
         for lit1_idx in 0..clause1.len() {
             let lit1 = clause1.get_literal(lit1_idx);
+            // Condition: The one being used for rewriting must be an equality
             if lit1.is_ne() {
                 continue;
             }
             for (lit1_lhs, lit1_rhs) in lit1.symm_term_iter() {
+                // Iterate over all possible unifying subpositions in the active set
                 for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
                     let lit2_lhs_p = candidate_pos.term_at(&self.active);
+                    // Condition 2: The term at the subposition must not be a variable
                     if lit2_lhs_p.variable_id().is_some() {
                         continue;
                     }
+
+                    // Condition 1: the lhs of the rewriting literal and the subposition must unify
                     if let Some(subst) = lit1_lhs.unify(lit2_lhs_p, &term_bank) {
-                        let l1_ord = lit1_lhs
-                            .clone()
-                            .subst_with(&subst, term_bank)
-                            .kbo(&lit1_rhs.clone().subst_with(&subst, term_bank), term_bank);
-                        if l1_ord != Some(Ordering::Equal) && l1_ord != Some(Ordering::Less) {
-                            let clause_pos = &candidate_pos.clause_pos;
-                            let literal_pos = &clause_pos.literal_pos;
-                            let term_pos = &literal_pos.term_pos;
-                            let clause2 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
-                            info!(
-                                "SP working {} together with: {}",
-                                pretty_print(clause1, term_bank),
-                                pretty_print(clause2, term_bank)
-                            );
-                            let lit2_idx = clause_pos.literal_idx;
-                            let lit2 = clause2.get_literal(lit2_idx);
-                            let lit2_lhs = literal_pos.literal_side.get_side(lit2);
-                            let lit2_rhs = literal_pos.literal_side.swap().get_side(lit2);
-                            let lit2_pol = lit2.get_pol();
-                            let l2_ord = lit2_lhs
-                                .clone()
-                                .subst_with(&subst, term_bank)
-                                .kbo(&lit2_rhs.clone().subst_with(&subst, term_bank), term_bank);
-                            if l2_ord != Some(Ordering::Equal) && l2_ord != Some(Ordering::Less) {
-                                if let Some(mut new_literals1) =
-                                    strict_maximality_check(clause1, lit1_idx, &subst, term_bank)
-                                {
-                                    let checker = match lit2_pol {
-                                        Polarity::Eq => strict_maximality_check,
-                                        Polarity::Ne => maximality_check,
-                                    };
-                                    if let Some(mut new_literals2) =
-                                        checker(clause2, lit2_idx, &subst, term_bank)
-                                    {
-                                        new_literals1.append(&mut new_literals2);
-                                        let new_rhs =
-                                            lit2_rhs.clone().subst_with(&subst, term_bank);
-                                        let new_lhs = term_pos
-                                            .replace_term_at(lit2_lhs, lit1_rhs.clone(), term_bank)
-                                            .subst_with(&subst, term_bank);
-                                        let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
-                                        new_literals1.push(new_lit);
-                                        let new_clause = Clause::new(new_literals1);
-                                        info!(
-                                            "SP derived clause: {}",
-                                            pretty_print(&new_clause, term_bank)
-                                        );
-                                        acc.push(new_clause);
-                                    }
-                                }
-                            }
-                        }
+                        let clause_pos = &candidate_pos.clause_pos;
+                        let literal_pos = &clause_pos.literal_pos;
+                        let subterm_pos = &literal_pos.term_pos;
+                        let clause2 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
+                        let lit2_idx = clause_pos.literal_idx;
+                        let lit2 = clause2.get_literal(lit2_idx);
+                        let lit2_lhs = literal_pos.literal_side.get_side(lit2);
+                        let lit2_rhs = literal_pos.literal_side.swap().get_side(lit2);
+                        let lit2_pol = lit2.get_pol();
+
+                        self.superposition_core(
+                            clause1,
+                            clause2,
+                            lit1_idx,
+                            lit2_idx,
+                            lit2_pol,
+                            &lit1_lhs,
+                            &lit1_rhs,
+                            lit2_lhs,
+                            lit2_rhs,
+                            subterm_pos,
+                            &subst,
+                            acc,
+                            term_bank,
+                        );
                     }
                 }
             }
@@ -284,10 +359,13 @@ impl<'a> SuperpositonState<'a> {
             let lit2 = clause2.get_literal(lit2_idx);
             let lit2_pol = lit2.get_pol();
             for (lit2_lhs, lit2_rhs) in lit2.symm_term_iter() {
-                for (subterm, subterm_pos) in TermPositionIterator::new(&lit2_lhs) {
+                // Iterate over all subterms to look for unifying partners in the active set
+                for (subterm, subterm_pos) in lit2_lhs.subterm_iter() {
                     if subterm.variable_id().is_some() {
                         continue;
                     }
+
+                    // Iterate over all top level terms that potentially unify with our subterm
                     let candidates = self.subterm_index.get_unification_candidates(&subterm);
                     for candidate_pos in candidates
                         .into_iter()
@@ -297,6 +375,7 @@ impl<'a> SuperpositonState<'a> {
                         let clause1 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
                         let lit1_idx = clause_pos.literal_idx;
                         let lit1 = clause1.get_literal(lit1_idx);
+                        // Condition: The one being used for rewriting must be an equality
                         if lit1.get_pol() != Polarity::Eq {
                             continue;
                         }
@@ -304,50 +383,24 @@ impl<'a> SuperpositonState<'a> {
                         let lit1_lhs = literal_pos.literal_side.get_side(lit1);
                         let lit1_rhs = literal_pos.literal_side.swap().get_side(lit1);
 
+                        // Condition 1: The lhs of the rewriting literal and the subposition must
+                        // unify
                         if let Some(subst) = subterm.unify(lit1_lhs, term_bank) {
-                            let l1_ord = lit1_lhs
-                                .clone()
-                                .subst_with(&subst, term_bank)
-                                .kbo(&lit1_rhs.clone().subst_with(&subst, term_bank), term_bank);
-                            if l1_ord != Some(Ordering::Equal) && l1_ord != Some(Ordering::Less) {
-                                let l2_ord = lit2_lhs.clone().subst_with(&subst, term_bank).kbo(
-                                    &lit2_rhs.clone().subst_with(&subst, term_bank),
-                                    term_bank,
-                                );
-                                if l2_ord != Some(Ordering::Equal) && l2_ord != Some(Ordering::Less)
-                                {
-                                    if let Some(mut new_literals1) = strict_maximality_check(
-                                        clause1, lit1_idx, &subst, term_bank,
-                                    ) {
-                                        let checker = match lit2_pol {
-                                            Polarity::Eq => strict_maximality_check,
-                                            Polarity::Ne => maximality_check,
-                                        };
-                                        if let Some(mut new_literals2) =
-                                            checker(clause2, lit2_idx, &subst, term_bank)
-                                        {
-                                            new_literals1.append(&mut new_literals2);
-                                            let new_rhs =
-                                                lit2_rhs.clone().subst_with(&subst, term_bank);
-                                            let new_lhs = subterm_pos
-                                                .replace_term_at(
-                                                    &lit2_lhs,
-                                                    lit1_rhs.clone(),
-                                                    term_bank,
-                                                )
-                                                .subst_with(&subst, term_bank);
-                                            let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
-                                            new_literals1.push(new_lit);
-                                            let new_clause = Clause::new(new_literals1);
-                                            info!(
-                                                "SP derived clause: {}",
-                                                pretty_print(&new_clause, term_bank)
-                                            );
-                                            acc.push(new_clause);
-                                        }
-                                    }
-                                }
-                            }
+                            self.superposition_core(
+                                clause1,
+                                clause2,
+                                lit1_idx,
+                                lit2_idx,
+                                lit2_pol,
+                                &lit1_lhs,
+                                &lit1_rhs,
+                                &lit2_lhs,
+                                &lit2_rhs,
+                                &subterm_pos,
+                                &subst,
+                                acc,
+                                term_bank,
+                            );
                         }
                     }
                 }
@@ -365,11 +418,7 @@ impl<'a> SuperpositonState<'a> {
 
     // TODO: full given-clause loop
     fn run(mut self) -> SuperpositionResult {
-        let mut count = 10;
         while let Some(mut g) = self.passive.pop() {
-            if count == 0 {
-                return SuperpositionResult::Unknown;
-            }
             g = g.fresh_variable_clone(&mut self.term_bank);
             if g.is_empty() {
                 return SuperpositionResult::ProofFound;
@@ -379,7 +428,6 @@ impl<'a> SuperpositonState<'a> {
             new_clauses
                 .into_iter()
                 .for_each(|clause| self.insert_passive(clause));
-            count -= 1;
         }
         SuperpositionResult::StatementFalse
     }

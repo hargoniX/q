@@ -73,10 +73,16 @@ pub struct TermPositionIterator<'a> {
 }
 
 impl<'a> TermPositionIterator<'a> {
-    pub fn new(term: &'a Term) -> Self {
+    fn new(term: &'a Term) -> Self {
         Self {
             front: vec![(term, TermPosition::new())],
         }
+    }
+}
+
+impl Term {
+    pub fn subterm_iter<'a>(&'a self) -> TermPositionIterator<'a> {
+        TermPositionIterator::new(self)
     }
 }
 
