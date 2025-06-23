@@ -3,7 +3,7 @@
 //! be pretty printed given some information from a term bank.
 
 use crate::{
-    clause::{Clause, Literal, Polarity},
+    clause::{Literal, Polarity},
     term_bank::{RawTerm, Term, TermBank},
 };
 
@@ -63,24 +63,5 @@ impl BankPrettyPrint for Literal {
         self.get_pol().print_into(term_bank, acc);
         acc.push_str(" ");
         self.get_rhs().print_into(term_bank, acc);
-    }
-}
-
-impl BankPrettyPrint for Clause {
-    fn print_into(&self, term_bank: &TermBank, acc: &mut String) {
-        if self.is_empty() {
-            acc.push_str("⊥");
-        } else {
-            for lit_idx in 0..(self.len() - 1) {
-                let lit = self.get_literal(lit_idx);
-                acc.push_str("(");
-                lit.print_into(term_bank, acc);
-                acc.push_str(") ∨ ");
-            }
-            let lit = self.get_literal(self.len() - 1);
-            acc.push_str("(");
-            lit.print_into(term_bank, acc);
-            acc.push_str(")");
-        }
     }
 }

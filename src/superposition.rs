@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use log::info;
 
 use crate::{
-    clause::{Clause, ClauseSet, Literal, Polarity},
+    clause::{Clause, ClauseSet, Literal, LiteralId, Polarity},
     clause_queue::ClauseQueue,
     discr_tree::DiscriminationTree,
     kbo::KboOrd,
@@ -32,23 +32,20 @@ pub enum SuperpositionResult {
 
 fn ordering_check(
     clause: &Clause,
-    check_lit_idx: usize,
+    check_lit_id: LiteralId,
     subst: &Substitution,
     f: impl Fn(Option<Ordering>) -> bool,
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
     let mut new_literals = Vec::with_capacity(clause.len());
     let check_lit = clause
-        .get_literal(check_lit_idx)
+        .get_literal(check_lit_id)
         .clone()
         .subst_with(&subst, term_bank);
-    let ok = (0..clause.len())
-        .filter(|other_lit_idx| check_lit_idx != *other_lit_idx)
-        .all(|other_lit_idx| {
-            let other_lit = clause
-                .get_literal(other_lit_idx)
-                .clone()
-                .subst_with(&subst, term_bank);
+    let ok = clause.iter()
+        .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id)
+        .all(|(_, other_lit)| {
+            let other_lit = other_lit.clone().subst_with(&subst, term_bank);
             if f(check_lit.kbo(&other_lit, term_bank)) {
                 new_literals.push(other_lit);
                 true
@@ -61,20 +58,20 @@ fn ordering_check(
 }
 
 /*
-Takes a `clause` and an index `check_lit_idx` to some literal `check_lit` in `clause` together
+Takes a `clause` and an index `check_lit_id` to some literal `check_lit` in `clause` together
 with a substitution `subst`. Then checks whether `subst(check_lit)` is maximal in `subst(clause)`.
 
 Returns `None` if maximality check fails, otherwise `Some(subst(clause) \ subst(check_lit))`
 */
 fn maximality_check(
     clause: &Clause,
-    check_lit_idx: usize,
+    check_lit_id: LiteralId,
     subst: &Substitution,
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
     ordering_check(
         clause,
-        check_lit_idx,
+        check_lit_id,
         subst,
         |ord| ord != Some(Ordering::Greater),
         term_bank,
@@ -82,7 +79,7 @@ fn maximality_check(
 }
 
 /*
-Takes a `clause` and an index `check_lit_idx` to some literal `check_lit` in `clause` together
+Takes a `clause` and an index `check_lit_id` to some literal `check_lit` in `clause` together
 with a substitution `subst`. Then checks whether `subst(check_lit)` is strictly maximal in
 `subst(clause)`.
 
@@ -90,13 +87,13 @@ Returns `None` if maximality check fails, otherwise `Some(subst(clause) \ subst(
 */
 fn strict_maximality_check(
     clause: &Clause,
-    check_lit_idx: usize,
+    check_lit_id: LiteralId,
     subst: &Substitution,
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
     ordering_check(
         clause,
-        check_lit_idx,
+        check_lit_id,
         subst,
         |ord| ord != Some(Ordering::Greater) && ord != Some(Ordering::Equal),
         term_bank,
@@ -105,9 +102,7 @@ fn strict_maximality_check(
 
 fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBank) {
     info!("ERes working clause: {}", pretty_print(clause, term_bank));
-    for literal_idx in 0..clause.len() {
-        let literal = clause.get_literal(literal_idx);
-
+    for (literal_id, literal) in clause.iter() {
         // Condition: the literal must be an inequality
         if literal.is_eq() {
             continue;
@@ -116,7 +111,7 @@ fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermB
         // Condition 1: the lhs and rhs of the literal must unify
         if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), term_bank) {
             // Condition 2: The literal must be maximal in the clause with the mgu applied
-            if let Some(new_literals) = maximality_check(clause, literal_idx, &subst, term_bank) {
+            if let Some(new_literals) = maximality_check(clause, literal_id, &subst, term_bank) {
                 let new_clause = Clause::new(new_literals);
                 info!(
                     "ERes derived clause: {}",
@@ -130,16 +125,14 @@ fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermB
 
 fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBank) {
     info!("EFact working clause: {}", pretty_print(clause, term_bank));
-    for literal1_idx in 0..clause.len() {
-        let lit1 = clause.get_literal(literal1_idx);
+    for (literal1_id, lit1) in clause.iter() {
         // Condition: Literal 1 must be an equality
         if lit1.is_ne() {
             continue;
         }
-        for literal2_idx in 0..clause.len() {
-            let lit2 = clause.get_literal(literal2_idx);
+        for (literal2_id, lit2) in clause.iter() {
             // Condition: Literal 2 must be an equality
-            if lit2.is_ne() || literal2_idx == literal1_idx {
+            if lit2.is_ne() || literal2_id == literal1_id {
                 continue;
             }
             for (l1_lhs, l1_rhs) in lit1.symm_term_iter() {
@@ -158,7 +151,7 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
                         // Condition 3: The literal must be maximal in the clause with the mgu
                         // appplied
                         if let Some(mut new_literals) =
-                            maximality_check(clause, literal1_idx, &subst, term_bank)
+                            maximality_check(clause, literal1_id, &subst, term_bank)
                         {
                             let final_lit = Literal::mk_ne(
                                 l1_rhs.clone().subst_with(&subst, term_bank),
@@ -188,8 +181,7 @@ impl<'a> SuperpositonState<'a> {
         // TODO: There is a potential optimization here where we keep a second index that contains
         // just the root terms of all literals. This is useful for superposing when the given
         // clause is the one being substituted in.
-        for literal_idx in 0..clause.len() {
-            let literal = clause.get_literal(literal_idx);
+        for (literal_id, literal) in clause.iter() {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
@@ -197,7 +189,7 @@ impl<'a> SuperpositonState<'a> {
                         let pos = ClauseSetPosition::new(
                             ClausePosition::new(
                                 LiteralPosition::new(term_pos, literal_side),
-                                literal_idx,
+                                literal_id,
                             ),
                             clause_id,
                         );
@@ -223,8 +215,8 @@ impl<'a> SuperpositonState<'a> {
     }
 
     /// The core part of superposition, assuming that:
-    /// - lit1_idx points into a literal in clause1 that is an equality
-    /// - lit2_idx points into a literal in clause2
+    /// - lit1_id points into a literal in clause1 that is an equality
+    /// - lit2_id points into a literal in clause2
     /// - lit2_pol is the polarity of literal 2
     /// - lit(1|2)_(lhs|rhs) are the respective sides of the literals (recall that literals are
     ///   considered up to symmetry)
@@ -237,8 +229,8 @@ impl<'a> SuperpositonState<'a> {
         &self,
         clause1: &Clause,
         clause2: &Clause,
-        lit1_idx: usize,
-        lit2_idx: usize,
+        lit1_id: LiteralId,
+        lit2_id: LiteralId,
         lit2_pol: Polarity,
         lit1_lhs: &Term,
         lit1_rhs: &Term,
@@ -272,7 +264,7 @@ impl<'a> SuperpositonState<'a> {
         // Condition 4: The literal being used for rewriting must be maximal after
         // applying the mgu to its clause.
         if let Some(mut new_literals1) =
-            strict_maximality_check(clause1, lit1_idx, &subst, term_bank)
+            strict_maximality_check(clause1, lit1_id, &subst, term_bank)
         {
             // Condition 6: The literal being rewritten must be maximal or strictly
             // maximal after applying the mgu to its clause.
@@ -280,7 +272,7 @@ impl<'a> SuperpositonState<'a> {
                 Polarity::Eq => strict_maximality_check,
                 Polarity::Ne => maximality_check,
             };
-            if let Some(mut new_literals2) = checker(clause2, lit2_idx, &subst, term_bank) {
+            if let Some(mut new_literals2) = checker(clause2, lit2_id, &subst, term_bank) {
                 new_literals1.append(&mut new_literals2);
                 let new_rhs = lit2_rhs.clone().subst_with(&subst, term_bank);
                 let new_lhs = subterm_pos
@@ -306,8 +298,7 @@ impl<'a> SuperpositonState<'a> {
 
         let clause1 = given_clause;
         // Part 1: given_clause is the one being used for rewriting.
-        for lit1_idx in 0..clause1.len() {
-            let lit1 = clause1.get_literal(lit1_idx);
+        for (lit1_id, lit1) in clause1.iter() {
             // Condition: The one being used for rewriting must be an equality
             if lit1.is_ne() {
                 continue;
@@ -327,8 +318,8 @@ impl<'a> SuperpositonState<'a> {
                         let literal_pos = &clause_pos.literal_pos;
                         let subterm_pos = &literal_pos.term_pos;
                         let clause2 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
-                        let lit2_idx = clause_pos.literal_idx;
-                        let lit2 = clause2.get_literal(lit2_idx);
+                        let lit2_id = clause_pos.literal_id;
+                        let lit2 = clause2.get_literal(lit2_id);
                         let lit2_lhs = literal_pos.literal_side.get_side(lit2);
                         let lit2_rhs = literal_pos.literal_side.swap().get_side(lit2);
                         let lit2_pol = lit2.get_pol();
@@ -336,8 +327,8 @@ impl<'a> SuperpositonState<'a> {
                         self.superposition_core(
                             clause1,
                             clause2,
-                            lit1_idx,
-                            lit2_idx,
+                            lit1_id,
+                            lit2_id,
                             lit2_pol,
                             &lit1_lhs,
                             &lit1_rhs,
@@ -355,8 +346,7 @@ impl<'a> SuperpositonState<'a> {
 
         // Part 2: the given clause is the one being rewritten
         let clause2 = given_clause;
-        for lit2_idx in 0..clause2.len() {
-            let lit2 = clause2.get_literal(lit2_idx);
+        for (lit2_id, lit2) in clause2.iter() {
             let lit2_pol = lit2.get_pol();
             for (lit2_lhs, lit2_rhs) in lit2.symm_term_iter() {
                 // Iterate over all subterms to look for unifying partners in the active set
@@ -373,8 +363,8 @@ impl<'a> SuperpositonState<'a> {
                     {
                         let clause_pos = &candidate_pos.clause_pos;
                         let clause1 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
-                        let lit1_idx = clause_pos.literal_idx;
-                        let lit1 = clause1.get_literal(lit1_idx);
+                        let lit1_id = clause_pos.literal_id;
+                        let lit1 = clause1.get_literal(lit1_id);
                         // Condition: The one being used for rewriting must be an equality
                         if lit1.get_pol() != Polarity::Eq {
                             continue;
@@ -389,8 +379,8 @@ impl<'a> SuperpositonState<'a> {
                             self.superposition_core(
                                 clause1,
                                 clause2,
-                                lit1_idx,
-                                lit2_idx,
+                                lit1_id,
+                                lit2_id,
                                 lit2_pol,
                                 &lit1_lhs,
                                 &lit1_rhs,

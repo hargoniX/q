@@ -1,5 +1,5 @@
 use crate::{
-    clause::{Clause, ClauseId, ClauseSet, Literal},
+    clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId},
     term_bank::{RawTerm, Term, TermBank},
 };
 
@@ -156,14 +156,14 @@ impl Position for LiteralPosition {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClausePosition {
     pub literal_pos: LiteralPosition,
-    pub literal_idx: usize,
+    pub literal_id: LiteralId,
 }
 
 impl ClausePosition {
-    pub fn new(literal_pos: LiteralPosition, literal_idx: usize) -> Self {
+    pub fn new(literal_pos: LiteralPosition, literal_id: LiteralId) -> Self {
         Self {
             literal_pos,
-            literal_idx,
+            literal_id,
         }
     }
 }
@@ -172,7 +172,7 @@ impl Position for ClausePosition {
     type T = Clause;
 
     fn term_at<'a>(&self, t: &'a Self::T) -> &'a Term {
-        self.literal_pos.term_at(t.get_literal(self.literal_idx))
+        self.literal_pos.term_at(t.get_literal(self.literal_id))
     }
 }
 

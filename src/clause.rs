@@ -8,14 +8,11 @@
 use std::{
     collections::{BTreeMap, HashSet},
     hash::Hash,
-    slice,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
 use crate::{
-    multi_set::MultiSet,
-    subst::{Substitutable, Substitution},
-    term_bank::{Term, TermBank},
+    multi_set::MultiSet, pretty_print::BankPrettyPrint, subst::{Substitutable, Substitution}, term_bank::{Term, TermBank}
 };
 
 /// Whether a literal is `=` or `!=`
@@ -154,6 +151,10 @@ impl<'a> Iterator for SymmLitIterator<'a> {
     }
 }
 
+/// A unique identifier for a literal within a clause.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct LiteralId(usize);
+
 // We want to maintain unique clause identifiers for ease of indexing in a [ClauseSet], this
 // counter provides us with these identifiers.
 static CLAUSE_ID_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -203,8 +204,8 @@ impl Clause {
     }
 
     /// Obtain a literal from the clause by index.
-    pub fn get_literal(&self, literal_idx: usize) -> &Literal {
-        self.literals.get(literal_idx)
+    pub fn get_literal(&self, literal_id: LiteralId) -> &Literal {
+        self.literals.get(literal_id.0)
     }
 
     /// Obtain the unique identifier of this clause.
@@ -213,8 +214,11 @@ impl Clause {
     }
 
     /// Obtain an iterator over the literals in the clause.
-    pub fn iter(&self) -> slice::Iter<'_, Literal> {
-        self.literals.iter()
+    pub fn iter(&self) -> impl Iterator<Item=(LiteralId, &Literal)> {
+        (0..self.len()).map(|idx| {
+            let id = LiteralId(idx);
+            (id, self.get_literal(id))
+        })
     }
 
     /// Clone the clause and substitute all of its variables with fresh ones to obtain a clause
@@ -222,7 +226,7 @@ impl Clause {
     /// worst case `O(clause.len() * max(dag_size(lit_i)))`.
     pub fn fresh_variable_clone(&self, term_bank: &mut TermBank) -> Clause {
         let mut set = HashSet::new();
-        for lit in self.iter() {
+        for lit in self.literals.iter() {
             lit.get_lhs().collect_vars_into(&mut set);
             lit.get_rhs().collect_vars_into(&mut set);
         }
@@ -280,6 +284,25 @@ impl Substitutable for Clause {
         Self {
             id: next_clause_id(),
             literals: new_lits,
+        }
+    }
+}
+
+impl BankPrettyPrint for Clause {
+    fn print_into(&self, term_bank: &TermBank, acc: &mut String) {
+        if self.is_empty() {
+            acc.push_str("⊥");
+        } else {
+            for lit_idx in 0..(self.len() - 1) {
+                let lit = self.get_literal(LiteralId(lit_idx));
+                acc.push_str("(");
+                lit.print_into(term_bank, acc);
+                acc.push_str(") ∨ ");
+            }
+            let lit = self.get_literal(LiteralId(self.len() - 1));
+            acc.push_str("(");
+            lit.print_into(term_bank, acc);
+            acc.push_str(")");
         }
     }
 }
