@@ -8,6 +8,7 @@ chrono = "0.4.41"
 clap = { version = "4.5", features = ["derive"] }
 env_logger = "0.11.8"
 log = "0.4.27"
+memory-stats = { version = "1.2", features = ["always_use_statm"] }
 tptp = "0.31.1"
 
 [lib]

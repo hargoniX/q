@@ -12,7 +12,10 @@ use std::{
 };
 
 use crate::{
-    multi_set::MultiSet, pretty_print::BankPrettyPrint, subst::{Substitutable, Substitution}, term_bank::{Term, TermBank}
+    multi_set::MultiSet,
+    pretty_print::BankPrettyPrint,
+    subst::{Substitutable, Substitution},
+    term_bank::{Term, TermBank},
 };
 
 /// Whether a literal is `=` or `!=`
@@ -214,7 +217,7 @@ impl Clause {
     }
 
     /// Obtain an iterator over the literals in the clause.
-    pub fn iter(&self) -> impl Iterator<Item=(LiteralId, &Literal)> {
+    pub fn iter(&self) -> impl Iterator<Item = (LiteralId, &Literal)> {
         (0..self.len()).map(|idx| {
             let id = LiteralId(idx);
             (id, self.get_literal(id))

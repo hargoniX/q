@@ -1,4 +1,7 @@
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    time::{Duration, Instant},
+};
 
 use log::info;
 
@@ -15,19 +18,58 @@ use crate::{
     term_bank::{Term, TermBank},
 };
 
-struct SuperpositonState<'a> {
+use memory_stats::memory_stats;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ResourceLimitConfig {
+    pub duration: Option<Duration>,
+    pub memory_limit: Option<usize>,
+}
+
+impl Default for ResourceLimitConfig {
+    fn default() -> Self {
+        ResourceLimitConfig {
+            duration: None,
+            memory_limit: None,
+        }
+    }
+}
+
+struct ResourceLimits {
+    time_limit: Option<Instant>,
+    memory_limit: Option<usize>,
+}
+
+impl ResourceLimits {
+    fn of_config(config: &ResourceLimitConfig) -> Self {
+        let time_limit = config.duration.map(|dur| Instant::now() + dur);
+        let memory_limit = config.memory_limit;
+        ResourceLimits {
+            time_limit,
+            memory_limit,
+        }
+    }
+}
+
+struct SuperpositionState<'a> {
     passive: ClauseQueue,
     active: ClauseSet,
     term_bank: &'a mut TermBank,
     subterm_index: DiscriminationTree<ClauseSetPosition>,
+    resource_limits: ResourceLimits,
 }
 
-// TODO: timeout
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum UnknownReason {
+    Timeout,
+    OutOfMemory,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SuperpositionResult {
     ProofFound,
     StatementFalse,
-    Unknown,
+    Unknown(UnknownReason),
 }
 
 fn ordering_check(
@@ -42,7 +84,8 @@ fn ordering_check(
         .get_literal(check_lit_id)
         .clone()
         .subst_with(&subst, term_bank);
-    let ok = clause.iter()
+    let ok = clause
+        .iter()
         .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id)
         .all(|(_, other_lit)| {
             let other_lit = other_lit.clone().subst_with(&subst, term_bank);
@@ -172,7 +215,7 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
     }
 }
 
-impl<'a> SuperpositonState<'a> {
+impl<'a> SuperpositionState<'a> {
     fn insert_active(&mut self, clause: Clause) {
         let clause_id = clause.get_id();
 
@@ -406,6 +449,25 @@ impl<'a> SuperpositonState<'a> {
         acc
     }
 
+    fn resources_exhausted(&self) -> Option<UnknownReason> {
+        if let Some(time_limit) = self.resource_limits.time_limit {
+            let now = Instant::now();
+            if now < time_limit {
+                return Some(UnknownReason::Timeout);
+            }
+        }
+
+        if let Some(memory_limit) = self.resource_limits.memory_limit {
+            if let Some(stats) = memory_stats() {
+                if memory_limit < stats.physical_mem {
+                    return Some(UnknownReason::OutOfMemory);
+                }
+            }
+        }
+
+        None
+    }
+
     // TODO: full given-clause loop
     fn run(mut self) -> SuperpositionResult {
         while let Some(mut g) = self.passive.pop() {
@@ -418,22 +480,32 @@ impl<'a> SuperpositonState<'a> {
             new_clauses
                 .into_iter()
                 .for_each(|clause| self.insert_passive(clause));
+
+            if let Some(reason) = self.resources_exhausted() {
+                return SuperpositionResult::Unknown(reason);
+            }
         }
         SuperpositionResult::StatementFalse
     }
 }
 
-pub fn search_proof(clauses: Vec<Clause>, term_bank: &mut TermBank) -> SuperpositionResult {
+pub fn search_proof(
+    clauses: Vec<Clause>,
+    term_bank: &mut TermBank,
+    resource_config: &ResourceLimitConfig,
+) -> SuperpositionResult {
     let mut passive = ClauseQueue::new();
     clauses.into_iter().for_each(|clause| passive.push(clause));
     let active = ClauseSet::new();
     let subterm_index = DiscriminationTree::new();
+    let resource_limits = ResourceLimits::of_config(resource_config);
 
-    let state = SuperpositonState {
+    let state = SuperpositionState {
         passive,
         active,
         term_bank,
         subterm_index,
+        resource_limits,
     };
     state.run()
 }
@@ -478,7 +550,7 @@ mod test {
         let lit3 = Literal::new(fx, ft, Polarity::Ne);
         let clause = Clause::new(vec![lit1, lit2, lit3]);
         assert_eq!(
-            search_proof(vec![clause], &mut term_bank),
+            search_proof(vec![clause], &mut term_bank, &Default::default()),
             SuperpositionResult::ProofFound
         );
     }
@@ -508,7 +580,11 @@ mod test {
         let clause3 = Clause::new(vec![Literal::new(a.clone(), c.clone(), Polarity::Ne)]);
 
         assert_eq!(
-            search_proof(vec![clause1, clause2, clause3], &mut term_bank),
+            search_proof(
+                vec![clause1, clause2, clause3],
+                &mut term_bank,
+                &Default::default()
+            ),
             SuperpositionResult::ProofFound
         );
     }
