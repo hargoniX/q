@@ -1,6 +1,6 @@
 use crate::{
     clause::{Clause, ClauseId, ClauseSet, Literal},
-    term_bank::{RawTerm, Term},
+    term_bank::{RawTerm, Term, TermBank},
 };
 
 pub trait Position {
@@ -25,6 +25,32 @@ impl TermPosition {
     pub fn add(&mut self, next: usize) {
         self.path.push(next);
     }
+
+    fn replace_term_at_aux(
+        &self,
+        term: &Term,
+        new_term: Term,
+        term_bank: &TermBank,
+        idx: usize,
+    ) -> Term {
+        debug_assert!(idx <= self.path.len());
+        if idx == self.path.len() {
+            new_term
+        } else {
+            let mut args = term.function_args().unwrap().clone();
+            let new = self.replace_term_at_aux(&args[idx], new_term, term_bank, idx + 1);
+            args[idx] = new;
+            term_bank.mk_app(term.function_id().unwrap(), args)
+        }
+    }
+
+    pub fn replace_term_at(&self, term: &Term, new_term: Term, term_bank: &TermBank) -> Term {
+        self.replace_term_at_aux(term, new_term, term_bank, 0)
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.path.is_empty()
+    }
 }
 
 impl Position for TermPosition {
@@ -42,16 +68,68 @@ impl Position for TermPosition {
     }
 }
 
+pub struct TermPositionIterator<'a> {
+    front: Vec<(&'a Term, TermPosition)>,
+}
+
+impl<'a> TermPositionIterator<'a> {
+    fn new(term: &'a Term) -> Self {
+        Self {
+            front: vec![(term, TermPosition::new())],
+        }
+    }
+}
+
+impl Term {
+    pub fn subterm_iter<'a>(&'a self) -> TermPositionIterator<'a> {
+        TermPositionIterator::new(self)
+    }
+}
+
+impl<'a> Iterator for TermPositionIterator<'a> {
+    type Item = (Term, TermPosition);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (curr_term, curr_pos) = self.front.pop()?;
+
+        if let Some(args) = curr_term.function_args() {
+            for (idx, arg) in args.iter().enumerate() {
+                let mut new_pos = curr_pos.clone();
+                new_pos.add(idx);
+                self.front.push((arg, new_pos));
+            }
+        }
+
+        return Some((curr_term.clone(), curr_pos));
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LiteralSide {
     Left,
     Right,
 }
 
+impl LiteralSide {
+    pub fn get_side<'a>(&self, literal: &'a Literal) -> &'a Term {
+        match self {
+            LiteralSide::Left => literal.get_lhs(),
+            LiteralSide::Right => literal.get_rhs(),
+        }
+    }
+
+    pub fn swap(&self) -> Self {
+        match self {
+            LiteralSide::Left => LiteralSide::Right,
+            LiteralSide::Right => LiteralSide::Left,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LiteralPosition {
-    term_pos: TermPosition,
-    literal_side: LiteralSide,
+    pub term_pos: TermPosition,
+    pub literal_side: LiteralSide,
 }
 
 impl LiteralPosition {
@@ -77,8 +155,8 @@ impl Position for LiteralPosition {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClausePosition {
-    literal_pos: LiteralPosition,
-    literal_idx: usize,
+    pub literal_pos: LiteralPosition,
+    pub literal_idx: usize,
 }
 
 impl ClausePosition {
@@ -100,8 +178,8 @@ impl Position for ClausePosition {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClauseSetPosition {
-    clause_pos: ClausePosition,
-    clause_id: ClauseId,
+    pub clause_pos: ClausePosition,
+    pub clause_id: ClauseId,
 }
 
 impl ClauseSetPosition {

@@ -90,7 +90,7 @@ impl Literal {
     }
 
     /// Check whether the literal is an equality.
-    pub fn is_positive(&self) -> bool {
+    pub fn is_eq(&self) -> bool {
         self.kind == Polarity::Eq
     }
 
@@ -107,6 +107,11 @@ impl Literal {
     pub fn weight(&self) -> u32 {
         self.lhs.weight() + self.rhs.weight()
     }
+
+    /// Iterator over both symmetries of a literal.
+    pub fn symm_term_iter(&self) -> SymmLitIterator<'_> {
+        SymmLitIterator { lit: self, idx: 0 }
+    }
 }
 
 impl Substitutable for Literal {
@@ -120,6 +125,31 @@ impl Substitutable for Literal {
             lhs: new_lhs,
             rhs: new_rhs,
             kind: self.kind,
+        }
+    }
+}
+
+/// Iterator over both symmetries of a literal.
+pub struct SymmLitIterator<'a> {
+    lit: &'a Literal,
+    idx: u8,
+}
+
+impl<'a> Iterator for SymmLitIterator<'a> {
+    type Item = (Term, Term);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.idx {
+            0 => {
+                self.idx += 1;
+                Some((self.lit.get_lhs().clone(), self.lit.get_rhs().clone()))
+            }
+            1 => {
+                self.idx += 1;
+                Some((self.lit.get_rhs().clone(), self.lit.get_lhs().clone()))
+            }
+            2 => None,
+            _ => unreachable!(),
         }
     }
 }
@@ -305,15 +335,15 @@ mod test {
 
         assert_eq!(l1.get_lhs(), &x);
         assert_eq!(l1.get_rhs(), &y);
-        assert!(l1.is_positive());
+        assert!(l1.is_eq());
         assert!(!l1.is_ne());
         assert!(l2.is_ne());
-        assert!(!l2.is_positive());
+        assert!(!l2.is_eq());
         assert_ne!(l1, l2);
 
         l2 = l2.negate();
         assert_eq!(l1, l2);
-        assert!(l2.is_positive());
+        assert!(l2.is_eq());
 
         let c1_id = term_bank.add_function(FunctionInformation {
             name: "c1".to_string(),
