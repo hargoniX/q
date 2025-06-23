@@ -107,6 +107,11 @@ impl Literal {
     pub fn weight(&self) -> u32 {
         self.lhs.weight() + self.rhs.weight()
     }
+
+    /// Iterator over both symmetries of a literal.
+    pub fn symm_term_iter(&self) -> SymmLitIterator<'_> {
+        SymmLitIterator { lit: self, idx: 0 }
+    }
 }
 
 impl Substitutable for Literal {
@@ -120,6 +125,31 @@ impl Substitutable for Literal {
             lhs: new_lhs,
             rhs: new_rhs,
             kind: self.kind,
+        }
+    }
+}
+
+/// Iterator over both symmetries of a literal.
+pub struct SymmLitIterator<'a> {
+    lit: &'a Literal,
+    idx: u8,
+}
+
+impl<'a> Iterator for SymmLitIterator<'a> {
+    type Item = (Term, Term);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.idx {
+            0 => {
+                self.idx += 1;
+                Some((self.lit.get_lhs().clone(), self.lit.get_rhs().clone()))
+            }
+            1 => {
+                self.idx += 1;
+                Some((self.lit.get_rhs().clone(), self.lit.get_lhs().clone()))
+            }
+            2 => None,
+            _ => unreachable!(),
         }
     }
 }

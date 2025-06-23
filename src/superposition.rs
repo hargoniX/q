@@ -131,22 +131,14 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
         if lit1.is_ne() {
             continue;
         }
-        let lit1_terms = [lit1.get_lhs(), lit1.get_rhs()];
-
         for literal2_idx in 0..clause.len() {
             let lit2 = clause.get_literal(literal2_idx);
             if lit2.is_ne() || literal2_idx == literal1_idx {
                 continue;
             }
-            let lit2_terms = [lit2.get_lhs(), lit2.get_rhs()];
-            for t1_idx in 0..2 {
-                for t2_idx in 0..2 {
-                    let l1_lhs = lit1_terms[t1_idx];
-                    let l1_rhs = lit1_terms[1 - t1_idx];
-                    let l2_lhs = lit2_terms[t2_idx];
-                    let l2_rhs = lit2_terms[1 - t2_idx];
-
-                    if let Some(subst) = l1_lhs.unify(l2_lhs, term_bank) {
+            for (l1_lhs, l1_rhs) in lit1.symm_term_iter() {
+                for (l2_lhs, l2_rhs) in lit2.symm_term_iter() {
+                    if let Some(subst) = l1_lhs.unify(&l2_lhs, term_bank) {
                         let ord = l1_rhs
                             .clone()
                             .subst_with(&subst, term_bank)
@@ -222,11 +214,8 @@ impl<'a> SuperpositonState<'a> {
             if lit1.is_ne() {
                 continue;
             }
-            let lit1_terms = [lit1.get_lhs(), lit1.get_rhs()];
-            for t1_idx in 0..2 {
-                let lit1_lhs = lit1_terms[t1_idx];
-                let lit1_rhs = lit1_terms[1 - t1_idx];
-                for candidate_pos in self.subterm_index.get_unification_candidates(lit1_lhs) {
+            for (lit1_lhs, lit1_rhs) in lit1.symm_term_iter() {
+                for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
                     let lit2_lhs_p = candidate_pos.term_at(&self.active);
                     if lit2_lhs_p.variable_id().is_some() {
                         continue;
@@ -293,12 +282,9 @@ impl<'a> SuperpositonState<'a> {
         let clause2 = given_clause;
         for lit2_idx in 0..clause2.len() {
             let lit2 = clause2.get_literal(lit2_idx);
-            let lit2_terms = [lit2.get_lhs(), lit2.get_rhs()];
-            for t2_idx in 0..2 {
-                let lit2_lhs = lit2_terms[t2_idx];
-                let lit2_rhs = lit2_terms[1 - t2_idx];
-                let lit2_pol = lit2.get_pol();
-                for (subterm, subterm_pos) in TermPositionIterator::new(lit2_lhs) {
+            let lit2_pol = lit2.get_pol();
+            for (lit2_lhs, lit2_rhs) in lit2.symm_term_iter() {
+                for (subterm, subterm_pos) in TermPositionIterator::new(&lit2_lhs) {
                     if subterm.variable_id().is_some() {
                         continue;
                     }
@@ -345,7 +331,7 @@ impl<'a> SuperpositonState<'a> {
                                                 lit2_rhs.clone().subst_with(&subst, term_bank);
                                             let new_lhs = subterm_pos
                                                 .replace_term_at(
-                                                    lit2_lhs,
+                                                    &lit2_lhs,
                                                     lit1_rhs.clone(),
                                                     term_bank,
                                                 )
