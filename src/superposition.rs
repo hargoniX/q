@@ -372,7 +372,7 @@ impl<'a> SuperpositonState<'a> {
     fn generate(&self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
         equality_resolution(&clause, &mut acc, &self.term_bank);
-        //equality_factoring(&clause, &mut acc, &self.term_bank);
+        equality_factoring(&clause, &mut acc, &self.term_bank);
         self.superposition(&clause, &mut acc, &self.term_bank);
         acc
     }
