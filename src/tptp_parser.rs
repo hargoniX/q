@@ -419,6 +419,10 @@ impl From<fof::DefinedAtomicFormula<'_>> for FOLTerm {
     }
 }
 
+// `defined_proposition` aka `$true | $false` only occurs in `fof_defined_plain_formula`
+// Thus there are no other ways to create the builtin truth values
+// We refrain from integrating $false into our model because we would then
+// also need to automaticly include some term `$true != $false`
 impl From<fof::DefinedPlainFormula<'_>> for FOLTerm {
     fn from(f: fof::DefinedPlainFormula) -> Self {
         match f.0 {
@@ -429,8 +433,8 @@ impl From<fof::DefinedPlainFormula<'_>> for FOLTerm {
                 ))
             }
             fof::DefinedPlainTerm::Constant(c) if c.0.0.0.0.0 == "false" => {
-                FOLTerm::Literal(Literal::Eq(
-                    Term::Function(Name::Builtin(String::from("false")), Vec::new()),
+                FOLTerm::Literal(Literal::NotEq(
+                    Term::Function(Name::Builtin(String::from("true")), Vec::new()),
                     Term::Function(Name::Builtin(String::from("true")), Vec::new()),
                 ))
             }
