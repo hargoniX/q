@@ -458,10 +458,6 @@ fn cnf(f: SkolemTerm) -> SkolemTerm {
     }
 }
 
-// These will be conjuncted to an actual problem in CNF form to be proven by saturation:
-// - we conjunct the assumption formulas
-// - we conject those with the negated goals
-// - we show False
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct TPTPProblem {
     pub axioms: Vec<FOLTerm>,
@@ -524,10 +520,6 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                         log::info!("Parse FOF: {}", formula);
                         let fol_term = FOLTerm::from(formula.0);
                         log::info!("Parsed FOLTerm: {}", fol_term);
-                        let skolem_term = SkolemTerm::from(fol_term);
-                        log::info!("SkolemTerm: {}", skolem_term);
-                        let cnf_term = cnf(skolem_term.clone());
-                        log::info!("CNF Term: {}", skolem_term);
                         if role == "conjecture" {
                             conjectures.push(fol_term);
                         } else {
@@ -548,6 +540,41 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
         axioms: axioms,
         conjectures: conjectures,
     }
+}
+
+// Transform the TPTPProblem into the problem in CNF for our saturation prover:
+// - we conjunct the assumption formulas
+// - we conject those with the negated goals
+// - we transform it into CNF
+// - we show False
+pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
+    let mut acc;
+    if problem.conjectures.len() != 0 {
+        let neg_goals: Vec<FOLTerm> = problem
+            .conjectures
+            .into_iter()
+            .map(FOLTerm::negate)
+            .collect();
+        log::info!("Neg. Goals: {:?}", neg_goals);
+        acc = FOLTerm::from(neg_goals[0].clone());
+        for t in neg_goals[1..].into_iter() {
+            acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
+        }
+        for t in problem.axioms {
+            acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
+        }
+    } else {
+        log::warn!("No Goals!");
+        acc = FOLTerm::from(problem.axioms[0].clone());
+        for t in problem.axioms[1..].into_iter() {
+            acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
+        }
+    }
+    let skolem_term = SkolemTerm::from(acc);
+    log::info!("SkolemTerm: {}", skolem_term);
+    let cnf_term = cnf(skolem_term.clone());
+    log::info!("CNF Term: {}", skolem_term);
+    cnf_term
 }
 
 // This function has to:

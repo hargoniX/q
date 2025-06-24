@@ -28,10 +28,12 @@ fn main() {
         .init();
     log::info!("Path to TPTP problem: '{:?}'", args.file);
     let tptp_problem = qlib::tptp_parser::parse_file(args.file);
-    for assumption in tptp_problem.axioms {
+    for assumption in &tptp_problem.axioms {
         log::info!("Axioms: '{}'", assumption);
     }
-    for goal in tptp_problem.conjectures {
+    for goal in &tptp_problem.conjectures {
         log::info!("Conjectures: '{}'", goal);
     }
+    let problem_cnf = qlib::tptp_parser::transform_problem(tptp_problem);
+    log::info!("Problem Statement: '{}'", problem_cnf);
 }
