@@ -93,11 +93,13 @@ impl fmt::Display for Literal {
     }
 }
 
+// We chose to keep the n-ary Quantifiers since they can be handled quite easily when skolemizing,
+// but distributing n-ary Operators seems to result in a worse result when computing naively
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum FOLTerm {
     Literal(Literal),
-    And(Vec<FOLTerm>),
-    Or(Vec<FOLTerm>),
+    And(Box<FOLTerm>, Box<FOLTerm>),
+    Or(Box<FOLTerm>, Box<FOLTerm>),
     Exist(Vec<Name>, Box<FOLTerm>),
     Forall(Vec<Name>, Box<FOLTerm>),
 }
@@ -106,22 +108,8 @@ impl fmt::Display for FOLTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             FOLTerm::Literal(l) => write!(f, "{}", l),
-            FOLTerm::And(ts) => write!(
-                f,
-                "({})",
-                ts.into_iter()
-                    .map(|t| t.to_string())
-                    .collect::<Vec<String>>()
-                    .join("&")
-            ),
-            FOLTerm::Or(ts) => write!(
-                f,
-                "({})",
-                ts.into_iter()
-                    .map(|t| t.to_string())
-                    .collect::<Vec<String>>()
-                    .join("|")
-            ),
+            FOLTerm::And(t1, t2) => write!(f, "({}&{})", t1, t2),
+            FOLTerm::Or(t1, t2) => write!(f, "({}|{})", t1, t2),
             FOLTerm::Exist(vars, ts) => {
                 write!(
                     f,
@@ -151,8 +139,8 @@ impl fmt::Display for FOLTerm {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum SkolemTerm {
     Literal(Literal),
-    And(Vec<SkolemTerm>),
-    Or(Vec<SkolemTerm>),
+    And(Box<SkolemTerm>, Box<SkolemTerm>),
+    Or(Box<SkolemTerm>, Box<SkolemTerm>),
 }
 
 struct SkolemState {
@@ -187,6 +175,11 @@ fn rename_term(t: &Term, s: &mut ScopedRenameMap) -> Term {
     }
 }
 
+enum Op {
+    And,
+    Or,
+}
+
 enum Binder {
     Forall(Vec<Name>),
     Exist(Vec<Name>),
@@ -198,8 +191,8 @@ impl FOLTerm {
         match self {
             FOLTerm::Literal(Literal::Eq(t1, t2)) => FOLTerm::Literal(Literal::NotEq(t1, t2)),
             FOLTerm::Literal(Literal::NotEq(t1, t2)) => FOLTerm::Literal(Literal::Eq(t1, t2)),
-            FOLTerm::And(ts) => FOLTerm::Or(ts.into_iter().map(FOLTerm::negate).collect()),
-            FOLTerm::Or(ts) => FOLTerm::And(ts.into_iter().map(FOLTerm::negate).collect()),
+            FOLTerm::And(t1, t2) => FOLTerm::Or(Box::new(t1.negate()), Box::new(t2.negate())),
+            FOLTerm::Or(t1, t2) => FOLTerm::And(Box::new(t1.negate()), Box::new(t2.negate())),
             FOLTerm::Exist(n, t) => FOLTerm::Forall(n, Box::new(t.negate())),
             FOLTerm::Forall(n, t) => FOLTerm::Exist(n, t),
         }
@@ -245,15 +238,13 @@ impl FOLTerm {
             FOLTerm::Literal(Literal::NotEq(t1, t2)) => {
                 FOLTerm::Literal(Literal::NotEq(rename_term(&t1, sub), rename_term(&t2, sub)))
             }
-            FOLTerm::And(ts) => FOLTerm::And(
-                ts.into_iter()
-                    .map(|t| t.rename_quants(state, sub))
-                    .collect(),
+            FOLTerm::And(t1, t2) => FOLTerm::And(
+                Box::new(t1.rename_quants(state, sub)),
+                Box::new(t2.rename_quants(state, sub)),
             ),
-            FOLTerm::Or(ts) => FOLTerm::Or(
-                ts.into_iter()
-                    .map(|t| t.rename_quants(state, sub))
-                    .collect(),
+            FOLTerm::Or(t1, t2) => FOLTerm::Or(
+                Box::new(t1.rename_quants(state, sub)),
+                Box::new(t2.rename_quants(state, sub)),
             ),
             FOLTerm::Exist(n, t) => {
                 let (new_binder_names, renamed_fol_term) =
@@ -272,12 +263,14 @@ impl FOLTerm {
     // until there is another type of term
     fn separate_binders(self, quants: &mut Vec<Binder>) -> FOLTerm {
         match self {
-            FOLTerm::And(ts) => {
-                FOLTerm::And(ts.into_iter().map(|t| t.separate_binders(quants)).collect())
-            }
-            FOLTerm::Or(ts) => {
-                FOLTerm::Or(ts.into_iter().map(|t| t.separate_binders(quants)).collect())
-            }
+            FOLTerm::And(t1, t2) => FOLTerm::And(
+                Box::new(t1.separate_binders(quants)),
+                Box::new(t2.separate_binders(quants)),
+            ),
+            FOLTerm::Or(t1, t2) => FOLTerm::Or(
+                Box::new(t1.separate_binders(quants)),
+                Box::new(t2.separate_binders(quants)),
+            ),
             FOLTerm::Exist(n, t) => {
                 quants.push(Binder::Exist(n));
                 t.separate_binders(quants)
@@ -328,7 +321,7 @@ impl FOLTerm {
     //      ∀1.∀2.p(2)
     //    where the substitution gets overwritten by the second occurence of x
     // 2. Pulling up the quantifiers
-    fn to_pnf(self, state: &mut SkolemState) -> FOLTerm {
+    fn pnf(self, state: &mut SkolemState) -> FOLTerm {
         let renamed_term = self.rename_quants(state, &mut ScopedRenameMap::new());
         log::debug!("Renamed Binders: {}", renamed_term);
         renamed_term.pull_quants()
@@ -347,12 +340,14 @@ impl FOLTerm {
                     SkolemTerm::Literal(Literal::NotEq(t1.substitute(s), t2.substitute(s)))
                 }
             },
-            FOLTerm::And(ts) => {
-                SkolemTerm::And(ts.into_iter().map(|t| t.skolemize(s, binders)).collect())
-            }
-            FOLTerm::Or(ts) => {
-                SkolemTerm::Or(ts.into_iter().map(|t| t.skolemize(s, binders)).collect())
-            }
+            FOLTerm::And(t1, t2) => SkolemTerm::And(
+                Box::new(t1.skolemize(s, binders)),
+                Box::new(t2.skolemize(s, binders)),
+            ),
+            FOLTerm::Or(t1, t2) => SkolemTerm::Or(
+                Box::new(t1.skolemize(s, binders)),
+                Box::new(t2.skolemize(s, binders)),
+            ),
             // Due to the pulling out of the quantifiers, the scopes become linear and
             // thus we can just append to the state of binder variables
             FOLTerm::Forall(names, t) => {
@@ -388,14 +383,14 @@ impl FOLTerm {
 // - replace Existential with a Skolem function symbol
 // - remove the Forall Quantifiers
 //
-// It is more complex since our Connectives and Quantifiers are not binary, but n-ary.
+// It is more complex since our Quantifiers are n-ary.
 // Since this is supposed to just naively parse the problem at the current time,
 // there are no optimizations like removing quantifiers
 // which variables don't occur in the formula
 impl From<FOLTerm> for SkolemTerm {
     fn from(f: FOLTerm) -> Self {
         let mut state = SkolemState { counter: 0 };
-        let pnf_term = f.to_pnf(&mut state);
+        let pnf_term = f.pnf(&mut state);
         log::info!("PNF Term: {}", pnf_term);
         pnf_term.skolemize(&mut Substitution::new(), &mut Vec::new())
     }
@@ -405,23 +400,61 @@ impl fmt::Display for SkolemTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             SkolemTerm::Literal(l) => write!(f, "{}", l),
-            SkolemTerm::And(ts) => write!(
-                f,
-                "({})",
-                ts.into_iter()
-                    .map(|t| t.to_string())
-                    .collect::<Vec<String>>()
-                    .join("&")
-            ),
-            SkolemTerm::Or(ts) => write!(
-                f,
-                "({})",
-                ts.into_iter()
-                    .map(|t| t.to_string())
-                    .collect::<Vec<String>>()
-                    .join("|")
-            ),
+            SkolemTerm::And(t1, t2) => write!(f, "({}&{})", t1, t2),
+            SkolemTerm::Or(t1, t2) => write!(f, "({}|{})", t1, t2),
         }
+    }
+}
+
+// This function requires the subterms of the `Or` to already be in CNF
+// and just recursively pushes possibly multiple `And`s inwards
+fn push_or_inwards(t: SkolemTerm) -> SkolemTerm {
+    match t {
+        SkolemTerm::Or(s, t) => match (*s, *t) {
+            (SkolemTerm::And(s1, s2), t) => {
+                let cnf_s = push_or_inwards(SkolemTerm::Or(s1, Box::new(t.clone())));
+                let cnf_t = push_or_inwards(SkolemTerm::Or(s2, Box::new(t)));
+                SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
+            }
+            (s, SkolemTerm::And(t1, t2)) => {
+                let cnf_s = push_or_inwards(SkolemTerm::Or(Box::new(s.clone()), t1));
+                let cnf_t = push_or_inwards(SkolemTerm::Or(Box::new(s), t2));
+                SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
+            }
+            (s, t) => SkolemTerm::Or(Box::new(s), Box::new(t)),
+        },
+        _ => t,
+    }
+}
+
+// Distribute Or inwards over And naively:
+//      Or(s, Or(t, And(v, And(u, w))))
+//   Should result in the following steps
+// ->   Or(s, And(Or(t,v), Or(t, And(u,w))))
+// ->   Or(s, And(Or(t,v), And(Or(t,u), Or(t,w))))
+// ->   And(Or(s, Or(t,v)), Or(s, And(Or(t,u), Or(t,w))))
+// ->   And(Or(s, Or(t,v)), And(Or(s, Or(t,u)), Or(s, Or(t,w))))
+fn cnf(f: SkolemTerm) -> SkolemTerm {
+    match f {
+        SkolemTerm::And(s, t) => SkolemTerm::And(Box::new(cnf(*s)), Box::new(cnf(*t))),
+        SkolemTerm::Or(s, t) => {
+            let cnf_s = cnf(*s);
+            let cnf_t = cnf(*t);
+            match (cnf_s, cnf_t) {
+                (SkolemTerm::And(s1, s2), t) => {
+                    let cnf_s = push_or_inwards(SkolemTerm::Or(s1, Box::new(t.clone())));
+                    let cnf_t = push_or_inwards(SkolemTerm::Or(s2, Box::new(t)));
+                    SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
+                }
+                (s, SkolemTerm::And(t1, t2)) => {
+                    let cnf_s = push_or_inwards(SkolemTerm::Or(Box::new(s.clone()), t1));
+                    let cnf_t = push_or_inwards(SkolemTerm::Or(Box::new(s), t2));
+                    SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
+                }
+                (s, t) => SkolemTerm::Or(Box::new(s), Box::new(t)),
+            }
+        }
+        _ => f,
     }
 }
 
@@ -493,6 +526,8 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                         log::info!("Parsed FOLTerm: {}", fol_term);
                         let skolem_term = SkolemTerm::from(fol_term);
                         log::info!("SkolemTerm: {}", skolem_term);
+                        let cnf_term = cnf(skolem_term.clone());
+                        log::info!("CNF Term: {}", skolem_term);
                         if role == "conjecture" {
                             conjectures.push(fol_term);
                         } else {
@@ -561,29 +596,42 @@ impl From<fof::BinaryNonassoc<'_>> for FOLTerm {
         let l = Self::from(*f.left);
         let r = Self::from(*f.right);
         match f.op {
-            NonassocConnective::LRImplies => Self::Or(vec![l.negate(), r]),
-            NonassocConnective::RLImplies => Self::Or(vec![r.negate(), l]),
-            NonassocConnective::Equivalent => Self::And(vec![
-                Self::Or(vec![l.clone().negate(), r.clone()]),
-                Self::Or(vec![r.negate(), l]),
-            ]),
-            NonassocConnective::NotEquivalent => Self::Or(vec![
-                Self::And(vec![l.clone(), r.clone().negate()]),
-                Self::And(vec![r, l.negate()]),
-            ]),
-            NonassocConnective::NotOr => Self::And(vec![l.negate(), r.negate()]),
-            NonassocConnective::NotAnd => Self::And(vec![l.negate(), r.negate()]),
+            NonassocConnective::LRImplies => Self::Or(Box::new(l.negate()), Box::new(r)),
+            NonassocConnective::RLImplies => Self::Or(Box::new(r.negate()), Box::new(l)),
+            NonassocConnective::Equivalent => Self::And(
+                Box::new(Self::Or(Box::new(l.clone().negate()), Box::new(r.clone()))),
+                Box::new(Self::Or(Box::new(r.negate()), Box::new(l))),
+            ),
+            NonassocConnective::NotEquivalent => Self::Or(
+                Box::new(Self::And(Box::new(l.clone()), Box::new(r.clone().negate()))),
+                Box::new(Self::And(Box::new(r), Box::new(l.negate()))),
+            ),
+            NonassocConnective::NotOr => Self::And(Box::new(l.negate()), Box::new(r.negate())),
+            NonassocConnective::NotAnd => Self::Or(Box::new(l.negate()), Box::new(r.negate())),
         }
     }
+}
+
+// The BNF makes sure that there are atleast two elems in the initial vec
+// the formula vectors `f_or`|`f_and`
+fn convert_op_into_binary(fs: &[fof::UnitFormula<'_>], op: &Op) -> FOLTerm {
+    let mut acc = FOLTerm::from(fs[0].clone());
+    let op_fn = match op {
+        Op::And => FOLTerm::And,
+        Op::Or => FOLTerm::Or,
+    };
+    for f in fs[1..].into_iter() {
+        let t = FOLTerm::from(f.clone());
+        acc = op_fn(Box::new(acc), Box::new(t));
+    }
+    acc
 }
 
 impl From<fof::BinaryAssoc<'_>> for FOLTerm {
     fn from(f: fof::BinaryAssoc) -> Self {
         match f {
-            fof::BinaryAssoc::Or(f_or) => Self::Or(f_or.0.into_iter().map(Self::from).collect()),
-            fof::BinaryAssoc::And(f_and) => {
-                Self::And(f_and.0.into_iter().map(Self::from).collect())
-            }
+            fof::BinaryAssoc::And(f_and) => convert_op_into_binary(&f_and.0[..], &Op::And),
+            fof::BinaryAssoc::Or(f_or) => convert_op_into_binary(&f_or.0[..], &Op::Or),
         }
     }
 }
