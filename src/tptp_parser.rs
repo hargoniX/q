@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
@@ -38,6 +39,26 @@ impl fmt::Display for Name {
 pub enum Term {
     Variable(Name),
     Function(Name, Vec<Term>),
+}
+
+type Substitution<'a> = HashMap<Name, Term>;
+
+impl Term {
+    fn substitute(&self, s: &mut Substitution) -> Term {
+        match self {
+            Term::Variable(name) => {
+                if let Some(t2) = s.get(&name) {
+                    t2.clone()
+                } else {
+                    self.clone()
+                }
+            }
+            Term::Function(name, ts) => Term::Function(
+                name.clone(),
+                ts.into_iter().map(|t| t.substitute(s)).collect(),
+            ),
+        }
+    }
 }
 
 impl fmt::Display for Term {
@@ -127,6 +148,50 @@ impl fmt::Display for FOLTerm {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub enum SkolemTerm {
+    Literal(Literal),
+    And(Vec<SkolemTerm>),
+    Or(Vec<SkolemTerm>),
+}
+
+struct SkolemState {
+    counter: usize,
+}
+
+impl SkolemState {
+    pub fn get_fresh_var(&mut self) -> Name {
+        self.counter += 1;
+        Name::Skolem(self.counter.to_string())
+    }
+}
+
+// Modelling scopes through a stack:
+// the currently active renaming is the last element of the vec
+type ScopedRenameMap<'a> = HashMap<Name, Vec<Name>>;
+
+fn rename_term(t: &Term, s: &mut ScopedRenameMap) -> Term {
+    match t {
+        Term::Variable(name) => {
+            if let Some(rename_list) = s.get_mut(name) {
+                if let Some(t2) = rename_list.get(rename_list.len() - 1) {
+                    return Term::Variable(t2.clone());
+                }
+            }
+            t.clone()
+        }
+        Term::Function(name, ts) => Term::Function(
+            name.clone(),
+            ts.into_iter().map(|t| rename_term(t, s)).collect(),
+        ),
+    }
+}
+
+enum Binder {
+    Forall(Vec<Name>),
+    Exist(Vec<Name>),
+}
+
 impl FOLTerm {
     // Distribute a negation over the whole term
     fn negate(self) -> FOLTerm {
@@ -139,9 +204,228 @@ impl FOLTerm {
             FOLTerm::Forall(n, t) => FOLTerm::Exist(n, t),
         }
     }
+
+    // There is a caveat to using a single mutable subst in that we need to know the previous
+    // value of the mapping and restore it after the binder gets out of scope.
+    // Example:
+    //      ∀x.(∀x.p(x)) ∧ p(x)
+    // should result in
+    //      ∀1.(∀2.p(2)) ∧ p(1)
+    fn rename_quantifier(
+        binder_names: Vec<Name>,
+        term: Box<FOLTerm>,
+        state: &mut SkolemState,
+        sub: &mut ScopedRenameMap,
+    ) -> (Vec<Name>, Box<FOLTerm>) {
+        let mut new_binder_names = Vec::new();
+        for name in binder_names.clone() {
+            let fresh_var = state.get_fresh_var();
+            new_binder_names.push(fresh_var.clone());
+            log::debug!("Renaming {} to {}", name, fresh_var);
+
+            if let Some(binders) = sub.get_mut(&name) {
+                binders.push(fresh_var);
+            } else {
+                sub.insert(name, vec![fresh_var]);
+            }
+        }
+        let renamed_fol_term = term.rename_quants(state, sub);
+        // Pop the changes after leaving the scope
+        for name in binder_names {
+            sub.get_mut(&name).unwrap().pop();
+        }
+        (new_binder_names, Box::new(renamed_fol_term))
+    }
+
+    fn rename_quants(self, state: &mut SkolemState, sub: &mut ScopedRenameMap) -> FOLTerm {
+        match self {
+            FOLTerm::Literal(Literal::Eq(t1, t2)) => {
+                FOLTerm::Literal(Literal::Eq(rename_term(&t1, sub), rename_term(&t2, sub)))
+            }
+            FOLTerm::Literal(Literal::NotEq(t1, t2)) => {
+                FOLTerm::Literal(Literal::NotEq(rename_term(&t1, sub), rename_term(&t2, sub)))
+            }
+            FOLTerm::And(ts) => FOLTerm::And(
+                ts.into_iter()
+                    .map(|t| t.rename_quants(state, sub))
+                    .collect(),
+            ),
+            FOLTerm::Or(ts) => FOLTerm::Or(
+                ts.into_iter()
+                    .map(|t| t.rename_quants(state, sub))
+                    .collect(),
+            ),
+            FOLTerm::Exist(n, t) => {
+                let (new_binder_names, renamed_fol_term) =
+                    FOLTerm::rename_quantifier(n, t, state, sub);
+                FOLTerm::Exist(new_binder_names, renamed_fol_term)
+            }
+            FOLTerm::Forall(n, t) => {
+                let (new_binder_names, renamed_fol_term) =
+                    FOLTerm::rename_quantifier(n, t, state, sub);
+                FOLTerm::Forall(new_binder_names, renamed_fol_term)
+            }
+        }
+    }
+
+    // Cuts away quantifiers recursively and pushes them into the vec
+    // until there is another type of term
+    fn separate_binders(self, quants: &mut Vec<Binder>) -> FOLTerm {
+        match self {
+            FOLTerm::And(ts) => {
+                FOLTerm::And(ts.into_iter().map(|t| t.separate_binders(quants)).collect())
+            }
+            FOLTerm::Or(ts) => {
+                FOLTerm::Or(ts.into_iter().map(|t| t.separate_binders(quants)).collect())
+            }
+            FOLTerm::Exist(n, t) => {
+                quants.push(Binder::Exist(n));
+                t.separate_binders(quants)
+            }
+            FOLTerm::Forall(n, t) => {
+                quants.push(Binder::Forall(n));
+                t.separate_binders(quants)
+            }
+            _ => self,
+        }
+    }
+
+    // The order of the pulled up quantifiers is important for Skolemnization.
+    // TODO: If there are multiple equisatisfiable versions, picking Exist first is preferable.
+    // It will result in Skolem Functions with less arguments.
+    fn pull_quants(self) -> FOLTerm {
+        let mut quants = Vec::new();
+        let mut result = self.separate_binders(&mut quants);
+
+        // Reverse the order of the quantifiers to build the terms more easily
+        quants.reverse();
+        for quant in quants {
+            match quant {
+                Binder::Exist(names) => {
+                    result = FOLTerm::Exist(names, Box::new(result));
+                }
+                Binder::Forall(names) => {
+                    result = FOLTerm::Forall(names, Box::new(result));
+                }
+            }
+        }
+        result
+    }
+
+    // Prenex Normal Form
+    //
+    // The following equivalence/possible transformation is not valid:
+    //     P(x) ∧ (∃x. Q(x)) ⇔ ∃x. P(x) ∧ Q(x).
+    // We can always avoid such problems by renaming the bound variable, if
+    // necessary, to some y that is not free in either p or q:
+    //     p ∧ (∃x. q) ⇔ ∃y. p ∧ (subst (x |⇒ y) q).
+    //
+    // This is done as naively as possible:
+    // 1. Renaming all the quantifier variables to fresh Skolem Ones
+    //    If there are multiple quantifiers over the same Variable, e.g.
+    //      ∀x.∀x.p(x)
+    //    then we would expect the result to be
+    //      ∀1.∀2.p(2)
+    //    where the substitution gets overwritten by the second occurence of x
+    // 2. Pulling up the quantifiers
+    fn to_pnf(self, state: &mut SkolemState) -> FOLTerm {
+        let renamed_term = self.rename_quants(state, &mut ScopedRenameMap::new());
+        log::debug!("Renamed Binders: {}", renamed_term);
+        renamed_term.pull_quants()
+    }
+
+    // TODO: I think it is fine to remove forall on the traversal already?
+    // this should probably take a &mut subst and subst on the traversal with the skolemized
+    // function symbol
+    fn skolemize(self, s: &mut Substitution, binders: &mut Vec<Name>) -> SkolemTerm {
+        match self {
+            FOLTerm::Literal(t) => match t {
+                Literal::Eq(t1, t2) => {
+                    SkolemTerm::Literal(Literal::Eq(t1.substitute(s), t2.substitute(s)))
+                }
+                Literal::NotEq(t1, t2) => {
+                    SkolemTerm::Literal(Literal::NotEq(t1.substitute(s), t2.substitute(s)))
+                }
+            },
+            FOLTerm::And(ts) => {
+                SkolemTerm::And(ts.into_iter().map(|t| t.skolemize(s, binders)).collect())
+            }
+            FOLTerm::Or(ts) => {
+                SkolemTerm::Or(ts.into_iter().map(|t| t.skolemize(s, binders)).collect())
+            }
+            // Due to the pulling out of the quantifiers, the scopes become linear and
+            // thus we can just append to the state of binder variables
+            FOLTerm::Forall(names, t) => {
+                for name in names {
+                    binders.push(name);
+                }
+                t.skolemize(s, binders)
+            }
+            FOLTerm::Exist(names, t) => {
+                // It is fine for the function to keep its variable name
+                // since it's unique after renaming
+                for name in names {
+                    s.insert(
+                        name.clone(),
+                        Term::Function(
+                            name.clone(),
+                            binders
+                                .into_iter()
+                                .map(|n| Term::Variable(n.clone()))
+                                .collect(),
+                        ),
+                    );
+                }
+                t.skolemize(s, binders)
+            }
+        }
+    }
 }
 
-// These will be converted to an actual problem in CNF form to be proven by saturation:
+// This function gets rid of all the quantifiers:
+// - pull the quantifiers outside (Prenex Normal Form).
+//   We first rename ALL of the binder variables to get out of the edge cases
+// - replace Existential with a Skolem function symbol
+// - remove the Forall Quantifiers
+//
+// It is more complex since our Connectives and Quantifiers are not binary, but n-ary.
+// Since this is supposed to just naively parse the problem at the current time,
+// there are no optimizations like removing quantifiers
+// which variables don't occur in the formula
+impl From<FOLTerm> for SkolemTerm {
+    fn from(f: FOLTerm) -> Self {
+        let mut state = SkolemState { counter: 0 };
+        let pnf_term = f.to_pnf(&mut state);
+        log::info!("PNF Term: {}", pnf_term);
+        pnf_term.skolemize(&mut Substitution::new(), &mut Vec::new())
+    }
+}
+
+impl fmt::Display for SkolemTerm {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SkolemTerm::Literal(l) => write!(f, "{}", l),
+            SkolemTerm::And(ts) => write!(
+                f,
+                "({})",
+                ts.into_iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join("&")
+            ),
+            SkolemTerm::Or(ts) => write!(
+                f,
+                "({})",
+                ts.into_iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join("|")
+            ),
+        }
+    }
+}
+
+// These will be conjuncted to an actual problem in CNF form to be proven by saturation:
 // - we conjunct the assumption formulas
 // - we conject those with the negated goals
 // - we show False
@@ -207,6 +491,8 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                         log::info!("Parse FOF: {}", formula);
                         let fol_term = FOLTerm::from(formula.0);
                         log::info!("Parsed FOLTerm: {}", fol_term);
+                        let skolem_term = SkolemTerm::from(fol_term);
+                        log::info!("SkolemTerm: {}", skolem_term);
                         if role == "conjecture" {
                             conjectures.push(fol_term);
                         } else {
