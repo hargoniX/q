@@ -1,3 +1,12 @@
+//! ## TPTP Parsing and Conversion into Normal Formes
+//! This module implements the parsing of FOL Terms written with TPTP with the help of the tptp
+//! crate and the conversion of FOL Terms into NNF, PNF, SNF, CNF and finally into our HashConsed
+//! TermBank Structure. The transformations are mostly guided by the
+//! [LMU's ATP course](https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides05-resolution.pdf).
+//! and the third chapter of
+//! [Handbook of Practical Logic and Automated Reasoning](https://www.cambridge.org/core/books/abs/handbook-of-practical-logic-and-automated-reasoning/firstorder-logic/1DD3EC5827D7C7914EE6EC245344D140)
+//! about First-order logic.
+
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
@@ -18,17 +27,7 @@ use crate::term_bank::{
 pub enum Name {
     Builtin(String),
     Parsed(String),
-    Skolem(String),
-}
-
-impl Name {
-    pub fn get_name(&self) -> &str {
-        match self {
-            Name::Builtin(name) => name,
-            Name::Parsed(name) => name,
-            Name::Skolem(name) => name,
-        }
-    }
+    Skolem(usize),
 }
 
 impl fmt::Display for Name {
@@ -47,13 +46,13 @@ pub enum Term {
     Function(Name, Vec<Term>),
 }
 
-type Substitution<'a> = HashMap<Name, Term>;
+struct Substitution(HashMap<Name, Term>);
 
 impl Term {
-    fn substitute(&self, s: &mut Substitution) -> Term {
+    fn substitute(&self, s: &Substitution) -> Term {
         match self {
             Term::Variable(name) => {
-                if let Some(t2) = s.get(&name) {
+                if let Some(t2) = s.0.get(&name) {
                     t2.clone()
                 } else {
                     self.clone()
@@ -156,18 +155,18 @@ struct SkolemState {
 impl SkolemState {
     pub fn get_fresh_var(&mut self) -> Name {
         self.counter += 1;
-        Name::Skolem(self.counter.to_string())
+        Name::Skolem(self.counter)
     }
 }
 
 // Modelling scopes through a stack:
 // the currently active renaming is the last element of the vec
-type ScopedRenameMap<'a> = HashMap<Name, Vec<Name>>;
+struct ScopedRenameMap(HashMap<Name, Vec<Name>>);
 
 fn rename_term(t: &Term, s: &mut ScopedRenameMap) -> Term {
     match t {
         Term::Variable(name) => {
-            if let Some(rename_list) = s.get_mut(name) {
+            if let Some(rename_list) = s.0.get(name) {
                 if let Some(t2) = rename_list.get(rename_list.len() - 1) {
                     return Term::Variable(t2.clone());
                 }
@@ -222,16 +221,16 @@ impl FOLTerm {
             new_binder_names.push(fresh_var.clone());
             log::debug!("Renaming {} to {}", name, fresh_var);
 
-            if let Some(binders) = sub.get_mut(&name) {
+            if let Some(binders) = sub.0.get_mut(&name) {
                 binders.push(fresh_var);
             } else {
-                sub.insert(name, vec![fresh_var]);
+                sub.0.insert(name, vec![fresh_var]);
             }
         }
         let renamed_fol_term = term.rename_quants(state, sub);
         // Pop the changes after leaving the scope
         for name in binder_names {
-            sub.get_mut(&name).unwrap().pop();
+            sub.0.get_mut(&name).unwrap().pop();
         }
         (new_binder_names, Box::new(renamed_fol_term))
     }
@@ -328,15 +327,12 @@ impl FOLTerm {
     //    where the substitution gets overwritten by the second occurence of x
     // 2. Pulling up the quantifiers
     fn pnf(self, state: &mut SkolemState) -> FOLTerm {
-        let renamed_term = self.rename_quants(state, &mut ScopedRenameMap::new());
+        let renamed_term = self.rename_quants(state, &mut ScopedRenameMap(HashMap::new()));
         log::debug!("Renamed Binders: {}", renamed_term);
         renamed_term.pull_quants()
     }
 
-    // TODO: I think it is fine to remove forall on the traversal already?
-    // this should probably take a &mut subst and subst on the traversal with the skolemized
-    // function symbol
-    fn skolemize(self, s: &mut Substitution, binders: &mut Vec<Name>) -> SkolemTerm {
+    fn skolemize_aux(self, s: &mut Substitution, binders: &mut Vec<Name>) -> SkolemTerm {
         match self {
             FOLTerm::Literal(t) => match t {
                 Literal::Eq(t1, t2) => {
@@ -347,12 +343,12 @@ impl FOLTerm {
                 }
             },
             FOLTerm::And(t1, t2) => SkolemTerm::And(
-                Box::new(t1.skolemize(s, binders)),
-                Box::new(t2.skolemize(s, binders)),
+                Box::new(t1.skolemize_aux(s, binders)),
+                Box::new(t2.skolemize_aux(s, binders)),
             ),
             FOLTerm::Or(t1, t2) => SkolemTerm::Or(
-                Box::new(t1.skolemize(s, binders)),
-                Box::new(t2.skolemize(s, binders)),
+                Box::new(t1.skolemize_aux(s, binders)),
+                Box::new(t2.skolemize_aux(s, binders)),
             ),
             // Due to the pulling out of the quantifiers, the scopes become linear and
             // thus we can just append to the state of binder variables
@@ -360,13 +356,13 @@ impl FOLTerm {
                 for name in names {
                     binders.push(name);
                 }
-                t.skolemize(s, binders)
+                t.skolemize_aux(s, binders)
             }
             FOLTerm::Exist(names, t) => {
                 // It is fine for the function to keep its variable name
                 // since it's unique after renaming
                 for name in names {
-                    s.insert(
+                    s.0.insert(
                         name.clone(),
                         Term::Function(
                             name.clone(),
@@ -377,9 +373,13 @@ impl FOLTerm {
                         ),
                     );
                 }
-                t.skolemize(s, binders)
+                t.skolemize_aux(s, binders)
             }
         }
+    }
+
+    fn skolemize(self) -> SkolemTerm {
+        self.skolemize_aux(&mut Substitution(HashMap::new()), &mut Vec::new())
     }
 }
 
@@ -398,7 +398,7 @@ impl From<FOLTerm> for SkolemTerm {
         let mut state = SkolemState { counter: 0 };
         let pnf_term = f.pnf(&mut state);
         log::info!("PNF Term: {}", pnf_term);
-        pnf_term.skolemize(&mut Substitution::new(), &mut Vec::new())
+        pnf_term.skolemize()
     }
 }
 
@@ -412,55 +412,57 @@ impl fmt::Display for SkolemTerm {
     }
 }
 
-// This function requires the subterms of the `Or` to already be in CNF
-// and just recursively pushes possibly multiple `And`s inwards
-fn push_or_inwards(t: SkolemTerm) -> SkolemTerm {
-    match t {
-        SkolemTerm::Or(s, t) => match (*s, *t) {
-            (SkolemTerm::And(s1, s2), t) => {
-                let cnf_s = push_or_inwards(SkolemTerm::Or(s1, Box::new(t.clone())));
-                let cnf_t = push_or_inwards(SkolemTerm::Or(s2, Box::new(t)));
-                SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
-            }
-            (s, SkolemTerm::And(t1, t2)) => {
-                let cnf_s = push_or_inwards(SkolemTerm::Or(Box::new(s.clone()), t1));
-                let cnf_t = push_or_inwards(SkolemTerm::Or(Box::new(s), t2));
-                SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
-            }
-            (s, t) => SkolemTerm::Or(Box::new(s), Box::new(t)),
-        },
-        _ => t,
-    }
-}
-
-// Distribute Or inwards over And naively:
-//      Or(s, Or(t, And(v, And(u, w))))
-//   Should result in the following steps
-// ->   Or(s, And(Or(t,v), Or(t, And(u,w))))
-// ->   Or(s, And(Or(t,v), And(Or(t,u), Or(t,w))))
-// ->   And(Or(s, Or(t,v)), Or(s, And(Or(t,u), Or(t,w))))
-// ->   And(Or(s, Or(t,v)), And(Or(s, Or(t,u)), Or(s, Or(t,w))))
-fn cnf(f: SkolemTerm) -> SkolemTerm {
-    match f {
-        SkolemTerm::And(s, t) => SkolemTerm::And(Box::new(cnf(*s)), Box::new(cnf(*t))),
-        SkolemTerm::Or(s, t) => {
-            let cnf_s = cnf(*s);
-            let cnf_t = cnf(*t);
-            match (cnf_s, cnf_t) {
+impl SkolemTerm {
+    // This function requires the subterms of the `Or` to already be in CNF
+    // and just recursively pushes possibly multiple `And`s inwards
+    fn push_or_inwards(self) -> SkolemTerm {
+        match self {
+            SkolemTerm::Or(s, t) => match (*s, *t) {
                 (SkolemTerm::And(s1, s2), t) => {
-                    let cnf_s = push_or_inwards(SkolemTerm::Or(s1, Box::new(t.clone())));
-                    let cnf_t = push_or_inwards(SkolemTerm::Or(s2, Box::new(t)));
+                    let cnf_s = SkolemTerm::Or(s1, Box::new(t.clone())).push_or_inwards();
+                    let cnf_t = SkolemTerm::Or(s2, Box::new(t)).push_or_inwards();
                     SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
                 }
                 (s, SkolemTerm::And(t1, t2)) => {
-                    let cnf_s = push_or_inwards(SkolemTerm::Or(Box::new(s.clone()), t1));
-                    let cnf_t = push_or_inwards(SkolemTerm::Or(Box::new(s), t2));
+                    let cnf_s = SkolemTerm::Or(Box::new(s.clone()), t1).push_or_inwards();
+                    let cnf_t = SkolemTerm::Or(Box::new(s), t2).push_or_inwards();
                     SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
                 }
                 (s, t) => SkolemTerm::Or(Box::new(s), Box::new(t)),
-            }
+            },
+            _ => self,
         }
-        _ => f,
+    }
+
+    // Distribute Or inwards over And naively:
+    //      Or(s, Or(t, And(v, And(u, w))))
+    //   Should result in the following steps
+    // ->   Or(s, And(Or(t,v), Or(t, And(u,w))))
+    // ->   Or(s, And(Or(t,v), And(Or(t,u), Or(t,w))))
+    // ->   And(Or(s, Or(t,v)), Or(s, And(Or(t,u), Or(t,w))))
+    // ->   And(Or(s, Or(t,v)), And(Or(s, Or(t,u)), Or(s, Or(t,w))))
+    fn cnf(self) -> SkolemTerm {
+        match self {
+            SkolemTerm::And(s, t) => SkolemTerm::And(Box::new(s.cnf()), Box::new(t.cnf())),
+            SkolemTerm::Or(s, t) => {
+                let cnf_s = s.cnf();
+                let cnf_t = t.cnf();
+                match (cnf_s, cnf_t) {
+                    (SkolemTerm::And(s1, s2), t) => {
+                        let cnf_s = SkolemTerm::Or(s1, Box::new(t.clone())).push_or_inwards();
+                        let cnf_t = SkolemTerm::Or(s2, Box::new(t)).push_or_inwards();
+                        SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
+                    }
+                    (s, SkolemTerm::And(t1, t2)) => {
+                        let cnf_s = SkolemTerm::Or(Box::new(s.clone()), t1).push_or_inwards();
+                        let cnf_t = SkolemTerm::Or(Box::new(s), t2).push_or_inwards();
+                        SkolemTerm::And(Box::new(cnf_s), Box::new(cnf_t))
+                    }
+                    (s, t) => SkolemTerm::Or(Box::new(s), Box::new(t)),
+                }
+            }
+            _ => self,
+        }
     }
 }
 
@@ -550,7 +552,7 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
 
 // Transform the TPTPProblem into the problem in CNF for our saturation prover:
 // - we conjunct the assumption formulas
-// - we conject those with the negated goals
+// - we conjunct those with the disjunction of the negated goals
 // - we transform it into CNF
 // - we show False
 pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
@@ -561,10 +563,9 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
             .into_iter()
             .map(FOLTerm::negate)
             .collect();
-        log::info!("Neg. Goals: {:?}", neg_goals);
         acc = FOLTerm::from(neg_goals[0].clone());
         for t in neg_goals[1..].into_iter() {
-            acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
+            acc = FOLTerm::Or(Box::new(acc), Box::new(t.clone()));
         }
         for t in problem.axioms {
             acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
@@ -578,84 +579,84 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
     }
     let skolem_term = SkolemTerm::from(acc);
     log::info!("SkolemTerm: {}", skolem_term);
-    let cnf_term = cnf(skolem_term.clone());
-    log::info!("CNF Term: {}", skolem_term);
+    let cnf_term = skolem_term.cnf();
+    log::info!("CNF Term: {}", cnf_term);
     cnf_term
 }
 
-fn add_term_to_termbank(
-    t: Term,
-    term_bank: &mut TermBank,
-    var_map: &mut HashMap<Name, VariableIdentifier>,
-    func_map: &mut HashMap<Name, FunctionIdentifier>,
-) -> term_bank::Term {
+pub struct TermBankConversionState<'a> {
+    pub term_bank: &'a mut TermBank,
+    pub var_map: HashMap<Name, VariableIdentifier>,
+    pub func_map: HashMap<Name, FunctionIdentifier>,
+}
+
+impl TermBankConversionState<'_> {
+    fn get_var_id(&mut self, name: Name) -> VariableIdentifier {
+        if let Some(var) = self.var_map.get(&name) {
+            *var
+        } else {
+            let var = self.term_bank.add_variable(VariableInformation {
+                name: name.to_string(),
+            });
+            self.var_map.insert(name, var);
+            var
+        }
+    }
+
+    // TODO: if the problem contains two identically named functions with different arities
+    // the hashmap doesn't work correctly, but there is an assertion which does track this.
+    fn get_func_id(&mut self, name: Name, arity: usize) -> FunctionIdentifier {
+        if let Some(func) = self.func_map.get(&name) {
+            func.clone()
+        } else {
+            let func = self.term_bank.add_function(FunctionInformation {
+                name: name.to_string(),
+                arity: arity,
+            });
+            self.func_map.insert(name, func);
+            func
+        }
+    }
+}
+
+fn add_term_to_termbank(t: Term, state: &mut TermBankConversionState) -> term_bank::Term {
     match t {
         Term::Variable(n) => {
-            if let Some(var) = var_map.get(&n) {
-                term_bank.mk_variable(*var)
-            } else {
-                let var = term_bank.add_variable(VariableInformation {
-                    name: n.to_string(),
-                });
-                var_map.insert(n, var);
-                term_bank.mk_variable(var)
-            }
+            let var_id = state.get_var_id(n);
+            state.term_bank.mk_variable(var_id)
         }
         Term::Function(n, ts) => {
-            if let Some(func) = func_map.get(&n) {
-                let func = func.clone();
-                let args = ts
-                    .into_iter()
-                    .map(|t| add_term_to_termbank(t, term_bank, var_map, func_map))
-                    .collect();
-                term_bank.mk_app(func, args)
-            } else {
-                let func = term_bank.add_function(FunctionInformation {
-                    name: n.to_string(),
-                    arity: ts.len(),
-                });
-                func_map.insert(n, func);
-                let args = ts
-                    .into_iter()
-                    .map(|t| add_term_to_termbank(t, term_bank, var_map, func_map))
-                    .collect();
-                term_bank.mk_app(func, args)
-            }
+            let func_id = state.get_func_id(n, ts.len());
+            let args = ts
+                .into_iter()
+                .map(|t| add_term_to_termbank(t, state))
+                .collect();
+            state.term_bank.mk_app(func_id, args)
         }
     }
 }
 
-fn add_literal_to_termbank(
-    l: Literal,
-    term_bank: &mut TermBank,
-    var_map: &mut HashMap<Name, VariableIdentifier>,
-    func_map: &mut HashMap<Name, FunctionIdentifier>,
-) -> clause::Literal {
+fn add_literal_to_termbank(l: Literal, state: &mut TermBankConversionState) -> clause::Literal {
     match l {
         Literal::Eq(t1, t2) => {
-            let hash_cons_t1 = add_term_to_termbank(t1, term_bank, var_map, func_map);
-            let hash_cons_t2 = add_term_to_termbank(t2, term_bank, var_map, func_map);
-            clause::Literal::new(hash_cons_t1.clone(), hash_cons_t2.clone(), Polarity::Eq)
+            let hash_cons_t1 = add_term_to_termbank(t1, state);
+            let hash_cons_t2 = add_term_to_termbank(t2, state);
+            clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Eq)
         }
         Literal::NotEq(t1, t2) => {
-            let hash_cons_t1 = add_term_to_termbank(t1, term_bank, var_map, func_map);
-            let hash_cons_t2 = add_term_to_termbank(t2, term_bank, var_map, func_map);
-            clause::Literal::new(hash_cons_t1.clone(), hash_cons_t2.clone(), Polarity::Ne)
+            let hash_cons_t1 = add_term_to_termbank(t1, state);
+            let hash_cons_t2 = add_term_to_termbank(t2, state);
+            clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Ne)
         }
     }
 }
 
-fn to_literals(
-    t: SkolemTerm,
-    term_bank: &mut TermBank,
-    var_map: &mut HashMap<Name, VariableIdentifier>,
-    func_map: &mut HashMap<Name, FunctionIdentifier>,
-) -> Vec<clause::Literal> {
+fn to_literals(t: SkolemTerm, state: &mut TermBankConversionState) -> Vec<clause::Literal> {
     match t {
-        SkolemTerm::Literal(l) => vec![add_literal_to_termbank(l, term_bank, var_map, func_map)],
+        SkolemTerm::Literal(l) => vec![add_literal_to_termbank(l, state)],
         SkolemTerm::Or(s, t) => {
-            let mut literals_s = to_literals(*s, term_bank, var_map, func_map);
-            let mut literals_t = to_literals(*t, term_bank, var_map, func_map);
+            let mut literals_s = to_literals(*s, state);
+            let mut literals_t = to_literals(*t, state);
             literals_s.append(&mut literals_t);
             literals_s
         }
@@ -665,25 +666,19 @@ fn to_literals(
     }
 }
 
-pub fn to_clauses(
-    t: SkolemTerm,
-    term_bank: &mut TermBank,
-    var_map: &mut HashMap<Name, VariableIdentifier>,
-    func_map: &mut HashMap<Name, FunctionIdentifier>,
-) -> Vec<Clause> {
+// TODO: change the approach of this function to accumulator-based
+pub fn to_clauses(t: SkolemTerm, state: &mut TermBankConversionState) -> Vec<Clause> {
     match t {
-        SkolemTerm::Literal(l) => vec![Clause::new(vec![add_literal_to_termbank(
-            l, term_bank, var_map, func_map,
-        )])],
+        SkolemTerm::Literal(l) => vec![Clause::new(vec![add_literal_to_termbank(l, state)])],
         SkolemTerm::And(s, t) => {
-            let mut clause_s = to_clauses(*s, term_bank, var_map, func_map);
-            let mut clause_t = to_clauses(*t, term_bank, var_map, func_map);
+            let mut clause_s = to_clauses(*s, state);
+            let mut clause_t = to_clauses(*t, state);
             clause_s.append(&mut clause_t);
             clause_s
         }
         SkolemTerm::Or(s, t) => {
-            let mut literals_s = to_literals(*s, term_bank, var_map, func_map);
-            let mut literals_t = to_literals(*t, term_bank, var_map, func_map);
+            let mut literals_s = to_literals(*s, state);
+            let mut literals_t = to_literals(*t, state);
             literals_s.append(&mut literals_t);
             vec![Clause::new(literals_s)]
         }
