@@ -14,6 +14,7 @@ use crate::{
         ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position, TermPosition,
     },
     pretty_print::pretty_print,
+    simplifier::{cheap_simplify, simplify},
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
     trivial::is_trivial,
@@ -473,6 +474,7 @@ impl<'a> SuperpositionState<'a> {
     fn run(mut self) -> SuperpositionResult {
         while let Some(mut g) = self.passive.pop() {
             g = g.fresh_variable_clone(&mut self.term_bank);
+            g = simplify(g);
             if g.is_empty() {
                 return SuperpositionResult::ProofFound;
             }
@@ -480,6 +482,7 @@ impl<'a> SuperpositionState<'a> {
             let new_clauses = self.generate(g);
             new_clauses
                 .into_iter()
+                .map(|c| cheap_simplify(c))
                 .filter(|c| !is_trivial(c))
                 .for_each(|clause| self.insert_passive(clause));
 

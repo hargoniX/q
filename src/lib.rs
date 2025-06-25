@@ -11,6 +11,7 @@ pub mod kbo;
 pub mod multi_set;
 pub mod position;
 pub mod pretty_print;
+pub mod simplifier;
 pub mod subst;
 pub mod superposition;
 pub mod term_bank;

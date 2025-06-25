@@ -38,44 +38,37 @@ impl Polarity {
 }
 
 /// A literal represents either an equality or a disequality between two [Term].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Literal {
     lhs: Term,
     rhs: Term,
     kind: Polarity,
 }
 
-impl PartialEq for Literal {
-    /// Literal equality is defined up to symmetry.
-    fn eq(&self, other: &Self) -> bool {
-        self.get_pol() == other.get_pol() && self.eq_side_symm(other)
-    }
-}
-
-impl Eq for Literal {}
-
 impl Literal {
-    /// Create a new literal with `lhs = rhs` or `lhs != rhs` depending on `kind`.
+    /// Create a new literal with `lhs = rhs` or `lhs != rhs` depending on `kind`, note that the
+    /// literal will internally choose some canonical sorting of `lhs` and `rhs` such that
+    /// `get_lhs()` can actually return what was submitted as `lhs` here.
     pub fn new(lhs: Term, rhs: Term, kind: Polarity) -> Self {
+        // As terms are globally shared this should ensure that literals generated with the same
+        // terms (regardless of symmetry) end up being represented as the same datastructure
+        // underneath.
+        let (lhs, rhs) = if (lhs.as_ptr() as usize) < (rhs.as_ptr() as usize) {
+            (lhs, rhs)
+        } else {
+            (rhs, lhs)
+        };
         Self { lhs, rhs, kind }
     }
 
     /// Create a new literal with `lhs = rhs`.
     pub fn mk_eq(lhs: Term, rhs: Term) -> Self {
-        Self {
-            lhs,
-            rhs,
-            kind: Polarity::Eq,
-        }
+        Self::new(lhs, rhs, Polarity::Eq)
     }
 
     /// Create a new literal with `lhs != rhs`.
     pub fn mk_ne(lhs: Term, rhs: Term) -> Self {
-        Self {
-            lhs,
-            rhs,
-            kind: Polarity::Ne,
-        }
+        Self::new(lhs, rhs, Polarity::Ne)
     }
 
     /// Get the left hand side of the literal.
@@ -93,17 +86,11 @@ impl Literal {
         self.kind
     }
 
-    /// Check if self and other have the same terms up to symmetry but dont't check polarity
-    fn eq_side_symm(&self, other: &Self) -> bool {
-        // TODO: as terms are shared uniquely we could order literals by pointer as usize and thus
-        // get canonical representations of literals up to symmetry.
-        (self.get_lhs() == other.get_lhs() && self.get_rhs() == other.get_rhs())
-            || (self.get_lhs() == other.get_rhs() && self.get_rhs() == other.get_lhs())
-    }
-
     /// Check up to symmetry whether `other` is the negation of `self`.
     pub fn is_negation_of(&self, other: &Self) -> bool {
-        self.get_pol() == other.get_pol().negate() && self.eq_side_symm(other)
+        self.get_pol() == other.get_pol().negate()
+            && self.get_lhs() == other.get_lhs()
+            && self.get_rhs() == other.get_rhs()
     }
 
     /// Check whether the literal is a disequality.
