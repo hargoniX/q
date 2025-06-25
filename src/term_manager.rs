@@ -165,6 +165,12 @@ impl<T: Eq + Hash> Clone for Table<T> {
     }
 }
 
+impl<T: Eq + Hash> HashConsed<T> {
+    pub fn as_ptr(&self) -> *const T {
+        Rc::as_ptr(&self.inner.term)
+    }
+}
+
 impl<T: Eq + Hash> Hash for HashConsed<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.inner.term.hash(state);

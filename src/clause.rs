@@ -246,6 +246,14 @@ impl Clause {
         })
     }
 
+    /// Obtain an iterator over the literals after `id` in the clause.
+    pub fn iter_after(&self, id: LiteralId) -> impl Iterator<Item = (LiteralId, &Literal)> {
+        ((id.0 + 1)..self.len()).map(|idx| {
+            let id = LiteralId(idx);
+            (id, self.get_literal(id))
+        })
+    }
+
     /// Clone the clause and substitute all of its variables with fresh ones to obtain a clause
     /// with unique variables. For ground clauses this is a very cheap `O(clause.len())`, otherwise
     /// worst case `O(clause.len() * max(dag_size(lit_i)))`.
