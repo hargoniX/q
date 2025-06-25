@@ -4,8 +4,6 @@ use env_logger::Env;
 use qlib::pretty_print::pretty_print;
 use qlib::superposition::{ResourceLimitConfig, search_proof};
 use qlib::term_bank::TermBank;
-use qlib::tptp_parser::{TermBankConversionState, to_clauses};
-use std::collections::HashMap;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -57,14 +55,7 @@ fn main() {
     log::info!("Problem Statement: {}", problem_cnf);
 
     let mut term_bank = TermBank::new();
-    let clauses = to_clauses(
-        problem_cnf,
-        &mut TermBankConversionState {
-            term_bank: &mut term_bank,
-            var_map: HashMap::new(),
-            func_map: HashMap::new(),
-        },
-    );
+    let clauses = problem_cnf.to_clauses(&mut term_bank);
     for clause in &clauses {
         log::info!("Clause: {}", pretty_print(clause, &term_bank));
     }
