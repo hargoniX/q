@@ -37,9 +37,10 @@ impl TermPosition {
         if idx == self.path.len() {
             new_term
         } else {
+            let arg_idx = self.path[idx];
             let mut args = term.function_args().unwrap().clone();
-            let new = self.replace_term_at_aux(&args[idx], new_term, term_bank, idx + 1);
-            args[idx] = new;
+            let new = self.replace_term_at_aux(&args[arg_idx], new_term, term_bank, idx + 1);
+            args[arg_idx] = new;
             term_bank.mk_app(term.function_id().unwrap(), args)
         }
     }
