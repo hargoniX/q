@@ -5,6 +5,9 @@ import tomllib
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
+from multiprocessing import Pool
+
+NUM_THREADS = 16
 
 
 class Result(Enum):
@@ -78,6 +81,41 @@ def test(problem: Problem, duration: Optional[int]) -> Problem:
     )
 
 
+@dataclass
+class ResultLists:
+    matching_problems: List[Problem]
+    non_matching_problems: List[Problem]
+    timeout_problems: List[Problem]
+    unknown_problems: List[Problem]
+
+
+def go(
+    problems: List[Problem],
+    duration: int,
+    results: ResultLists,
+) -> ResultLists:
+    for problem in problems:
+        print(f"Running {problem.filename}")
+        problem = test(problem, duration)
+        if problem.result is problem.expected_result:
+            results.matching_problems.append(problem)
+            print(
+                f"{problem.filename} PASS: expected {problem.expected_result} got {problem.result}"
+            )
+        else:
+            print(
+                f"{problem.filename} FAIL: expected {problem.expected_result} got {problem.result}"
+            )
+            if problem.result is Result.TIMEOUT:
+                results.timeout_problems.append(problem)
+            elif problem.result is Result.UNKNOWN:
+                results.unknown_problems.append(problem)
+            else:
+                results.non_matching_problems.append(problem)
+                print(f"Non-matching!")
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=f"Run some measurements defined by a config file"
@@ -104,28 +142,35 @@ def main():
     os.chdir(root_dir)
     build()
     problems = get_problems(args.file)
+    print(f"Start Testsuite '{args.file}'")
+    print(80 * "-")
+
+    pool = Pool()
+    thread_list = []
+    for i in range(NUM_THREADS):
+        thread_list.append(
+            pool.apply_async(
+                go,
+                [
+                    problems[i::NUM_THREADS],
+                    args.duration,
+                    ResultLists([], [], [], []),
+                ],
+            )
+        )
+
     matching_problems = []
     non_matching_problems = []
     timeout_problems = []
     unknown_problems = []
-    print(f"Start Testsuite '{args.file}'")
+    for thread in thread_list:
+        results: ResultLists = thread.get(timeout=args.duration * 1500)
+        matching_problems.extend(results.matching_problems)
+        non_matching_problems.extend(results.non_matching_problems)
+        timeout_problems.extend(results.timeout_problems)
+        unknown_problems.extend(results.unknown_problems)
+
     print(80 * "-")
-    for problem in problems:
-        print(f"Running {problem.filename}")
-        problem = test(problem, args.duration)
-        if problem.result is problem.expected_result:
-            matching_problems.append(problem)
-            print(f"PASS: expected {problem.expected_result} got {problem.result}")
-        else:
-            print(f"FAIL: expected {problem.expected_result} got {problem.result}")
-            if problem.result is Result.TIMEOUT:
-                timeout_problems.append(timeout_problems)
-            elif problem.result is Result.UNKNOWN:
-                unknown_problems.append(unknown_problems)
-            else:
-                non_matching_problems.append(problem)
-                print(f"Non-matching!")
-        print(80 * "-")
     print("There are:")
     print(f"- {len(matching_problems)} matching results")
     print(f"- {len(non_matching_problems)} non-matching results")
