@@ -283,7 +283,7 @@ impl TermBank {
             .map(|a| a.get_data().function_count)
             .sum::<u32>()
             + 1;
-        debug_assert_eq!(self.get_function_info(id).arity, args.len());
+        assert_eq!(self.get_function_info(id).arity, args.len());
         let data = TermData {
             hash,
             var_bloom_filter,
