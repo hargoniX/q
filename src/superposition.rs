@@ -452,7 +452,7 @@ impl<'a> SuperpositionState<'a> {
     fn resources_exhausted(&self) -> Option<UnknownReason> {
         if let Some(time_limit) = self.resource_limits.time_limit {
             let now = Instant::now();
-            if now < time_limit {
+            if now > time_limit {
                 return Some(UnknownReason::Timeout);
             }
         }
