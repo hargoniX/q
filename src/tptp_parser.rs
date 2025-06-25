@@ -200,7 +200,7 @@ impl FOLTerm {
             FOLTerm::And(t1, t2) => FOLTerm::Or(Box::new(t1.negate()), Box::new(t2.negate())),
             FOLTerm::Or(t1, t2) => FOLTerm::And(Box::new(t1.negate()), Box::new(t2.negate())),
             FOLTerm::Exist(n, t) => FOLTerm::Forall(n, Box::new(t.negate())),
-            FOLTerm::Forall(n, t) => FOLTerm::Exist(n, t),
+            FOLTerm::Forall(n, t) => FOLTerm::Exist(n, Box::new(t.negate())),
         }
     }
 
