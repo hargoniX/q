@@ -1,3 +1,4 @@
+Build release target:
 Start Testsuite 'benchmark/config.toml'
 --------------------------------------------------------------------------------
 Running problems/SYN000+1.p
@@ -13,7 +14,7 @@ Running problems/KRS063+1.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/MGT019+2.p
-PASS: expected Result.SAT got Result.SAT
+FAIL: expected Result.SAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb1.p
 PASS: expected Result.UNSAT got Result.UNSAT
@@ -40,7 +41,7 @@ Running problems/pelletier_problems/pb8.p
 PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb9.p
-FAIL: expected Result.UNSAT got Result.TIMEOUT
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb10.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -67,16 +68,13 @@ Running problems/pelletier_problems/pb17.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb18.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb19.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb20.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb21.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -85,12 +83,10 @@ Running problems/pelletier_problems/pb22.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb23.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb24.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb25.p
 PASS: expected Result.UNSAT got Result.UNSAT
@@ -99,24 +95,22 @@ Running problems/pelletier_problems/pb26.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb27.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb28.p
-FAIL: expected Result.SAT got Result.TIMEOUT
+PASS: expected Result.SAT got Result.SAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb29.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb30.p
-FAIL: expected Result.UNSAT got Result.TIMEOUT
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb31.p
 PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb32.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb33.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -125,22 +119,19 @@ Running problems/pelletier_problems/pb34.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb35.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb36.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb37.p
-FAIL: expected Result.UNSAT got Result.TIMEOUT
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb38.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb39.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb40.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -149,8 +140,7 @@ Running problems/pelletier_problems/pb41.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb42.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb43.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -159,12 +149,10 @@ Running problems/pelletier_problems/pb44.p
 PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb45.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb46.p
-FAIL: expected Result.UNSAT got Result.SAT
-Non-matching!
+FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb47.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -200,7 +188,7 @@ Running problems/pelletier_problems/pb57.p
 PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb58.p
-FAIL: expected Result.UNSAT got Result.TIMEOUT
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb59.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -209,7 +197,7 @@ Running problems/pelletier_problems/pb60.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb61.p
-FAIL: expected Result.UNSAT got Result.TIMEOUT
+PASS: expected Result.UNSAT got Result.UNSAT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb62.p
 FAIL: expected Result.SAT got Result.TIMEOUT
@@ -221,7 +209,7 @@ Running problems/pelletier_problems/pb64.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb65.p
-PASS: expected Result.UNSAT got Result.UNSAT
+FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 Running problems/pelletier_problems/pb66.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
@@ -236,7 +224,7 @@ Running problems/pelletier_problems/equivalence.p
 FAIL: expected Result.UNSAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 There are:
-- 19 matching results
-- 13 non-matching results
-- 42 timeout results
+- 31 matching results
+- 0 non-matching results
+- 43 timeout results
 - 0 'unknown' results
