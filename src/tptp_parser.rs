@@ -114,8 +114,8 @@ impl fmt::Display for FOLTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             FOLTerm::Literal(l) => write!(f, "{}", l),
-            FOLTerm::And(t1, t2) => write!(f, "({}&{})", t1, t2),
-            FOLTerm::Or(t1, t2) => write!(f, "({}|{})", t1, t2),
+            FOLTerm::And(t1, t2) => write!(f, "({} & {})", t1, t2),
+            FOLTerm::Or(t1, t2) => write!(f, "({} | {})", t1, t2),
             FOLTerm::Exist(vars, ts) => {
                 write!(
                     f,
@@ -406,8 +406,8 @@ impl fmt::Display for SkolemTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             SkolemTerm::Literal(l) => write!(f, "{}", l),
-            SkolemTerm::And(t1, t2) => write!(f, "({}&{})", t1, t2),
-            SkolemTerm::Or(t1, t2) => write!(f, "({}|{})", t1, t2),
+            SkolemTerm::And(t1, t2) => write!(f, "({} & {})", t1, t2),
+            SkolemTerm::Or(t1, t2) => write!(f, "({} | {})", t1, t2),
         }
     }
 }
