@@ -1,18 +1,21 @@
 use chrono::Local;
 use clap::Parser;
 use env_logger::Env;
-use qlib::superposition::search_proof;
+use qlib::superposition::{ResourceLimitConfig, search_proof};
 use qlib::term_bank::TermBank;
 use qlib::tptp_parser::to_clauses;
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::PathBuf;
+use std::time::Duration;
 
 /// Prove some TPTP Problem
 #[derive(Parser)]
 struct Cli {
     /// Path to a tptp problem file
     file: PathBuf,
+    /// Duration limit
+    duration: Option<u64>,
 }
 
 fn main() {
@@ -30,7 +33,17 @@ fn main() {
             )
         })
         .init();
+    let resource_limit;
+    if let Some(duration) = args.duration {
+        resource_limit = ResourceLimitConfig {
+            duration: Some(Duration::from_secs(duration)),
+            memory_limit: None,
+        };
+    } else {
+        resource_limit = Default::default();
+    }
     log::info!("Path to TPTP problem: '{:?}'", args.file);
+
     let tptp_problem = qlib::tptp_parser::parse_file(args.file);
     for assumption in &tptp_problem.axioms {
         log::info!("Axioms: '{}'", assumption);
@@ -49,6 +62,6 @@ fn main() {
         &mut HashMap::new(),
         &mut HashMap::new(),
     );
-    let result = search_proof(clauses, &mut term_bank, &Default::default());
+    let result = search_proof(clauses, &mut term_bank, &resource_limit);
     log::warn!("Result superposition: '{:?}'", result);
 }
