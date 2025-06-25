@@ -1,6 +1,10 @@
 use chrono::Local;
 use clap::Parser;
 use env_logger::Env;
+use qlib::superposition::search_proof;
+use qlib::term_bank::TermBank;
+use qlib::tptp_parser::to_clauses;
+use std::collections::HashMap;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -34,6 +38,17 @@ fn main() {
     for goal in &tptp_problem.conjectures {
         log::info!("Conjectures: '{}'", goal);
     }
+    // This should be hidden away within `fn solve` or sth
     let problem_cnf = qlib::tptp_parser::transform_problem(tptp_problem);
-    log::info!("Problem Statement: '{}'", problem_cnf);
+    log::warn!("Problem Statement: '{}'", problem_cnf);
+
+    let mut term_bank = TermBank::new();
+    let clauses = to_clauses(
+        problem_cnf,
+        &mut term_bank,
+        &mut HashMap::new(),
+        &mut HashMap::new(),
+    );
+    let result = search_proof(clauses, &mut term_bank, &Default::default());
+    log::warn!("Result superposition: '{:?}'", result);
 }

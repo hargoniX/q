@@ -8,6 +8,12 @@ use tptp::common::NonassocConnective;
 use tptp::fof;
 use tptp::top::{AnnotatedFormula, FormulaSelection, TPTPInput};
 
+use crate::clause::{self, Clause, Polarity};
+use crate::term_bank::{
+    self, FunctionIdentifier, FunctionInformation, TermBank, VariableIdentifier,
+    VariableInformation,
+};
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Name {
     Builtin(String),
@@ -564,7 +570,7 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
             acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
         }
     } else {
-        log::warn!("No Goals!");
+        log::warn!("The TPTP Problem contains no goals!");
         acc = FOLTerm::from(problem.axioms[0].clone());
         for t in problem.axioms[1..].into_iter() {
             acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
@@ -575,6 +581,113 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
     let cnf_term = cnf(skolem_term.clone());
     log::info!("CNF Term: {}", skolem_term);
     cnf_term
+}
+
+fn add_term_to_termbank(
+    t: Term,
+    term_bank: &mut TermBank,
+    var_map: &mut HashMap<Name, VariableIdentifier>,
+    func_map: &mut HashMap<Name, FunctionIdentifier>,
+) -> term_bank::Term {
+    match t {
+        Term::Variable(n) => {
+            if let Some(var) = var_map.get(&n) {
+                term_bank.mk_variable(*var)
+            } else {
+                let var = term_bank.add_variable(VariableInformation {
+                    name: n.to_string(),
+                });
+                var_map.insert(n, var);
+                term_bank.mk_variable(var)
+            }
+        }
+        Term::Function(n, ts) => {
+            if let Some(func) = func_map.get(&n) {
+                let func = func.clone();
+                let args = ts
+                    .into_iter()
+                    .map(|t| add_term_to_termbank(t, term_bank, var_map, func_map))
+                    .collect();
+                term_bank.mk_app(func, args)
+            } else {
+                let func = term_bank.add_function(FunctionInformation {
+                    name: n.to_string(),
+                    arity: ts.len(),
+                });
+                func_map.insert(n, func);
+                let args = ts
+                    .into_iter()
+                    .map(|t| add_term_to_termbank(t, term_bank, var_map, func_map))
+                    .collect();
+                term_bank.mk_app(func, args)
+            }
+        }
+    }
+}
+
+fn add_literal_to_termbank(
+    l: Literal,
+    term_bank: &mut TermBank,
+    var_map: &mut HashMap<Name, VariableIdentifier>,
+    func_map: &mut HashMap<Name, FunctionIdentifier>,
+) -> clause::Literal {
+    match l {
+        Literal::Eq(t1, t2) => {
+            let hash_cons_t1 = add_term_to_termbank(t1, term_bank, var_map, func_map);
+            let hash_cons_t2 = add_term_to_termbank(t2, term_bank, var_map, func_map);
+            clause::Literal::new(hash_cons_t1.clone(), hash_cons_t2.clone(), Polarity::Eq)
+        }
+        Literal::NotEq(t1, t2) => {
+            let hash_cons_t1 = add_term_to_termbank(t1, term_bank, var_map, func_map);
+            let hash_cons_t2 = add_term_to_termbank(t2, term_bank, var_map, func_map);
+            clause::Literal::new(hash_cons_t1.clone(), hash_cons_t2.clone(), Polarity::Ne)
+        }
+    }
+}
+
+fn to_literals(
+    t: SkolemTerm,
+    term_bank: &mut TermBank,
+    var_map: &mut HashMap<Name, VariableIdentifier>,
+    func_map: &mut HashMap<Name, FunctionIdentifier>,
+) -> Vec<clause::Literal> {
+    match t {
+        SkolemTerm::Literal(l) => vec![add_literal_to_termbank(l, term_bank, var_map, func_map)],
+        SkolemTerm::Or(s, t) => {
+            let mut literals_s = to_literals(*s, term_bank, var_map, func_map);
+            let mut literals_t = to_literals(*t, term_bank, var_map, func_map);
+            literals_s.append(&mut literals_t);
+            literals_s
+        }
+        SkolemTerm::And(_, _) => {
+            panic!("There should never be an 'And' inwards of an 'Or' at this stage!")
+        }
+    }
+}
+
+pub fn to_clauses(
+    t: SkolemTerm,
+    term_bank: &mut TermBank,
+    var_map: &mut HashMap<Name, VariableIdentifier>,
+    func_map: &mut HashMap<Name, FunctionIdentifier>,
+) -> Vec<Clause> {
+    match t {
+        SkolemTerm::Literal(l) => vec![Clause::new(vec![add_literal_to_termbank(
+            l, term_bank, var_map, func_map,
+        )])],
+        SkolemTerm::And(s, t) => {
+            let mut clause_s = to_clauses(*s, term_bank, var_map, func_map);
+            let mut clause_t = to_clauses(*t, term_bank, var_map, func_map);
+            clause_s.append(&mut clause_t);
+            clause_s
+        }
+        SkolemTerm::Or(s, t) => {
+            let mut literals_s = to_literals(*s, term_bank, var_map, func_map);
+            let mut literals_t = to_literals(*t, term_bank, var_map, func_map);
+            literals_s.append(&mut literals_t);
+            vec![Clause::new(literals_s)]
+        }
+    }
 }
 
 // This function has to:
