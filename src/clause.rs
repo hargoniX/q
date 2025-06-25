@@ -38,12 +38,21 @@ impl Polarity {
 }
 
 /// A literal represents either an equality or a disequality between two [Term].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Literal {
     lhs: Term,
     rhs: Term,
     kind: Polarity,
 }
+
+impl PartialEq for Literal {
+    /// Literal equality is defined up to symmetry.
+    fn eq(&self, other: &Self) -> bool {
+        self.get_pol() == other.get_pol() && self.eq_side_symm(other)
+    }
+}
+
+impl Eq for Literal {}
 
 impl Literal {
     /// Create a new literal with `lhs = rhs` or `lhs != rhs` depending on `kind`.
@@ -82,6 +91,19 @@ impl Literal {
     /// Get the polarity of the literal.
     pub fn get_pol(&self) -> Polarity {
         self.kind
+    }
+
+    /// Check if self and other have the same terms up to symmetry but dont't check polarity
+    fn eq_side_symm(&self, other: &Self) -> bool {
+        // TODO: as terms are shared uniquely we could order literals by pointer as usize and thus
+        // get canonical representations of literals up to symmetry.
+        (self.get_lhs() == other.get_lhs() && self.get_rhs() == other.get_rhs())
+            || (self.get_lhs() == other.get_rhs() && self.get_rhs() == other.get_lhs())
+    }
+
+    /// Check up to symmetry whether `other` is the negation of `self`.
+    pub fn is_negation_of(&self, other: &Self) -> bool {
+        self.get_pol() == other.get_pol().negate() && self.eq_side_symm(other)
     }
 
     /// Check whether the literal is a disequality.

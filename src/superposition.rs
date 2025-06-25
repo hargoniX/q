@@ -16,6 +16,7 @@ use crate::{
     pretty_print::pretty_print,
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
+    trivial::is_trivial,
 };
 
 use memory_stats::memory_stats;
@@ -479,6 +480,7 @@ impl<'a> SuperpositionState<'a> {
             let new_clauses = self.generate(g);
             new_clauses
                 .into_iter()
+                .filter(|c| !is_trivial(c))
                 .for_each(|clause| self.insert_passive(clause));
 
             if let Some(reason) = self.resources_exhausted() {

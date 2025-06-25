@@ -167,10 +167,7 @@ fn multiset_gt(
 
 impl KboOrd for Literal {
     fn kbo(&self, other: &Self, term_bank: &TermBank) -> Option<Ordering> {
-        if self.get_pol() == other.get_pol()
-            && ((self.get_lhs() == other.get_lhs() && self.get_rhs() == other.get_rhs())
-                || (self.get_lhs() == other.get_rhs() && self.get_rhs() == other.get_lhs()))
-        {
+        if self == other {
             Some(Ordering::Equal)
         } else {
             let lhs_set = literal_to_multiset(self);

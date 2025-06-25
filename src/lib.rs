@@ -16,4 +16,5 @@ pub mod superposition;
 pub mod term_bank;
 pub mod term_manager;
 pub mod tptp_parser;
+pub mod trivial;
 pub mod unify;
