@@ -464,6 +464,15 @@ impl SkolemTerm {
             _ => self,
         }
     }
+
+    pub fn to_clauses(self, term_bank: &mut TermBank) -> Vec<Clause> {
+        let mut state = TermBankConversionState {
+            term_bank: term_bank,
+            var_map: HashMap::new(),
+            func_map: HashMap::new(),
+        };
+        state.to_clauses_aux(self)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -617,70 +626,70 @@ impl TermBankConversionState<'_> {
             func
         }
     }
-}
 
-fn add_term_to_termbank(t: Term, state: &mut TermBankConversionState) -> term_bank::Term {
-    match t {
-        Term::Variable(n) => {
-            let var_id = state.get_var_id(n);
-            state.term_bank.mk_variable(var_id)
-        }
-        Term::Function(n, ts) => {
-            let func_id = state.get_func_id(n, ts.len());
-            let args = ts
-                .into_iter()
-                .map(|t| add_term_to_termbank(t, state))
-                .collect();
-            state.term_bank.mk_app(func_id, args)
+    fn add_term_to_termbank(&mut self, t: Term) -> term_bank::Term {
+        match t {
+            Term::Variable(n) => {
+                let var_id = self.get_var_id(n);
+                self.term_bank.mk_variable(var_id)
+            }
+            Term::Function(n, ts) => {
+                let func_id = self.get_func_id(n, ts.len());
+                let args = ts
+                    .into_iter()
+                    .map(|t| self.add_term_to_termbank(t))
+                    .collect();
+                self.term_bank.mk_app(func_id, args)
+            }
         }
     }
-}
 
-fn add_literal_to_termbank(l: Literal, state: &mut TermBankConversionState) -> clause::Literal {
-    match l {
-        Literal::Eq(t1, t2) => {
-            let hash_cons_t1 = add_term_to_termbank(t1, state);
-            let hash_cons_t2 = add_term_to_termbank(t2, state);
-            clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Eq)
-        }
-        Literal::NotEq(t1, t2) => {
-            let hash_cons_t1 = add_term_to_termbank(t1, state);
-            let hash_cons_t2 = add_term_to_termbank(t2, state);
-            clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Ne)
+    fn add_literal_to_termbank(&mut self, l: Literal) -> clause::Literal {
+        match l {
+            Literal::Eq(t1, t2) => {
+                let hash_cons_t1 = self.add_term_to_termbank(t1);
+                let hash_cons_t2 = self.add_term_to_termbank(t2);
+                clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Eq)
+            }
+            Literal::NotEq(t1, t2) => {
+                let hash_cons_t1 = self.add_term_to_termbank(t1);
+                let hash_cons_t2 = self.add_term_to_termbank(t2);
+                clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Ne)
+            }
         }
     }
-}
 
-fn to_literals(t: SkolemTerm, state: &mut TermBankConversionState) -> Vec<clause::Literal> {
-    match t {
-        SkolemTerm::Literal(l) => vec![add_literal_to_termbank(l, state)],
-        SkolemTerm::Or(s, t) => {
-            let mut literals_s = to_literals(*s, state);
-            let mut literals_t = to_literals(*t, state);
-            literals_s.append(&mut literals_t);
-            literals_s
-        }
-        SkolemTerm::And(_, _) => {
-            panic!("There should never be an 'And' inwards of an 'Or' at this stage!")
+    fn to_literals(&mut self, t: SkolemTerm) -> Vec<clause::Literal> {
+        match t {
+            SkolemTerm::Literal(l) => vec![self.add_literal_to_termbank(l)],
+            SkolemTerm::Or(s, t) => {
+                let mut literals_s = self.to_literals(*s);
+                let mut literals_t = self.to_literals(*t);
+                literals_s.append(&mut literals_t);
+                literals_s
+            }
+            SkolemTerm::And(_, _) => {
+                panic!("There should never be an 'And' inwards of an 'Or' at this stage!")
+            }
         }
     }
-}
 
-// TODO: change the approach of this function to accumulator-based
-pub fn to_clauses(t: SkolemTerm, state: &mut TermBankConversionState) -> Vec<Clause> {
-    match t {
-        SkolemTerm::Literal(l) => vec![Clause::new(vec![add_literal_to_termbank(l, state)])],
-        SkolemTerm::And(s, t) => {
-            let mut clause_s = to_clauses(*s, state);
-            let mut clause_t = to_clauses(*t, state);
-            clause_s.append(&mut clause_t);
-            clause_s
-        }
-        SkolemTerm::Or(s, t) => {
-            let mut literals_s = to_literals(*s, state);
-            let mut literals_t = to_literals(*t, state);
-            literals_s.append(&mut literals_t);
-            vec![Clause::new(literals_s)]
+    // TODO: change the approach of this function to accumulator-based
+    pub fn to_clauses_aux(&mut self, t: SkolemTerm) -> Vec<Clause> {
+        match t {
+            SkolemTerm::Literal(l) => vec![Clause::new(vec![self.add_literal_to_termbank(l)])],
+            SkolemTerm::And(s, t) => {
+                let mut clause_s = self.to_clauses_aux(*s);
+                let mut clause_t = self.to_clauses_aux(*t);
+                clause_s.append(&mut clause_t);
+                clause_s
+            }
+            SkolemTerm::Or(s, t) => {
+                let mut literals_s = self.to_literals(*s);
+                let mut literals_t = self.to_literals(*t);
+                literals_s.append(&mut literals_t);
+                vec![Clause::new(literals_s)]
+            }
         }
     }
 }
