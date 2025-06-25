@@ -3,9 +3,11 @@
 //! in [LMU's ATP course](https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides14-efficient-saturation-procedures-outlook.pdf).
 //! The key exported data structure is [DiscriminationTree].
 
+use core::slice;
 use std::{
     collections::{HashMap, HashSet, hash_map::Entry},
     hash::Hash,
+    iter::Peekable,
     rc::Rc,
 };
 
@@ -151,6 +153,71 @@ impl<V> Trie<DiscrTreeKey, V> {
     }
 }
 
+pub struct UnificationCandidateIter<'a, V> {
+    frontier: Vec<(
+        Peekable<PersistentPreorderTermIterator>,
+        &'a Trie<DiscrTreeKey, V>,
+    )>,
+    found_node_iter: Option<slice::Iter<'a, V>>,
+}
+
+impl<'a, V> Iterator for UnificationCandidateIter<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If at the node we are currently stopped at something is still left, use it.
+        match &mut self.found_node_iter {
+            &mut Some(ref mut found_node_iter) => {
+                if let Some(next) = found_node_iter.next() {
+                    return Some(next);
+                } else {
+                    self.found_node_iter = None;
+                }
+            }
+            None => {}
+        }
+
+        // Start looking for a new node.
+        while let Some((mut query_pos, trie_pos)) = self.frontier.pop() {
+            match query_pos.peek() {
+                Some(DiscrTreeKey::Star) => {
+                    let subtries = trie_pos.skip_to_next_subterm();
+                    query_pos.next();
+                    subtries
+                        .iter()
+                        .for_each(|subtrie| self.frontier.push((query_pos.clone(), subtrie)));
+                }
+                Some(key @ DiscrTreeKey::App { .. }) => {
+                    if let Some(subtrie) = trie_pos.children.get(&key) {
+                        let mut next_query_pos = query_pos.clone();
+                        next_query_pos.next();
+                        self.frontier.push((next_query_pos, subtrie));
+                    }
+
+                    if let Some(subtrie) = trie_pos.children.get(&DiscrTreeKey::Star) {
+                        skip_to_next_subterm(&mut query_pos);
+                        self.frontier.push((query_pos, subtrie));
+                    }
+                }
+                None => {
+                    if !trie_pos.values.is_empty() {
+                        assert!(self.found_node_iter.is_none());
+                        let mut next_iter = trie_pos.values.iter();
+                        // We know this will be some, the remainder of this node will be drained on
+                        // future calls to our next.
+                        let next_elem = next_iter.next();
+                        self.found_node_iter = Some(next_iter);
+                        return next_elem;
+                    }
+                }
+            }
+        }
+
+        // We were unable to find a new node, finished
+        None
+    }
+}
+
 impl<V: Hash + Eq> DiscriminationTree<V> {
     /// Create an empty discrimination tree.
     pub fn new() -> Self {
@@ -231,43 +298,18 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
     /// Obtain the values associated with all potential unifications of `term` indexed in `self`,
     /// that is find all values for whose keys there might exist a substitution `subst` s.t.
     /// `subst(term) = subst(key)`.
-    pub fn get_unification_candidates(&self, term: &Term) -> HashSet<&V> {
+    pub fn get_unification_candidates(&self, term: &Term) -> UnificationCandidateIter<'_, V> {
         let iter = PersistentPreorderTermIterator::new(term).peekable();
-        let mut frontier = vec![(iter, &self.trie)];
-        let mut set = HashSet::new();
-        while let Some((mut query_pos, trie_pos)) = frontier.pop() {
-            match query_pos.peek() {
-                Some(DiscrTreeKey::Star) => {
-                    let subtries = trie_pos.skip_to_next_subterm();
-                    query_pos.next();
-                    subtries
-                        .iter()
-                        .for_each(|subtrie| frontier.push((query_pos.clone(), subtrie)));
-                }
-                Some(key @ DiscrTreeKey::App { .. }) => {
-                    if let Some(subtrie) = trie_pos.children.get(&key) {
-                        let mut next_query_pos = query_pos.clone();
-                        next_query_pos.next();
-                        frontier.push((next_query_pos, subtrie));
-                    }
-
-                    if let Some(subtrie) = trie_pos.children.get(&DiscrTreeKey::Star) {
-                        skip_to_next_subterm(&mut query_pos);
-                        frontier.push((query_pos, subtrie));
-                    }
-                }
-                None => trie_pos.values.iter().for_each(|val| {
-                    set.insert(val);
-                }),
-            }
+        UnificationCandidateIter {
+            frontier: vec![(iter, &self.trie)],
+            found_node_iter: None,
         }
-        set
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     use crate::term_bank::{FunctionInformation, Term, TermBank, VariableInformation};
 
@@ -630,7 +672,9 @@ mod test {
         ];
 
         for (query_term, expected_query_results) in tests.iter() {
-            let query_result = discr_tree.get_unification_candidates(query_term);
+            let query_result = discr_tree
+                .get_unification_candidates(query_term)
+                .collect::<HashSet<_>>();
             assert_eq!(query_result.len(), expected_query_results.len());
             for expected in expected_query_results.iter() {
                 assert!(query_result.contains(map.get(expected).unwrap()));
