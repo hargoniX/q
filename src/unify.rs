@@ -3,7 +3,7 @@
 //! [LMU's ATP course](https://www.tcs.ifi.lmu.de/lehre/ws-2024-25/atp/slides06-general-resolution.pdf).
 //! The key function is [Term::unify].
 
-use log::info;
+use log::debug;
 
 use crate::{
     pretty_print::pretty_print,
@@ -108,7 +108,7 @@ impl Term {
     /// If both `self` and `other` are ground this operation is `O(1)` otherwise potentially
     /// expensive.
     pub fn unify(&self, other: &Self, term_bank: &TermBank) -> Option<Substitution> {
-        info!(
+        debug!(
             "Unifying, {} with {}",
             pretty_print(self, term_bank),
             pretty_print(other, term_bank),
@@ -124,7 +124,7 @@ impl Term {
             let problem = UnificationProblem::new(self.clone(), other.clone());
             problem.run(term_bank)
         };
-        info!("Unification success? {}", res.is_some());
+        debug!("Unification success? {}", res.is_some());
         res
     }
 }
