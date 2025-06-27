@@ -220,6 +220,10 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
 impl<'a> SuperpositionState<'a> {
     fn insert_active(&mut self, clause: Clause) {
         let clause_id = clause.get_id();
+        info!(
+            "Inserting active: {}",
+            pretty_print(&clause, self.term_bank)
+        );
 
         // Insert all sub terms with their position into the term index for superposition
 
@@ -244,10 +248,6 @@ impl<'a> SuperpositionState<'a> {
             }
         }
 
-        info!(
-            "Inserting active: {}",
-            pretty_print(&clause, self.term_bank)
-        );
         self.active.insert(clause);
     }
 
@@ -470,6 +470,17 @@ impl<'a> SuperpositionState<'a> {
         None
     }
 
+    fn redundant(&self, g: &Clause) -> bool {
+        // TODO: indexing
+        for active_clause in self.active.iter() {
+            if active_clause.subsumes(g) {
+                info!("Subsumption: {} subsumes {}", pretty_print(active_clause, &self.term_bank), pretty_print(active_clause, &self.term_bank));
+                return true;
+            }
+        }
+        false
+    }
+
     // TODO: full given-clause loop
     fn run(mut self) -> SuperpositionResult {
         while let Some(mut g) = self.passive.pop() {
@@ -477,6 +488,9 @@ impl<'a> SuperpositionState<'a> {
             g = simplify(g);
             if g.is_empty() {
                 return SuperpositionResult::ProofFound;
+            }
+            if self.redundant(&g) {
+                continue;
             }
             self.insert_active(g.clone());
             let new_clauses = self.generate(g);

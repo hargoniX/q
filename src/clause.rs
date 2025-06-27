@@ -12,7 +12,6 @@ use std::{
 };
 
 use crate::{
-    multi_set::MultiSet,
     pretty_print::BankPrettyPrint,
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
@@ -183,7 +182,7 @@ fn next_clause_id() -> ClauseId {
 #[derive(Debug, Clone)]
 pub struct Clause {
     id: ClauseId,
-    literals: MultiSet<Literal>,
+    pub(crate) literals: Vec<Literal>,
 }
 
 impl Clause {
@@ -191,7 +190,7 @@ impl Clause {
     pub fn new(vec: Vec<Literal>) -> Self {
         Self {
             id: next_clause_id(),
-            literals: MultiSet::of_vec(vec),
+            literals: vec,
         }
     }
 
@@ -217,7 +216,7 @@ impl Clause {
 
     /// Obtain a literal from the clause by index.
     pub fn get_literal(&self, literal_id: LiteralId) -> &Literal {
-        self.literals.get(literal_id.0)
+        &self.literals[literal_id.0]
     }
 
     /// Obtain the unique identifier of this clause.
@@ -348,6 +347,10 @@ impl ClauseSet {
     /// Get clause by its unique identifier.
     pub fn get_by_id(&self, id: ClauseId) -> Option<&Clause> {
         self.map.get(&id)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item=&Clause> {
+        self.map.iter().map(|(_, clause)| clause)
     }
 }
 
