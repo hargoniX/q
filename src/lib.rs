@@ -8,6 +8,7 @@ pub mod clause;
 pub mod clause_queue;
 pub mod discr_tree;
 pub mod kbo;
+pub mod matching;
 pub mod multi_set;
 pub mod position;
 pub mod pretty_print;

@@ -353,7 +353,7 @@ impl<'a> SuperpositionState<'a> {
                 for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
                     let lit2_lhs_p = candidate_pos.term_at(&self.active);
                     // Condition 2: The term at the subposition must not be a variable
-                    if lit2_lhs_p.variable_id().is_some() {
+                    if lit2_lhs_p.is_variable() {
                         continue;
                     }
 
@@ -396,7 +396,7 @@ impl<'a> SuperpositionState<'a> {
             for (lit2_lhs, lit2_rhs) in lit2.symm_term_iter() {
                 // Iterate over all subterms to look for unifying partners in the active set
                 for (subterm, subterm_pos) in lit2_lhs.subterm_iter() {
-                    if subterm.variable_id().is_some() {
+                    if subterm.is_variable() {
                         continue;
                     }
 

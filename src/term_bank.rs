@@ -150,6 +150,22 @@ impl RawTerm {
     pub fn weight(&self) -> u32 {
         self.get_data().weight
     }
+
+    /// Return `true` iff the term is a variable
+    pub fn is_variable(&self) -> bool {
+        match self {
+            RawTerm::Var { .. } => true,
+            _ => false,
+        }
+    }
+
+    /// Return `true` iff the term is a function application (including constants)
+    pub fn is_app(&self) -> bool {
+        match self {
+            RawTerm::App { .. } => true,
+            _ => false,
+        }
+    }
 }
 
 impl HashConsed<RawTerm> {
