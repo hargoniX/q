@@ -297,7 +297,14 @@ impl TermBank {
 
     pub(crate) fn mk_replacement_variable(&mut self, old_id: VariableIdentifier) -> Term {
         let mut info = self.get_variable_info(old_id).clone();
-        info.name.push_str("_rep");
+        let size = self.variable_bank.len();
+        if info.name.ends_with("rep") {
+            let foo = info.name.rsplit_once("_").unwrap().0;
+            info.name = foo.to_owned() + &format!("_{}rep", size);
+        } else {
+            info.name.push_str(&format!("_{}rep", size));
+
+        }
         self.mk_fresh_variable(info)
     }
 
