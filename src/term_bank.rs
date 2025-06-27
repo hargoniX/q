@@ -219,6 +219,24 @@ impl TermBank {
         }
     }
 
+    pub fn assert_names_unique(&self) {
+        for my_idx in 0..self.variable_bank.len() {
+            let my_info = &self.variable_bank[my_idx];
+            for other_idx in (my_idx + 1)..self.variable_bank.len() {
+                let other_info = &self.variable_bank[other_idx];
+                debug_assert_ne!(my_info.name, other_info.name);
+            }
+        }
+
+        for my_idx in 0..self.function_bank.len() {
+            let my_info = &self.function_bank[my_idx];
+            for other_idx in (my_idx + 1)..self.function_bank.len() {
+                let other_info = &self.function_bank[other_idx];
+                debug_assert_ne!(my_info.name, other_info.name);
+            }
+        }
+    }
+
     /// Create a fresh variable with some associated information.
     pub fn add_variable(&mut self, info: VariableInformation) -> VariableIdentifier {
         let size = self.variable_bank.len();
