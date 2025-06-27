@@ -56,6 +56,7 @@ fn main() {
 
     let mut term_bank = TermBank::new();
     let clauses = problem_cnf.to_clauses(&mut term_bank);
+    term_bank.assert_names_unique();
     for clause in &clauses {
         log::info!("Clause: {}", pretty_print(clause, &term_bank));
     }
