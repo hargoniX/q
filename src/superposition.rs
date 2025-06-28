@@ -118,7 +118,7 @@ fn maximality_check(
         clause,
         check_lit_id,
         subst,
-        |ord| ord != Some(Ordering::Greater),
+        |ord| ord != Some(Ordering::Less),
         term_bank,
     )
 }
@@ -140,7 +140,7 @@ fn strict_maximality_check(
         clause,
         check_lit_id,
         subst,
-        |ord| ord != Some(Ordering::Greater) && ord != Some(Ordering::Equal),
+        |ord| ord != Some(Ordering::Less) && ord != Some(Ordering::Equal),
         term_bank,
     )
 }
