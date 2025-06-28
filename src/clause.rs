@@ -349,7 +349,7 @@ impl ClauseSet {
         self.map.get(&id)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&Clause> {
+    pub fn iter(&self) -> impl Iterator<Item = &Clause> {
         self.map.iter().map(|(_, clause)| clause)
     }
 }

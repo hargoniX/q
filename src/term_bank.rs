@@ -303,7 +303,6 @@ impl TermBank {
             info.name = foo.to_owned() + &format!("_{}rep", size);
         } else {
             info.name.push_str(&format!("_{}rep", size));
-
         }
         self.mk_fresh_variable(info)
     }

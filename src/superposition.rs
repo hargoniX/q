@@ -474,7 +474,11 @@ impl<'a> SuperpositionState<'a> {
         // TODO: indexing
         for active_clause in self.active.iter() {
             if active_clause.subsumes(g) {
-                info!("Subsumption: {} subsumes {}", pretty_print(active_clause, &self.term_bank), pretty_print(active_clause, &self.term_bank));
+                info!(
+                    "Subsumption: {} subsumes {}",
+                    pretty_print(active_clause, &self.term_bank),
+                    pretty_print(active_clause, &self.term_bank)
+                );
                 return true;
             }
         }
