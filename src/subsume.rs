@@ -11,12 +11,23 @@ use crate::{
 };
 
 impl Clause {
-    fn subsumes_aux(subsuming: &[Literal], target: &[Literal], unused: Vec<bool>, subst: Substitution) -> bool {
+    fn subsumes_aux(
+        subsuming: &[Literal],
+        target: &[Literal],
+        unused: Vec<bool>,
+        subst: Substitution,
+    ) -> bool {
         if subsuming.len() == 0 {
             return true;
         }
 
-        for (t_idx, t_lit) in unused.iter().enumerate().filter(|(_, b)| **b).map(|(idx, _)| (idx, &target[idx])).filter(|(_, t_lit)| t_lit.get_pol() == subsuming[0].get_pol()) {
+        for (t_idx, t_lit) in unused
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| **b)
+            .map(|(idx, _)| (idx, &target[idx]))
+            .filter(|(_, t_lit)| t_lit.get_pol() == subsuming[0].get_pol())
+        {
             let t_lhs = t_lit.get_lhs();
             let t_rhs = t_lit.get_rhs();
             for (s_lhs, s_rhs) in subsuming[0].symm_term_iter() {
@@ -39,6 +50,11 @@ impl Clause {
         if self.len() > other.len() {
             return false;
         }
-        Clause::subsumes_aux(&self.literals, &other.literals, vec![true; other.len()], Substitution::new())
+        Clause::subsumes_aux(
+            &self.literals,
+            &other.literals,
+            vec![true; other.len()],
+            Substitution::new(),
+        )
     }
 }
