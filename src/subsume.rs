@@ -5,6 +5,8 @@
 //! are going to be integrated as well. The concrete implementation of the algorithms is based on
 //! the implementation in [Zipperposition](https://github.com/sneeuwballen/zipperposition/blob/050072e01d8539f9126993482b595e09f921f66a/src/prover_calculi/superposition.ml#L2737).
 
+use bitvec::{bitvec, vec::BitVec};
+
 use crate::{
     clause::{Clause, Literal},
     subst::Substitution,
@@ -14,7 +16,7 @@ impl Clause {
     fn subsumes_aux(
         subsuming: &[Literal],
         target: &[Literal],
-        unused: Vec<bool>,
+        unused: BitVec,
         subst: Substitution,
     ) -> bool {
         if subsuming.len() == 0 {
@@ -35,7 +37,7 @@ impl Clause {
                 if let Some(subst) = s_lhs.matching_partial(&t_lhs, Some(subst)) {
                     if let Some(subst) = s_rhs.matching_partial(&t_rhs, Some(subst)) {
                         let mut unused = unused.clone();
-                        unused[t_idx] = false;
+                        unused.set(t_idx, false);
                         if Clause::subsumes_aux(&subsuming[1..], target, unused, subst) {
                             return true;
                         }
@@ -53,7 +55,7 @@ impl Clause {
         Clause::subsumes_aux(
             &self.literals,
             &other.literals,
-            vec![true; other.len()],
+            bitvec![1; other.len()],
             Substitution::new(),
         )
     }
