@@ -52,6 +52,18 @@ impl Clause {
         if self.len() > other.len() {
             return false;
         }
+
+        let mut subsuming_lits = self.literals.clone();
+
+        // Inspired by Zipperposition which is in turn inspired by "Towards Efficient Subsumption"
+        subsuming_lits.sort_by(|lhs, rhs| {
+            // ground literals are bigger
+            lhs.is_ground().cmp(&rhs.is_ground()).then_with(|| {
+                // heavy literals are smaller
+                lhs.weight().cmp(&rhs.weight()).reverse()
+            })
+        });
+
         Clause::subsumes_aux(
             &self.literals,
             &other.literals,

@@ -120,6 +120,10 @@ impl Literal {
     pub fn symm_term_iter(&self) -> SymmLitIterator<'_> {
         SymmLitIterator { lit: self, idx: 0 }
     }
+
+    pub fn is_ground(&self) -> bool {
+        self.lhs.is_ground() && self.rhs.is_ground()
+    }
 }
 
 impl Substitutable for Literal {
