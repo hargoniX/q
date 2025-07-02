@@ -124,6 +124,11 @@ impl Literal {
     pub fn is_ground(&self) -> bool {
         self.lhs.is_ground() && self.rhs.is_ground()
     }
+
+    /// `O(1)` computation for how many function symbols (including constants) occur in the term.
+    pub fn function_symbol_count(&self) -> u32 {
+        self.get_lhs().function_symbol_count() + self.get_rhs().function_symbol_count()
+    }
 }
 
 impl Substitutable for Literal {

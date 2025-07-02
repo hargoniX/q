@@ -122,6 +122,11 @@ impl RawTerm {
         self.get_data().var_bloom_filter == 0
     }
 
+    /// `O(1)` computation for how many function symbols (including constants) occur in the term.
+    pub fn function_symbol_count(&self) -> u32 {
+        self.get_data().function_count
+    }
+
     /// Return `Some(x)` if the term is a variable, otherwise `None`.
     pub fn variable_id(&self) -> Option<VariableIdentifier> {
         match self {

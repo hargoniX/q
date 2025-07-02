@@ -7,6 +7,7 @@
 pub mod clause;
 pub mod clause_queue;
 pub mod discr_tree;
+pub mod feature_vector;
 pub mod kbo;
 pub mod matching;
 pub mod persistent_vec_iter;
