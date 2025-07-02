@@ -4,25 +4,16 @@
 //! The key exported data structure is [DiscriminationTree].
 
 use core::slice;
-use std::{
-    collections::{HashMap, HashSet, hash_map::Entry},
-    hash::Hash,
-    iter::Peekable,
-    rc::Rc,
+use std::{hash::Hash, iter::Peekable};
+
+use crate::{
+    persistent_vec_iter::PersistentVecIterator,
+    term_bank::{FunctionIdentifier, RawTerm, Term},
+    trie::Trie,
 };
 
-use crate::term_bank::{FunctionIdentifier, RawTerm, Term};
-
-/// Implementation of a [trie](https://en.wikipedia.org/wiki/Trie) with `C` being the characters
-/// from its alphabet and `V` the values in the nodes.
-#[derive(Debug)]
-struct Trie<C, V> {
-    values: Vec<V>,
-    children: HashMap<C, Box<Trie<C, V>>>,
-}
-
 /// The alphabet of a discrimination tree trie.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 enum DiscrTreeKey {
     /// Stars for representing variables.
     Star,
@@ -34,49 +25,16 @@ enum DiscrTreeKey {
     },
 }
 
-#[derive(Debug, Clone)]
-struct PersistentPreorderTermIterator {
-    flatterm: Rc<Vec<DiscrTreeKey>>,
-    pos: usize,
-}
-
 /// A non perfect discrimination tree with `V` as the values associated with the indexed terms.
 #[derive(Debug)]
 pub struct DiscriminationTree<V> {
     trie: Trie<DiscrTreeKey, V>,
 }
 
-impl<C: Eq + Hash, V> Trie<C, V> {
-    /// Create a new empty try.
-    fn new() -> Self {
-        Self {
-            values: Vec::new(),
-            children: HashMap::new(),
-        }
-    }
-
-    /// Insert `value` at the position described by the string produce by `iter`.
-    fn insert(&mut self, mut iter: impl Iterator<Item = C>, value: V) {
-        match iter.next() {
-            Some(char) => match self.children.entry(char) {
-                Entry::Occupied(mut occupied_entry) => {
-                    occupied_entry.get_mut().insert(iter, value);
-                }
-                Entry::Vacant(vacant_entry) => {
-                    let subtrie = Self::new();
-                    let mut filled = vacant_entry.insert_entry(Box::new(subtrie));
-                    filled.get_mut().insert(iter, value);
-                }
-            },
-            None => self.values.push(value),
-        }
-    }
-}
-
-impl PersistentPreorderTermIterator {
-    fn new(term: &Term) -> Self {
+impl Term {
+    fn preorder_iter(&self) -> PersistentVecIterator<DiscrTreeKey> {
         let mut flatterm = Vec::new();
-        let mut stack = vec![term];
+        let mut stack = vec![self];
         while let Some(curr) = stack.pop() {
             match &**curr {
                 RawTerm::Var { .. } => flatterm.push(DiscrTreeKey::Star),
@@ -89,24 +47,7 @@ impl PersistentPreorderTermIterator {
                 }
             }
         }
-        Self {
-            flatterm: Rc::new(flatterm),
-            pos: 0,
-        }
-    }
-}
-
-impl Iterator for PersistentPreorderTermIterator {
-    type Item = DiscrTreeKey;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.flatterm.len() {
-            let ret = self.flatterm[self.pos];
-            self.pos += 1;
-            Some(ret)
-        } else {
-            None
-        }
+        PersistentVecIterator::new(flatterm)
     }
 }
 
@@ -137,7 +78,7 @@ impl<V> Trie<DiscrTreeKey, V> {
         let mut final_positions: Vec<&Self> = Vec::new();
         let mut frontier = vec![(self, 1usize)];
         while let Some((pos, to_skip)) = frontier.pop() {
-            for (child_key, child_pos) in pos.children.iter() {
+            for (child_key, child_pos) in pos.iter_children() {
                 let to_skip = match child_key {
                     DiscrTreeKey::Star => to_skip - 1,
                     DiscrTreeKey::App { arity, .. } => (to_skip + *arity) - 1,
@@ -155,7 +96,7 @@ impl<V> Trie<DiscrTreeKey, V> {
 
 pub struct UnificationCandidateIter<'a, V> {
     frontier: Vec<(
-        Peekable<PersistentPreorderTermIterator>,
+        Peekable<PersistentVecIterator<DiscrTreeKey>>,
         &'a Trie<DiscrTreeKey, V>,
     )>,
     found_node_iter: Option<slice::Iter<'a, V>>,
@@ -188,21 +129,21 @@ impl<'a, V> Iterator for UnificationCandidateIter<'a, V> {
                         .for_each(|subtrie| self.frontier.push((query_pos.clone(), subtrie)));
                 }
                 Some(key @ DiscrTreeKey::App { .. }) => {
-                    if let Some(subtrie) = trie_pos.children.get(&key) {
+                    if let Some(subtrie) = trie_pos.get_child(&key) {
                         let mut next_query_pos = query_pos.clone();
                         next_query_pos.next();
                         self.frontier.push((next_query_pos, subtrie));
                     }
 
-                    if let Some(subtrie) = trie_pos.children.get(&DiscrTreeKey::Star) {
+                    if let Some(subtrie) = trie_pos.get_child(&DiscrTreeKey::Star) {
                         skip_to_next_subterm(&mut query_pos);
                         self.frontier.push((query_pos, subtrie));
                     }
                 }
                 None => {
-                    if !trie_pos.values.is_empty() {
+                    if trie_pos.has_values() {
                         assert!(self.found_node_iter.is_none());
-                        let mut next_iter = trie_pos.values.iter();
+                        let mut next_iter = trie_pos.iter_values();
                         // We know this will be some, the remainder of this node will be drained on
                         // future calls to our next.
                         let next_elem = next_iter.next();
@@ -226,80 +167,15 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
 
     /// Insert a new term with some associated value into the discrimination tree.
     pub fn insert(&mut self, term: &Term, value: V) {
-        let iter = PersistentPreorderTermIterator::new(term);
+        let iter = term.preorder_iter();
         self.trie.insert(iter, value);
-    }
-
-    /// Obtain the values associated with all potential generalisations of `term` indexed in `self`,
-    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
-    /// `subst(term) = key`.
-    pub fn get_generalisation_candidates(&self, term: &Term) -> HashSet<&V> {
-        let iter = PersistentPreorderTermIterator::new(term).peekable();
-        let mut frontier = vec![(iter, &self.trie)];
-        let mut set = HashSet::new();
-        while let Some((mut query_pos, trie_pos)) = frontier.pop() {
-            match query_pos.peek() {
-                Some(DiscrTreeKey::Star) => {
-                    if let Some(subtrie) = trie_pos.children.get(&DiscrTreeKey::Star) {
-                        query_pos.next();
-                        frontier.push((query_pos, subtrie))
-                    }
-                }
-                Some(key @ DiscrTreeKey::App { .. }) => {
-                    if let Some(subtrie) = trie_pos.children.get(&key) {
-                        let mut next_query_pos = query_pos.clone();
-                        next_query_pos.next();
-                        frontier.push((next_query_pos, subtrie));
-                    }
-
-                    if let Some(subtrie) = trie_pos.children.get(&DiscrTreeKey::Star) {
-                        skip_to_next_subterm(&mut query_pos);
-                        frontier.push((query_pos, subtrie));
-                    }
-                }
-                None => trie_pos.values.iter().for_each(|val| {
-                    set.insert(val);
-                }),
-            }
-        }
-        set
-    }
-
-    /// Obtain the values associated with all potential instances of `term` indexed in `self`,
-    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
-    /// `term = subst(key)`.
-    pub fn get_instance_candidates(&self, term: &Term) -> HashSet<&V> {
-        let iter = PersistentPreorderTermIterator::new(term).peekable();
-        let mut frontier = vec![(iter, &self.trie)];
-        let mut set = HashSet::new();
-        while let Some((mut query_pos, trie_pos)) = frontier.pop() {
-            match query_pos.peek() {
-                Some(DiscrTreeKey::Star) => {
-                    let subtries = trie_pos.skip_to_next_subterm();
-                    query_pos.next();
-                    subtries
-                        .iter()
-                        .for_each(|subtrie| frontier.push((query_pos.clone(), subtrie)));
-                }
-                Some(key @ DiscrTreeKey::App { .. }) => {
-                    if let Some(subtrie) = trie_pos.children.get(&key) {
-                        query_pos.next();
-                        frontier.push((query_pos, subtrie));
-                    }
-                }
-                None => trie_pos.values.iter().for_each(|val| {
-                    set.insert(val);
-                }),
-            }
-        }
-        set
     }
 
     /// Obtain the values associated with all potential unifications of `term` indexed in `self`,
     /// that is find all values for whose keys there might exist a substitution `subst` s.t.
     /// `subst(term) = subst(key)`.
     pub fn get_unification_candidates(&self, term: &Term) -> UnificationCandidateIter<'_, V> {
-        let iter = PersistentPreorderTermIterator::new(term).peekable();
+        let iter = term.preorder_iter().peekable();
         UnificationCandidateIter {
             frontier: vec![(iter, &self.trie)],
             found_node_iter: None,
@@ -313,10 +189,10 @@ mod test {
 
     use crate::term_bank::{FunctionInformation, Term, TermBank, VariableInformation};
 
-    use super::{DiscrTreeKey, DiscriminationTree, PersistentPreorderTermIterator};
+    use super::{DiscrTreeKey, DiscriminationTree};
 
     fn flatterm(t: &Term) -> Vec<DiscrTreeKey> {
-        PersistentPreorderTermIterator::new(t).collect()
+        t.preorder_iter().collect()
     }
 
     #[test]
@@ -413,167 +289,6 @@ mod test {
                 DiscrTreeKey::App { id: c, arity: 0 }
             ]
         );
-    }
-
-    #[test]
-    fn basic_generalisation_test() {
-        let mut term_bank = TermBank::new();
-        let b = term_bank.add_function(FunctionInformation {
-            name: "b".to_string(),
-            arity: 0,
-        });
-        let c = term_bank.add_function(FunctionInformation {
-            name: "c".to_string(),
-            arity: 0,
-        });
-        let g = term_bank.add_function(FunctionInformation {
-            name: "g".to_string(),
-            arity: 2,
-        });
-        let f = term_bank.add_function(FunctionInformation {
-            name: "f".to_string(),
-            arity: 1,
-        });
-        let h = term_bank.add_function(FunctionInformation {
-            name: "h".to_string(),
-            arity: 2,
-        });
-        let x = term_bank.mk_fresh_variable(VariableInformation {
-            name: "x".to_string(),
-        });
-        let y = term_bank.mk_fresh_variable(VariableInformation {
-            name: "y".to_string(),
-        });
-
-        let q1 = term_bank.mk_app(f, vec![term_bank.mk_const(c)]);
-        let q2 = term_bank.mk_app(f, vec![term_bank.mk_app(f, vec![term_bank.mk_const(c)])]);
-        let q3 = term_bank.mk_app(
-            g,
-            vec![
-                term_bank.mk_app(h, vec![x.clone(), y.clone()]),
-                term_bank.mk_const(b),
-            ],
-        );
-        let q4 = term_bank.mk_app(
-            g,
-            vec![term_bank.mk_app(h, vec![x.clone(), y.clone()]), x.clone()],
-        );
-
-        let t1 = term_bank.mk_app(f, vec![x.clone()]);
-        let t2 = q1.clone();
-        let t3 = term_bank.mk_app(g, vec![x.clone(), term_bank.mk_const(b)]);
-        let t4 = term_bank.mk_app(g, vec![x.clone(), x.clone()]);
-        let t5 = term_bank.mk_app(f, vec![term_bank.mk_app(f, vec![x.clone()])]);
-        let mut discr_tree = DiscriminationTree::new();
-
-        let mut map = HashMap::new();
-        map.insert(&t1, 1);
-        map.insert(&t2, 2);
-        map.insert(&t3, 3);
-        map.insert(&t4, 4);
-        map.insert(&t5, 5);
-
-        discr_tree.insert(&t1, 1);
-        discr_tree.insert(&t2, 2);
-        discr_tree.insert(&t3, 3);
-        discr_tree.insert(&t4, 4);
-        discr_tree.insert(&t5, 5);
-
-        let tests = [
-            (q1, vec![t1.clone(), t2.clone()]),
-            (q2, vec![t1.clone(), t5.clone()]),
-            (q3, vec![t3.clone(), t4.clone()]),
-            (q4, vec![t4.clone()]),
-        ];
-
-        for (query_term, expected_query_results) in tests.iter() {
-            let query_result = discr_tree.get_generalisation_candidates(query_term);
-            assert_eq!(query_result.len(), expected_query_results.len());
-            for expected in expected_query_results.iter() {
-                assert!(query_result.contains(map.get(expected).unwrap()));
-            }
-        }
-    }
-
-    #[test]
-    fn basic_instance_test() {
-        let mut term_bank = TermBank::new();
-        let b = term_bank.add_function(FunctionInformation {
-            name: "b".to_string(),
-            arity: 0,
-        });
-        let c = term_bank.add_function(FunctionInformation {
-            name: "c".to_string(),
-            arity: 0,
-        });
-        let f = term_bank.add_function(FunctionInformation {
-            name: "f".to_string(),
-            arity: 1,
-        });
-        let h = term_bank.add_function(FunctionInformation {
-            name: "h".to_string(),
-            arity: 2,
-        });
-        let x = term_bank.mk_fresh_variable(VariableInformation {
-            name: "x".to_string(),
-        });
-        let y = term_bank.mk_fresh_variable(VariableInformation {
-            name: "y".to_string(),
-        });
-
-        let q1 = term_bank.mk_app(f, vec![x.clone()]);
-        let q2 = term_bank.mk_app(f, vec![term_bank.mk_const(c)]);
-        let q3 = term_bank.mk_app(f, vec![term_bank.mk_app(f, vec![x.clone()])]);
-        let q4 = term_bank.mk_app(h, vec![x.clone(), y.clone()]);
-        let q5 = term_bank.mk_app(h, vec![term_bank.mk_app(f, vec![x.clone()]), y.clone()]);
-
-        let t1 = term_bank.mk_app(f, vec![x.clone()]);
-        let t2 = term_bank.mk_app(f, vec![term_bank.mk_const(c)]);
-        let t3 = term_bank.mk_app(f, vec![term_bank.mk_app(f, vec![term_bank.mk_const(c)])]);
-        let t4 = term_bank.mk_app(h, vec![term_bank.mk_const(b), term_bank.mk_const(c)]);
-        let t5 = term_bank.mk_app(
-            h,
-            vec![
-                term_bank.mk_app(f, vec![term_bank.mk_const(b)]),
-                term_bank.mk_const(c),
-            ],
-        );
-        let t6 = term_bank.mk_app(
-            h,
-            vec![term_bank.mk_app(f, vec![term_bank.mk_const(b)]), x.clone()],
-        );
-        let mut discr_tree = DiscriminationTree::new();
-
-        let mut map = HashMap::new();
-        map.insert(&t1, 1);
-        map.insert(&t2, 2);
-        map.insert(&t3, 3);
-        map.insert(&t4, 4);
-        map.insert(&t5, 5);
-        map.insert(&t6, 6);
-
-        discr_tree.insert(&t1, 1);
-        discr_tree.insert(&t2, 2);
-        discr_tree.insert(&t3, 3);
-        discr_tree.insert(&t4, 4);
-        discr_tree.insert(&t5, 5);
-        discr_tree.insert(&t6, 6);
-
-        let tests = [
-            (q1, vec![t1.clone(), t2.clone(), t3.clone()]),
-            (q2, vec![t2.clone()]),
-            (q3, vec![t3.clone()]),
-            (q4, vec![t4.clone(), t5.clone(), t6.clone()]),
-            (q5, vec![t5.clone(), t6.clone()]),
-        ];
-
-        for (query_term, expected_query_results) in tests.iter() {
-            let query_result = discr_tree.get_instance_candidates(query_term);
-            assert_eq!(query_result.len(), expected_query_results.len());
-            for expected in expected_query_results.iter() {
-                assert!(query_result.contains(map.get(expected).unwrap()));
-            }
-        }
     }
 
     #[test]
