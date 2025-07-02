@@ -9,6 +9,7 @@ use crate::{
     clause::{Clause, ClauseSet, Literal, LiteralId, Polarity},
     clause_queue::ClauseQueue,
     discr_tree::DiscriminationTree,
+    feature_vector::FeatureVectorIndex,
     kbo::KboOrd,
     position::{
         ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position, TermPosition,
@@ -58,6 +59,7 @@ struct SuperpositionState<'a> {
     active: ClauseSet,
     term_bank: &'a mut TermBank,
     subterm_index: DiscriminationTree<ClauseSetPosition>,
+    subsumption_index: FeatureVectorIndex,
     resource_limits: ResourceLimits,
 }
 
@@ -247,6 +249,9 @@ impl<'a> SuperpositionState<'a> {
                 }
             }
         }
+
+        // Update the feature vector index for subsumption
+        self.subsumption_index.insert(&clause);
 
         self.active.insert(clause);
     }
@@ -471,8 +476,8 @@ impl<'a> SuperpositionState<'a> {
     }
 
     fn redundant(&self, g: &Clause) -> bool {
-        // TODO: indexing
-        for active_clause in self.active.iter() {
+        for active_clause_id in self.subsumption_index.get_subsumer_candidates(g) {
+            let active_clause = self.active.get_by_id(active_clause_id).unwrap();
             if active_clause.subsumes(g) {
                 info!(
                     "Subsumption: {} subsumes {}",
@@ -507,6 +512,7 @@ impl<'a> SuperpositionState<'a> {
             if let Some(reason) = self.resources_exhausted() {
                 return SuperpositionResult::Unknown(reason);
             }
+            self.term_bank.gc();
         }
         SuperpositionResult::StatementFalse
     }
@@ -522,6 +528,7 @@ pub fn search_proof(
     let active = ClauseSet::new();
     let subterm_index = DiscriminationTree::new();
     let resource_limits = ResourceLimits::of_config(resource_config);
+    let subsumption_index = FeatureVectorIndex::new();
 
     let state = SuperpositionState {
         passive,
@@ -529,6 +536,7 @@ pub fn search_proof(
         term_bank,
         subterm_index,
         resource_limits,
+        subsumption_index,
     };
     state.run()
 }
