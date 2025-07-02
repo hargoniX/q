@@ -31,14 +31,13 @@ impl FeatureVector {
                 Polarity::Eq => {
                     cplus += 1;
                     cplusf += lit.function_symbol_count() as usize;
-                },
+                }
                 Polarity::Ne => {
                     cminus += 1;
                     cminusf += lit.function_symbol_count() as usize;
-                },
+                }
             }
         }
-
 
         // TODO: more clause features from the paper
         Self {
