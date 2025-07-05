@@ -467,7 +467,12 @@ impl<'a> SuperpositionState<'a> {
         if let Some(memory_limit) = self.resource_limits.memory_limit {
             if let Some(stats) = memory_stats() {
                 if memory_limit < stats.physical_mem {
-                    return Some(UnknownReason::OutOfMemory);
+                    self.term_bank.gc();
+                    if let Some(stats) = memory_stats() {
+                        if memory_limit < stats.physical_mem {
+                            return Some(UnknownReason::OutOfMemory);
+                        }
+                    }
                 }
             }
         }
@@ -512,7 +517,6 @@ impl<'a> SuperpositionState<'a> {
             if let Some(reason) = self.resources_exhausted() {
                 return SuperpositionResult::Unknown(reason);
             }
-            self.term_bank.gc();
         }
         SuperpositionResult::StatementFalse
     }
