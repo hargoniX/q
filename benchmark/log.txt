@@ -10,148 +10,148 @@ Running problems/pelletier_problems/pb1.p
 Running problems/pelletier_problems/pb2.p
 Running problems/pelletier_problems/pb3.p
 Running problems/pelletier_problems/pb4.p
+Running problems/pelletier_problems/pb5.p
 Running problems/pelletier_problems/pb6.p
 Running problems/pelletier_problems/pb7.p
 Running problems/pelletier_problems/pb8.p
-Running problems/pelletier_problems/pb5.p
-Running problems/pelletier_problems/pb9.p
-Running problems/pelletier_problems/pb11.p
+Running problems/pelletier_problems/pb9.pRunning problems/pelletier_problems/pb11.p
+
 Running problems/pelletier_problems/pb10.p
-problems/pelletier_problems/pb7.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb23.p
-problems/pelletier_problems/pb3.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb19.p
 problems/pelletier_problems/pb11.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb27.p
-problems/KRS018+1.p PASS: expected Result.SAT got Result.SAT
-Running problems/pelletier_problems/pb14.p
-problems/MGT019+2.p PASS: expected Result.SAT got Result.SAT
-Running problems/pelletier_problems/pb16.p
-problems/pelletier_problems/pb4.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb20.p
-problems/pelletier_problems/pb2.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb18.p
-problems/pelletier_problems/pb9.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb25.p
-problems/pelletier_problems/pb8.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb24.p
-problems/SYN000+1.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb12.p
+problems/pelletier_problems/pb10.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb26.p
 problems/pelletier_problems/pb5.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb21.p
 problems/pelletier_problems/pb1.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb17.p
-problems/pelletier_problems/pb10.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb26.p
+problems/pelletier_problems/pb3.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb19.p
+problems/pelletier_problems/pb9.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb25.p
+problems/KRS018+1.p PASS: expected Result.SAT got Result.SAT
+Running problems/pelletier_problems/pb14.p
+problems/pelletier_problems/pb2.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb18.p
 problems/pelletier_problems/pb6.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb22.p
-problems/pelletier_problems/pb23.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb39.p
-problems/pelletier_problems/pb16.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb32.p
-problems/pelletier_problems/pb27.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb43.p
-problems/pelletier_problems/pb19.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb35.p
-problems/pelletier_problems/pb22.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb38.p
-problems/pelletier_problems/pb14.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb30.p
-problems/pelletier_problems/pb20.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb36.p
-problems/pelletier_problems/pb18.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb34.p
-problems/pelletier_problems/pb25.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb41.p
-problems/pelletier_problems/pb24.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb40.p
-problems/pelletier_problems/pb12.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb28.p
-problems/pelletier_problems/pb21.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb37.p
-problems/pelletier_problems/pb17.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb33.p
-problems/pelletier_problems/pb39.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb55.p
+problems/pelletier_problems/pb7.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb23.p
+problems/pelletier_problems/pb8.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb24.p
+problems/pelletier_problems/pb4.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb20.p
+problems/SYN000+1.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb12.p
+problems/MGT019+2.p PASS: expected Result.SAT got Result.SAT
+Running problems/pelletier_problems/pb16.p
 problems/KRS063+1.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb15.p
-problems/pelletier_problems/pb32.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb48.p
+problems/pelletier_problems/pb27.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb43.p
+problems/pelletier_problems/pb21.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb37.p
+problems/pelletier_problems/pb26.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb42.p
+problems/pelletier_problems/pb17.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb33.p
+problems/pelletier_problems/pb19.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb35.p
+problems/pelletier_problems/pb18.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb34.p
+problems/pelletier_problems/pb14.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb30.p
+problems/pelletier_problems/pb25.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb41.p
+problems/pelletier_problems/pb22.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb38.p
+problems/pelletier_problems/pb24.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb40.p
+problems/pelletier_problems/pb20.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb36.p
+problems/pelletier_problems/pb23.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb39.p
+problems/pelletier_problems/pb12.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb28.p
+problems/pelletier_problems/pb16.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb32.p
+problems/pelletier_problems/pb15.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb31.p
+problems/pelletier_problems/pb37.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb53.p
+problems/pelletier_problems/pb33.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb49.p
+problems/pelletier_problems/pb42.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb58.p
 problems/pelletier_problems/pb35.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb51.p
-problems/pelletier_problems/pb28.p PASS: expected Result.SAT got Result.SAT
-Running problems/pelletier_problems/pb44.p
 problems/pelletier_problems/pb30.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb46.p
 problems/pelletier_problems/pb41.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb57.p
 problems/pelletier_problems/pb36.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb52.p
-problems/pelletier_problems/pb37.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb53.p
-problems/pelletier_problems/pb33.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb49.p
 problems/pelletier_problems/pb40.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb56.p
-problems/pelletier_problems/pb55.p PASS: expected Result.UNSAT got Result.UNSAT
-problems/pelletier_problems/pb15.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb31.p
-problems/pelletier_problems/pb48.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb64.p
-problems/pelletier_problems/pb46.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb62.p
-problems/pelletier_problems/pb44.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb60.p
-problems/pelletier_problems/pb57.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb39.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb55.p
+problems/pelletier_problems/pb28.p PASS: expected Result.SAT got Result.SAT
+Running problems/pelletier_problems/pb44.p
+problems/pelletier_problems/pb32.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb48.p
 problems/pelletier_problems/pb31.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb47.p
-problems/pelletier_problems/pb60.p PASS: expected Result.UNSAT got Result.UNSAT
-problems/pelletier_problems/pb26.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb42.p
-problems/pelletier_problems/pb56.p PASS: expected Result.UNSAT got Result.UNSAT
-problems/pelletier_problems/pb42.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb58.p
+problems/pelletier_problems/pb43.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb59.p
 problems/pelletier_problems/pb58.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb46.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb62.p
+problems/pelletier_problems/pb57.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb44.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb60.p
+problems/pelletier_problems/pb48.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb64.p
+problems/pelletier_problems/pb55.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb56.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb59.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb60.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb62.p PASS: expected Result.SAT got Result.SAT
+problems/pelletier_problems/pb64.p PASS: expected Result.UNSAT got Result.UNSAT
 problems/SYN075+1.p FAIL: expected Result.UNSAT got Result.TIMEOUT
 Running problems/pelletier_problems/pb13.p
 problems/pelletier_problems/pb13.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb29.p
-problems/pelletier_problems/pb43.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb59.p
-problems/pelletier_problems/pb59.p PASS: expected Result.UNSAT got Result.UNSAT
-problems/pelletier_problems/pb38.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb54.p
-problems/pelletier_problems/pb34.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb50.p
-problems/pelletier_problems/pb50.p PASS: expected Result.UNSAT got Result.UNSAT
-Running problems/pelletier_problems/pb66.p
-problems/pelletier_problems/pb51.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb67.p
-problems/pelletier_problems/pb52.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb68.p
-problems/pelletier_problems/pb49.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb65.p
-problems/pelletier_problems/pb53.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/equivalence.p
-problems/pelletier_problems/pb62.p FAIL: expected Result.SAT got Result.TIMEOUT
-problems/pelletier_problems/pb64.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-problems/pelletier_problems/pb47.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-Running problems/pelletier_problems/pb63.p
 problems/pelletier_problems/pb29.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb45.p
 problems/pelletier_problems/pb45.p PASS: expected Result.UNSAT got Result.UNSAT
 Running problems/pelletier_problems/pb61.p
 problems/pelletier_problems/pb61.p PASS: expected Result.UNSAT got Result.UNSAT
-problems/pelletier_problems/pb66.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-problems/pelletier_problems/pb54.p FAIL: expected Result.SAT got Result.TIMEOUT
-problems/pelletier_problems/pb68.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+problems/pelletier_problems/pb38.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/pb54.p
+problems/pelletier_problems/pb34.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/pb50.p
+problems/pelletier_problems/pb53.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/equivalence.p
+problems/pelletier_problems/pb51.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/pb67.p
+problems/pelletier_problems/pb50.p PASS: expected Result.UNSAT got Result.UNSAT
+Running problems/pelletier_problems/pb66.p
+problems/pelletier_problems/pb52.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/pb68.p
+problems/pelletier_problems/pb47.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/pb63.p
+problems/pelletier_problems/pb49.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+Running problems/pelletier_problems/pb65.p
+problems/pelletier_problems/pb67.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb66.p PASS: expected Result.UNSAT got Result.UNSAT
+problems/pelletier_problems/pb65.p PASS: expected Result.UNSAT got Result.UNSAT
 problems/pelletier_problems/equivalence.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-problems/pelletier_problems/pb67.p FAIL: expected Result.UNSAT got Result.TIMEOUT
-problems/pelletier_problems/pb65.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+problems/pelletier_problems/pb68.p FAIL: expected Result.UNSAT got Result.TIMEOUT
 problems/pelletier_problems/pb63.p FAIL: expected Result.UNSAT got Result.TIMEOUT
+problems/pelletier_problems/pb54.p FAIL: expected Result.SAT got Result.TIMEOUT
 --------------------------------------------------------------------------------
 There are:
-- 56 matching results
+- 62 matching results
 - 0 non-matching results
-- 18 timeout results
+- 12 timeout results
 - 0 'unknown' results
