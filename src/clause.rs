@@ -6,7 +6,7 @@
 //! - [ClauseSet] for representing sets of clauses
 
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{HashMap, HashSet},
     hash::Hash,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -337,14 +337,14 @@ impl BankPrettyPrint for Clause {
 
 /// A set of clauses indexed by unique clause identifiers.
 pub struct ClauseSet {
-    map: BTreeMap<ClauseId, Clause>,
+    map: HashMap<ClauseId, Clause>,
 }
 
 impl ClauseSet {
     /// Create an empty clause set.
     pub fn new() -> Self {
         Self {
-            map: BTreeMap::new(),
+            map: HashMap::new(),
         }
     }
 
