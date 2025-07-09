@@ -9,13 +9,17 @@ use std::collections::HashMap;
 
 use crate::term_bank::{
     RawTerm::{App, Var},
-    Term, TermBank, VariableIdentifier,
+    Term, TermBank, VarBloomFilter, VariableIdentifier,
 };
 
 /// A first order substitution, mapping variables to terms to replace them with.
 #[derive(Debug, Clone)]
 pub struct Substitution {
+    /// The map that is the substitution itself.
     map: HashMap<VariableIdentifier, Term>,
+    /// A var bloom filter for the variables the substitution maps s.t. we can quickly see if a
+    /// term we are called for is irrelevant.
+    filter: VarBloomFilter,
 }
 
 impl Substitution {
@@ -23,12 +27,14 @@ impl Substitution {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
+            filter: VarBloomFilter::new(),
         }
     }
 
     /// Associate `var` with `term` in the substitution.
     pub fn insert(&mut self, var: VariableIdentifier, term: Term) {
         self.map.insert(var, term);
+        self.filter |= var.to_bloom_filter();
     }
 
     /// Obtain the term associated with `var` if it exists.
@@ -38,7 +44,7 @@ impl Substitution {
 
     /// Return `true` if the substitution is an identity substitution.
     pub fn is_nop(&self) -> bool {
-        self.map.is_empty()
+        self.filter.is_empty()
     }
 
     /// Compose the current substitution with `{ var_id |-> term }`.
@@ -54,6 +60,7 @@ impl Substitution {
             *value = value.clone().subst_with(&new_subst, &term_bank);
         }
         self.map.entry(var_id).or_insert_with(|| term);
+        self.filter |= var_id.to_bloom_filter();
     }
 }
 
@@ -70,7 +77,7 @@ impl Term {
         term_bank: &TermBank,
         cache: &mut HashMap<Term, Term>,
     ) -> Term {
-        if self.is_ground() {
+        if (self.var_bloom_filter() & subst.filter).is_empty() {
             self
         } else if let Some(hit) = cache.get(&self) {
             hit.clone()
