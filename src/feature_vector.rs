@@ -3,54 +3,108 @@
 //! [Simple and Efficient Clause Subsumption with Feature Vector Indexing](https://wwwlehre.dhbw-stuttgart.de/~sschulz/PAPERS/Schulz2013-FVI.pdf)
 //! The key exported data structure is [FeatureVectorIndex].
 
-use std::{slice, vec};
+use std::{array, slice, vec};
 
 use crate::{
     clause::{Clause, ClauseId, Polarity},
     persistent_vec_iter::PersistentVecIterator,
+    term_bank::{RawTerm, Term, TermBank},
     trie::Trie,
 };
 
+// Taken from EProver `FVINDEX_MAX_FEATURES_DEFAULT`.
+const FEATURE_VECTOR_SIZE: usize = 16;
+
+/// This implements a feature vector in the DRT-AC config.
 struct FeatureVector {
-    vec: Vec<usize>,
+    vec: [usize; FEATURE_VECTOR_SIZE],
 }
 
 impl FeatureVector {
-    fn new(clause: &Clause) -> Self {
-        // |C^+|
-        let mut cplus = 0;
-        // |C^-|
-        let mut cminus = 0;
-        // sum of |C^+|_f for all f
-        let mut cplusf = 0;
-        // sum of |C^-|_f for all f
-        let mut cminusf = 0;
+    fn count_function_symbols(
+        term: &Term,
+        accumulator: &mut [usize],
+        limit: usize,
+        term_bank: &TermBank,
+    ) {
+        if let RawTerm::App { id, args, .. } = term.as_ref() {
+            let idx = term_bank.get_function_index(*id) as usize;
+            if idx < limit {
+                accumulator[idx + 1] += 1;
+            } else {
+                accumulator[0] += 1;
+            }
+
+            args.iter()
+                .for_each(|arg| Self::count_function_symbols(arg, accumulator, limit, term_bank));
+        }
+    }
+
+    fn new(clause: &Clause, term_bank: &TermBank) -> Self {
+        // According to EProver `TermAddSymbolFeaturesLimited` we literally just count the first
+        // couple of symbols in a dedicated fashion and accumulate the rest at a catch all index.
+
+        // We reserve:
+        // - [0] for |C^+|
+        // - [1] for |C^-|
+        // - [2] for the catch all |C^+|_f
+        // - [3-8] for the first 6 function symbols occuring positively
+        // - [9] for the catch all |C^-|_f
+        // - [10-15] for the the first 6 function symbols occuring negatively
+        let mut vec = [0; FEATURE_VECTOR_SIZE];
+        const CPLUS: usize = 0;
+        const CMINUS: usize = 1;
+        const CPLUS_FUNC_START: usize = CMINUS + 1;
+        const CPLUS_FUNC_END: usize = CPLUS_FUNC_START + (FEATURE_VECTOR_SIZE - 2) / 2 - 1;
+        const CPLUS_FUNC_SIZE: usize = CPLUS_FUNC_END - CPLUS_FUNC_START;
+        const CMINUS_FUNC_START: usize = CPLUS_FUNC_END + 1;
+        const CMINUS_FUNC_END: usize = CMINUS_FUNC_START + (FEATURE_VECTOR_SIZE - 2) / 2 - 1;
+        const CMINUS_FUNC_SIZE: usize = CMINUS_FUNC_END - CMINUS_FUNC_START;
 
         for (_, lit) in clause.iter() {
             match lit.get_pol() {
                 Polarity::Eq => {
-                    cplus += 1;
-                    cplusf += lit.function_symbol_count() as usize;
+                    vec[CPLUS] += 1;
+                    Self::count_function_symbols(
+                        lit.get_lhs(),
+                        &mut vec[CPLUS_FUNC_START..=CPLUS_FUNC_END],
+                        CPLUS_FUNC_SIZE,
+                        term_bank,
+                    );
+                    Self::count_function_symbols(
+                        lit.get_rhs(),
+                        &mut vec[CPLUS_FUNC_START..=CPLUS_FUNC_END],
+                        CPLUS_FUNC_SIZE,
+                        term_bank,
+                    );
                 }
                 Polarity::Ne => {
-                    cminus += 1;
-                    cminusf += lit.function_symbol_count() as usize;
+                    vec[CMINUS] += 1;
+                    Self::count_function_symbols(
+                        lit.get_lhs(),
+                        &mut vec[CMINUS_FUNC_START..=CMINUS_FUNC_END],
+                        CMINUS_FUNC_SIZE,
+                        term_bank,
+                    );
+                    Self::count_function_symbols(
+                        lit.get_rhs(),
+                        &mut vec[CMINUS_FUNC_START..=CMINUS_FUNC_END],
+                        CMINUS_FUNC_SIZE,
+                        term_bank,
+                    );
                 }
             }
         }
 
-        // TODO: more clause features from the paper
-        Self {
-            vec: vec![cplus, cminus, cplusf, cminusf],
-        }
+        Self { vec }
     }
 
-    fn into_iter(self) -> vec::IntoIter<usize> {
+    fn into_iter(self) -> array::IntoIter<usize, FEATURE_VECTOR_SIZE> {
         self.vec.into_iter()
     }
 
     fn into_persistent_iter(self) -> PersistentVecIterator<usize> {
-        PersistentVecIterator::new(self.vec)
+        PersistentVecIterator::new(self.vec.to_vec())
     }
 }
 
@@ -60,8 +114,8 @@ pub struct SubsumerIterator<'a> {
 }
 
 impl<'a> SubsumerIterator<'a> {
-    fn new(index: &'a FeatureVectorIndex, clause: &Clause) -> Self {
-        let iter = FeatureVector::new(clause).into_persistent_iter();
+    fn new(index: &'a FeatureVectorIndex, clause: &Clause, term_bank: &TermBank) -> Self {
+        let iter = FeatureVector::new(clause, term_bank).into_persistent_iter();
         Self {
             frontier: vec![(iter, &index.trie)],
             found_node_iter: None,
@@ -121,13 +175,17 @@ impl FeatureVectorIndex {
     }
 
     /// Insert a clause into the feature vector index.
-    pub fn insert(&mut self, clause: &Clause) {
-        let vec = FeatureVector::new(clause);
+    pub fn insert(&mut self, clause: &Clause, term_bank: &TermBank) {
+        let vec = FeatureVector::new(clause, term_bank);
         self.trie.insert(vec.into_iter(), clause.get_id());
     }
 
     /// Obtain an iterator over clauses from the index that might subsume `clause`.
-    pub fn get_subsumer_candidates<'a>(&'a self, clause: &Clause) -> SubsumerIterator<'a> {
-        SubsumerIterator::new(self, clause)
+    pub fn forward_candidates<'a>(
+        &'a self,
+        clause: &Clause,
+        term_bank: &TermBank,
+    ) -> SubsumerIterator<'a> {
+        SubsumerIterator::new(self, clause, term_bank)
     }
 }

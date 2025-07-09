@@ -251,7 +251,7 @@ impl<'a> SuperpositionState<'a> {
         }
 
         // Update the feature vector index for subsumption
-        self.subsumption_index.insert(&clause);
+        self.subsumption_index.insert(&clause, &self.term_bank);
 
         self.active.insert(clause);
     }
@@ -481,7 +481,10 @@ impl<'a> SuperpositionState<'a> {
     }
 
     fn redundant(&self, g: &Clause) -> bool {
-        for active_clause_id in self.subsumption_index.get_subsumer_candidates(g) {
+        for active_clause_id in self
+            .subsumption_index
+            .forward_candidates(g, &self.term_bank)
+        {
             let active_clause = self.active.get_by_id(active_clause_id).unwrap();
             if active_clause.subsumes(g) {
                 info!(
