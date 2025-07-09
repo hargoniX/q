@@ -10,6 +10,7 @@
 use std::{
     collections::HashSet,
     hash::{DefaultHasher, Hash, Hasher},
+    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign},
 };
 
 use crate::term_manager::{HashConsed, Table};
@@ -42,14 +43,17 @@ pub struct FunctionIdentifier(u32);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VariableIdentifier(u32);
 
+/// A bloom filter for variables.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct VarBloomFilter(u64);
+
 /// All [Term] contain some pre computed values to speed up commonly done computations.
 #[derive(Debug, PartialEq, Eq)]
 pub struct TermData {
     hash: u64,
-    var_bloom_filter: u64,
+    var_bloom_filter: VarBloomFilter,
     var_count: u32,
     function_count: u32,
-    weight: u32,
 }
 
 /// The raw term representation, this should *not* be used by consumers of this module, use [Term]
@@ -70,6 +74,52 @@ pub enum RawTerm {
 /// The general hash consed term representation.
 pub type Term = HashConsed<RawTerm>;
 
+impl BitAnd for VarBloomFilter {
+    type Output = VarBloomFilter;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for VarBloomFilter {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 = self.0 & rhs.0;
+    }
+}
+
+impl BitOr for VarBloomFilter {
+    type Output = VarBloomFilter;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for VarBloomFilter {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 = self.0 | rhs.0;
+    }
+}
+
+impl VarBloomFilter {
+    /// Create an empty variable bloom filter.
+    pub fn new() -> Self {
+        Self(0)
+    }
+
+    /// Returns true iff the bloom filter is empty
+    pub fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
+
+    /// Returns true if the bloom filter might contain `var`. In particular if
+    /// it returns true we know for sure it does *not* contain `var`.
+    pub fn maybe_contains(&self, var: VariableIdentifier) -> bool {
+        !(*self & var.to_bloom_filter()).is_empty()
+    }
+}
+
 impl Hash for RawTerm {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_data().hash);
@@ -77,8 +127,8 @@ impl Hash for RawTerm {
 }
 
 impl VariableIdentifier {
-    fn to_bloom_filter(&self) -> u64 {
-        1 << (self.0 % 64) as u64
+    pub fn to_bloom_filter(&self) -> VarBloomFilter {
+        VarBloomFilter(1 << (self.0 % 64) as u64)
     }
 
     /// Check whether this identifier occurs in `term`. This check is `O(1)` if `term` is ground,
@@ -86,10 +136,9 @@ impl VariableIdentifier {
     pub fn occurs_in(&self, term: &Term) -> bool {
         let mut visited = HashSet::new();
         let mut worklist = vec![term];
-        let bloom_id = self.to_bloom_filter();
 
         while let Some(term) = worklist.pop() {
-            if term.get_data().var_bloom_filter & bloom_id == 0 || visited.contains(term) {
+            if !term.get_data().var_bloom_filter.maybe_contains(*self) || visited.contains(term) {
                 continue;
             } else {
                 match term.as_ref() {
@@ -119,7 +168,7 @@ impl RawTerm {
 
     /// `O(1)` check if  this term is ground.
     pub fn is_ground(&self) -> bool {
-        self.get_data().var_bloom_filter == 0
+        self.get_data().var_bloom_filter.is_empty()
     }
 
     /// `O(1)` computation for how many function symbols (including constants) occur in the term.
@@ -153,7 +202,10 @@ impl RawTerm {
 
     /// Obtain the precomuted default weight for the term for the clause queue.
     pub fn weight(&self) -> u32 {
-        self.get_data().weight
+        // This is E's clause queue term weight heuristic:
+        // "standard weight (computed as two times function symbol count plus variable count)"
+        let data = self.get_data();
+        2 * data.function_count + data.var_count
     }
 
     /// Return `true` iff the term is a variable
@@ -170,6 +222,10 @@ impl RawTerm {
             RawTerm::App { .. } => true,
             _ => false,
         }
+    }
+
+    pub fn var_bloom_filter(&self) -> VarBloomFilter {
+        self.get_data().var_bloom_filter
     }
 }
 
@@ -271,12 +327,6 @@ impl TermBank {
         self.hash_cons_table.gc();
     }
 
-    fn weight_heuristic(var_count: u32, function_count: u32) -> u32 {
-        // This is E's clause queue term weight heuristic:
-        // "standard weight (computed as two times function symbol count plus variable count)"
-        2 * function_count + var_count
-    }
-
     /// Create a hash consed variable term for some variable identifier.
     pub fn mk_variable(&self, id: VariableIdentifier) -> Term {
         let mut hasher = DefaultHasher::new();
@@ -288,7 +338,6 @@ impl TermBank {
                 var_bloom_filter: id.to_bloom_filter(),
                 var_count: 1,
                 function_count: 0,
-                weight: Self::weight_heuristic(1, 0),
             },
         };
         self.hash_cons_table.hashcons(var)
@@ -319,9 +368,9 @@ impl TermBank {
         hasher.write_u32(id.0);
         args.iter().for_each(|arg| arg.hash(&mut hasher));
         let hash = hasher.finish();
-        let var_bloom_filter = args
-            .iter()
-            .fold(0, |acc, arg| acc | arg.get_data().var_bloom_filter);
+        let var_bloom_filter = args.iter().fold(VarBloomFilter::new(), |acc, arg| {
+            acc | arg.get_data().var_bloom_filter
+        });
         let var_count = args.iter().map(|a| a.get_data().var_count).sum();
         let function_count = args
             .iter()
@@ -334,7 +383,6 @@ impl TermBank {
             var_bloom_filter,
             var_count,
             function_count,
-            weight: Self::weight_heuristic(var_count, function_count),
         };
         let app = RawTerm::App { id, args, data };
         self.hash_cons_table.hashcons(app)
