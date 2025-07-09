@@ -1,2 +1,15 @@
 #!/bin/bash
-stdbuf --output=L python -u benchmark/runner.py -f benchmark/config.toml -d 3 | tee benchmark/log.txt
+variant=$1
+REPO_ROOT=`git rev-parse --show-toplevel`
+
+pushd $REPO_ROOT > /dev/null
+if [ "${variant}" == "pelletier" ]; then
+  python benchmark/runner.py -d 3 -m pelletier -f benchmark/config.toml
+elif [ "${variant}" == "casc29" ]; then
+  python benchmark/runner.py -d 1 -m casc29
+elif [ "${variant}" == "casc24" ]; then
+  python benchmark/runner.py -d 1 -m casc24
+else
+  echo "${variant} has no controlflow! Existing Variants: 'pelletier', 'casc29', 'casc24'"
+fi
+popd > /dev/null
