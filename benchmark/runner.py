@@ -2,12 +2,23 @@ import argparse
 from subprocess import run, PIPE
 import os
 import tomllib
+import resource
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 from multiprocessing import Pool
+from datetime import datetime
 
+EXCLUDE_LIST = []
 NUM_THREADS = 16
+# This is a limit per thread!
+MEM_LIMIT = 10**9
+
+
+class Variant(Enum):
+    PELLETIER = "pelletier"
+    CASC24 = "casc24"
+    CASC29 = "casc24"
 
 
 class Result(Enum):
@@ -22,11 +33,20 @@ class Problem:
     filename: str
     expected_result: Result
     result: Optional[Result]
+    execution_time: Optional[float]
 
 
 def build():
     print("Build release target:")
     run(["cargo", "build", "--release"], stdout=PIPE, stderr=PIPE)
+
+
+def set_limits(duration: int):
+    # (soft_limit, hard_limit)
+    # cpu time in seconds
+    resource.setrlimit(resource.RLIMIT_CPU, (duration, duration))
+    # heap size in bytes
+    resource.setrlimit(resource.RLIMIT_DATA, (MEM_LIMIT, MEM_LIMIT))
 
 
 def get_problems(filename: str) -> List[Problem]:
@@ -46,8 +66,49 @@ def get_problems(filename: str) -> List[Problem]:
             case _:
                 exp_result = Result.UNKNOWN
         problems.append(
-            Problem(filename=filename, expected_result=exp_result, result=None)
+            Problem(
+                filename=filename,
+                expected_result=exp_result,
+                result=None,
+                execution_time=None,
+            )
         )
+
+    return problems
+
+
+def get_problems_casc(variant: Variant) -> List[Problem]:
+    problems = []
+    base = f"problems/{variant.value}"
+    if variant is Variant.CASC24:
+        problem_sets = [
+            ("FEQ", Result.UNSAT),
+            ("FNE", Result.UNSAT),
+            ("FNN", Result.SAT),
+            ("FNQ", Result.SAT),
+        ]
+    elif variant is Variant.CASC29:
+        problem_sets = [
+            ("FEQ/FEQProblemFiles", Result.UNSAT),
+            ("FNE/FNEProblemFiles", Result.UNSAT),
+            ("FNN/FNNProblemFiles", Result.SAT),
+            ("FNQ/FNQProblemFiles", Result.SAT),
+        ]
+    else:
+        assert False, f"No controlflow for given variant '{variant.value}'"
+    for problem_set in problem_sets:
+        path = f"{base}/{problem_set[0]}"
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        for problem in files:
+            if problem not in EXCLUDE_LIST:
+                problems.append(
+                    Problem(
+                        filename=f"{path}/{problem}",
+                        expected_result=problem_set[1],
+                        result=None,
+                        execution_time=None,
+                    )
+                )
 
     return problems
 
@@ -55,16 +116,20 @@ def get_problems(filename: str) -> List[Problem]:
 def test(problem: Problem, duration: Optional[int]) -> Problem:
     env = os.environ.copy()
     env["RUST_LOG"] = "WARN"
-    cmd = ["cargo", "run", "--release", "--", problem.filename]
+    # Using cargo with multiple threads is a bottleneck
+    cmd = ["target/release/qprover", problem.filename]
     if duration is not None:
         cmd.append(str(duration))
+    start = datetime.now()
     output = run(
         cmd,
         env=env,
         stdout=PIPE,
         stderr=PIPE,
         universal_newlines=True,
+        preexec_fn=set_limits(duration + 5 if duration else 1),
     ).stderr
+    end = datetime.now()
     if f"Result superposition: 'StatementFalse'" in output:
         result = Result.SAT
     elif f"Result superposition: 'ProofFound'" in output:
@@ -72,12 +137,13 @@ def test(problem: Problem, duration: Optional[int]) -> Problem:
     elif f"Result superposition: 'Unknown(Timeout)'" in output:
         result = Result.TIMEOUT
     else:
-        print(f"Result is Unknown:\n{output}")
+        print(f"Result is Unknown: stdout'{output}'")
         result = Result.UNKNOWN
     return Problem(
         filename=problem.filename,
         expected_result=problem.expected_result,
         result=result,
+        execution_time=(end - start).total_seconds(),
     )
 
 
@@ -99,6 +165,7 @@ def go(
         problem = test(problem, duration)
         if problem.result is problem.expected_result:
             results.matching_problems.append(problem)
+            # FIXME: write csv file
             print(
                 f"{problem.filename} PASS: expected {problem.expected_result} got {problem.result}"
             )
@@ -124,13 +191,19 @@ def main():
         "-f",
         "--file",
         help="File path to the desired run config toml file",
-        required=True,
     )
     parser.add_argument(
         "-d",
         "--duration",
         type=int,
         help="Timeout duration for a single prover run",
+    )
+    parser.add_argument(
+        "-m",
+        "--mode",
+        type=Variant,
+        choices=list(Variant),
+        help="Lowercase!",
     )
     args = parser.parse_args()
     root_dir = run(
@@ -141,8 +214,16 @@ def main():
     ).stdout.rstrip()
     os.chdir(root_dir)
     build()
-    problems = get_problems(args.file)
-    print(f"Start Testsuite '{args.file}'")
+    variant = args.mode
+    if variant is Variant.PELLETIER:
+        assert args.file is not None, "No config file given for pelletier variant!"
+        problems = get_problems(args.file)
+        print(f"Start Testsuite 'pelletier' with '{args.file}'")
+    elif variant in [Variant.CASC24, Variant.CASC29]:
+        problems = get_problems_casc(variant)
+        print(f"Start Testsuite '{variant.value}'")
+    else:
+        assert False, f"No controlflow for given variant '{variant.value}'"
     print(80 * "-")
 
     pool = Pool()
@@ -159,10 +240,10 @@ def main():
             )
         )
 
-    matching_problems = []
-    non_matching_problems = []
-    timeout_problems = []
-    unknown_problems = []
+    matching_problems: List[Problem] = []
+    non_matching_problems: List[Problem] = []
+    timeout_problems: List[Problem] = []
+    unknown_problems: List[Problem] = []
     for thread in thread_list:
         results: ResultLists = thread.get(timeout=args.duration * 1500)
         matching_problems.extend(results.matching_problems)
@@ -176,6 +257,23 @@ def main():
     print(f"- {len(non_matching_problems)} non-matching results")
     print(f"- {len(timeout_problems)} timeout results")
     print(f"- {len(unknown_problems)} 'unknown' results")
+    print(80 * "-")
+    out_file = f"benchmark/{variant.value}.csv"
+    print(f"Writing summary output file: '{out_file}'")
+    with open(out_file, "w") as f:
+        f.write("problem,expected_result,result,duration\n")
+        for result_set in [
+            non_matching_problems,
+            unknown_problems,
+            matching_problems,
+            timeout_problems,
+        ]:
+            result_set.sort(key=lambda x: x.filename)
+            for problem in result_set:
+                basename = os.path.basename(problem.filename)
+                f.write(
+                    f"{basename},{problem.expected_result.value},{problem.result.value},{problem.execution_time:.2f}\n"
+                )
 
 
 if __name__ == "__main__":
