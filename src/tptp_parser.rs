@@ -33,9 +33,9 @@ pub enum Name {
 impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Name::Builtin(name) => write!(f, "${}", name),
-            Name::Parsed(name) => write!(f, "P_{}", name),
-            Name::Skolem(name) => write!(f, "S_{}", name),
+            Name::Builtin(name) => write!(f, "${name}"),
+            Name::Parsed(name) => write!(f, "P_{name}"),
+            Name::Skolem(name) => write!(f, "S_{name}"),
         }
     }
 }
@@ -68,7 +68,7 @@ impl Term {
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Variable(name) => write!(f, "{}", name),
+            Term::Variable(name) => write!(f, "{name}"),
             Term::Function(name, ts) => write!(
                 f,
                 "{}({})",
@@ -91,8 +91,8 @@ pub enum Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Literal::Eq(t1, t2) => write!(f, "{} = {}", t1, t2),
-            Literal::NotEq(t1, t2) => write!(f, "{} != {}", t1, t2),
+            Literal::Eq(t1, t2) => write!(f, "{t1} = {t2}"),
+            Literal::NotEq(t1, t2) => write!(f, "{t1} != {t2}"),
         }
     }
 }
@@ -111,9 +111,9 @@ pub enum FOLTerm {
 impl fmt::Display for FOLTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            FOLTerm::Literal(l) => write!(f, "{}", l),
-            FOLTerm::And(t1, t2) => write!(f, "({} & {})", t1, t2),
-            FOLTerm::Or(t1, t2) => write!(f, "({} | {})", t1, t2),
+            FOLTerm::Literal(l) => write!(f, "{l}"),
+            FOLTerm::And(t1, t2) => write!(f, "({t1} & {t2})"),
+            FOLTerm::Or(t1, t2) => write!(f, "({t1} | {t2})"),
             FOLTerm::Exist(vars, ts) => {
                 write!(
                     f,
@@ -217,7 +217,7 @@ impl FOLTerm {
         for name in binder_names.clone() {
             let fresh_var = state.get_fresh_var();
             new_binder_names.push(fresh_var.clone());
-            log::debug!("Renaming {} to {}", name, fresh_var);
+            log::debug!("Renaming {name} to {fresh_var}");
 
             if let Some(binders) = sub.0.get_mut(&name) {
                 binders.push(fresh_var);
@@ -326,7 +326,7 @@ impl FOLTerm {
     // 2. Pulling up the quantifiers
     fn pnf(self, state: &mut SkolemState) -> FOLTerm {
         let renamed_term = self.rename_quants(state, &mut ScopedRenameMap(HashMap::new()));
-        log::debug!("Renamed Binders: {}", renamed_term);
+        log::debug!("Renamed Binders: {renamed_term}");
         renamed_term.pull_quants()
     }
 
@@ -392,7 +392,7 @@ impl From<FOLTerm> for SkolemTerm {
     fn from(f: FOLTerm) -> Self {
         let mut state = SkolemState { counter: 0 };
         let pnf_term = f.pnf(&mut state);
-        log::info!("PNF Term: {}", pnf_term);
+        log::info!("PNF Term: {pnf_term}");
         pnf_term.skolemize()
     }
 }
@@ -400,9 +400,9 @@ impl From<FOLTerm> for SkolemTerm {
 impl fmt::Display for SkolemTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SkolemTerm::Literal(l) => write!(f, "{}", l),
-            SkolemTerm::And(t1, t2) => write!(f, "({} & {})", t1, t2),
-            SkolemTerm::Or(t1, t2) => write!(f, "({} | {})", t1, t2),
+            SkolemTerm::Literal(l) => write!(f, "{l}"),
+            SkolemTerm::And(t1, t2) => write!(f, "({t1} & {t2})"),
+            SkolemTerm::Or(t1, t2) => write!(f, "({t1} | {t2})"),
         }
     }
 }
@@ -479,7 +479,7 @@ pub struct TPTPProblem {
 // Parse into structure consisting of two lists: one with assumptions, one with goals (still FoF)
 // FIXME: we don't have any sanity checks for include stuff with conflicting names
 pub fn parse_file(file: PathBuf) -> TPTPProblem {
-    log::info!("Opening {:?}", file);
+    log::info!("Opening {file:?}");
     let mut f = File::open(&file).expect("Unable to open file");
     let mut vec = Vec::new();
     f.read_to_end(&mut vec).expect("Unable to read file");
@@ -492,20 +492,19 @@ pub fn parse_file(file: PathBuf) -> TPTPProblem {
             TPTPInput::Include(include) => {
                 let include_file = include.file_name;
                 if let FormulaSelection(Some(a)) = include.selection {
-                    log::error!("Selection: '{}'", a);
+                    log::error!("Selection: '{a}'");
                     panic!("Parsing doesn't handle a selection of input yet!");
                 }
                 let mut include_path = file.clone();
                 assert!(
                     include_path.pop(),
-                    "Couldn't fetch the directory of the tptp input: '{:?}'",
-                    file
+                    "Couldn't fetch the directory of the tptp input: '{file:?}'"
                 );
                 // The path is singlely-quoted, which does make this funny.
                 // But who would put single quotes in their filenames right.. right
                 let problem_path = include_file.0.to_string().replace("'", "");
                 include_path.push(problem_path);
-                log::info!("Include {:?}", include_path);
+                log::info!("Include {include_path:?}");
 
                 let mut tptp_problem = parse_file(include_path);
                 axioms.append(&mut tptp_problem.axioms);
@@ -529,9 +528,9 @@ pub fn parse_file(file: PathBuf) -> TPTPProblem {
                             "The 'negated_conjecture'-role doesn't seem to be intended for this provers use-case."
                         );
                         let formula = *annotated_fof.formula;
-                        log::info!("Parse FOF: {}", formula);
+                        log::info!("Parse FOF: {formula}");
                         let fol_term = FOLTerm::from(formula.0);
-                        log::info!("Parsed FOLTerm: {}", fol_term);
+                        log::info!("Parsed FOLTerm: {fol_term}");
                         if role == "conjecture" {
                             conjectures.push(fol_term);
                         } else {
@@ -582,9 +581,9 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
         }
     }
     let skolem_term = SkolemTerm::from(acc);
-    log::info!("SkolemTerm: {}", skolem_term);
+    log::info!("SkolemTerm: {skolem_term}");
     let cnf_term = skolem_term.cnf();
-    log::info!("CNF Term: {}", cnf_term);
+    log::info!("CNF Term: {cnf_term}");
     cnf_term
 }
 

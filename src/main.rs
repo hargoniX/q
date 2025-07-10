@@ -45,14 +45,14 @@ fn main() {
 
     let tptp_problem = qlib::tptp_parser::parse_file(args.file);
     for assumption in &tptp_problem.axioms {
-        log::info!("Axioms: {}", assumption);
+        log::info!("Axioms: {assumption}");
     }
     for goal in &tptp_problem.conjectures {
-        log::info!("Conjectures: {}", goal);
+        log::info!("Conjectures: {goal}");
     }
     // This should be hidden away within `fn solve` or sth
     let problem_cnf = qlib::tptp_parser::transform_problem(tptp_problem);
-    log::info!("Problem Statement: {}", problem_cnf);
+    log::info!("Problem Statement: {problem_cnf}");
 
     let mut term_bank = TermBank::new();
     let clauses = problem_cnf.to_clauses(&mut term_bank);
@@ -61,5 +61,5 @@ fn main() {
         log::info!("Clause: {}", pretty_print(clause, &term_bank));
     }
     let result = search_proof(clauses, &mut term_bank, &resource_limit);
-    log::warn!("Result superposition: '{:?}'", result);
+    log::warn!("Result superposition: '{result:?}'");
 }

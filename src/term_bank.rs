@@ -348,9 +348,9 @@ impl TermBank {
         let size = self.variable_bank.len();
         if info.name.ends_with("rep") {
             let new = info.name.rsplit_once("_").unwrap().0;
-            info.name = new.to_owned() + &format!("_{}rep", size);
+            info.name = new.to_owned() + &format!("_{size}rep");
         } else {
-            info.name.push_str(&format!("_{}rep", size));
+            info.name.push_str(&format!("_{size}rep"));
         }
         self.mk_fresh_variable(info)
     }
