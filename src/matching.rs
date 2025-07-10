@@ -15,11 +15,10 @@ impl Term {
         other: &Self,
         subst: Option<Substitution>,
     ) -> Option<Substitution> {
-        let mut subst = subst.unwrap_or_else(|| Substitution::new());
+        let mut subst = subst.unwrap_or_else(Substitution::new);
         let mut matcher_list = vec![self];
         let mut target_list = vec![other];
-        while matcher_list.len() != 0 {
-            let matcher = matcher_list.pop().unwrap();
+        while let Some(matcher) = matcher_list.pop() {
             let target = target_list.pop().unwrap();
 
             match (&**matcher, &**target) {

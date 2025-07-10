@@ -57,7 +57,7 @@ impl Substitution {
         let mut new_subst = Substitution::new();
         new_subst.insert(var_id, term.clone());
         for (_, value) in self.map.iter_mut() {
-            *value = value.clone().subst_with(&new_subst, &term_bank);
+            *value = value.clone().subst_with(&new_subst, term_bank);
         }
         self.map.entry(var_id).or_insert_with(|| term);
         self.filter |= var_id.to_bloom_filter();

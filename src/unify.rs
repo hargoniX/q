@@ -25,8 +25,7 @@ enum UnificationState {
 // TODO: Polynomial Unification or better
 impl UnificationProblem {
     fn new(lhs: Term, rhs: Term) -> Self {
-        let mut equations = Vec::new();
-        equations.push((lhs, rhs));
+        let equations = vec![(lhs, rhs)];
         let substitution = Substitution::new();
         Self {
             equations,

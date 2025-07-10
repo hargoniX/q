@@ -33,9 +33,9 @@ pub enum Name {
 impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Name::Builtin(name) => write!(f, "${}", name),
-            Name::Parsed(name) => write!(f, "P_{}", name),
-            Name::Skolem(name) => write!(f, "S_{}", name),
+            Name::Builtin(name) => write!(f, "${name}"),
+            Name::Parsed(name) => write!(f, "P_{name}"),
+            Name::Skolem(name) => write!(f, "S_{name}"),
         }
     }
 }
@@ -52,16 +52,15 @@ impl Term {
     fn substitute(&self, s: &Substitution) -> Term {
         match self {
             Term::Variable(name) => {
-                if let Some(t2) = s.0.get(&name) {
+                if let Some(t2) = s.0.get(name) {
                     t2.clone()
                 } else {
                     self.clone()
                 }
             }
-            Term::Function(name, ts) => Term::Function(
-                name.clone(),
-                ts.into_iter().map(|t| t.substitute(s)).collect(),
-            ),
+            Term::Function(name, ts) => {
+                Term::Function(name.clone(), ts.iter().map(|t| t.substitute(s)).collect())
+            }
         }
     }
 }
@@ -69,12 +68,12 @@ impl Term {
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Variable(name) => write!(f, "{}", name),
+            Term::Variable(name) => write!(f, "{name}"),
             Term::Function(name, ts) => write!(
                 f,
                 "{}({})",
                 name,
-                ts.into_iter()
+                ts.iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<String>>()
                     .join(",")
@@ -92,8 +91,8 @@ pub enum Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Literal::Eq(t1, t2) => write!(f, "{} = {}", t1, t2),
-            Literal::NotEq(t1, t2) => write!(f, "{} != {}", t1, t2),
+            Literal::Eq(t1, t2) => write!(f, "{t1} = {t2}"),
+            Literal::NotEq(t1, t2) => write!(f, "{t1} != {t2}"),
         }
     }
 }
@@ -112,29 +111,29 @@ pub enum FOLTerm {
 impl fmt::Display for FOLTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            FOLTerm::Literal(l) => write!(f, "{}", l),
-            FOLTerm::And(t1, t2) => write!(f, "({} & {})", t1, t2),
-            FOLTerm::Or(t1, t2) => write!(f, "({} | {})", t1, t2),
+            FOLTerm::Literal(l) => write!(f, "{l}"),
+            FOLTerm::And(t1, t2) => write!(f, "({t1} & {t2})"),
+            FOLTerm::Or(t1, t2) => write!(f, "({t1} | {t2})"),
             FOLTerm::Exist(vars, ts) => {
                 write!(
                     f,
                     "?[{}]:{}",
-                    vars.into_iter()
+                    vars.iter()
                         .map(|v| v.to_string())
                         .collect::<Vec<String>>()
                         .join(","),
-                    ts.to_string()
+                    ts
                 )
             }
             FOLTerm::Forall(vars, ts) => {
                 write!(
                     f,
                     "![{}]:{}",
-                    vars.into_iter()
+                    vars.iter()
                         .map(|v| v.to_string())
                         .collect::<Vec<String>>()
                         .join(","),
-                    ts.to_string()
+                    ts
                 )
             }
         }
@@ -167,16 +166,15 @@ fn rename_term(t: &Term, s: &mut ScopedRenameMap) -> Term {
     match t {
         Term::Variable(name) => {
             if let Some(rename_list) = s.0.get(name) {
-                if let Some(t2) = rename_list.get(rename_list.len() - 1) {
+                if let Some(t2) = rename_list.last() {
                     return Term::Variable(t2.clone());
                 }
             }
             t.clone()
         }
-        Term::Function(name, ts) => Term::Function(
-            name.clone(),
-            ts.into_iter().map(|t| rename_term(t, s)).collect(),
-        ),
+        Term::Function(name, ts) => {
+            Term::Function(name.clone(), ts.iter().map(|t| rename_term(t, s)).collect())
+        }
     }
 }
 
@@ -211,7 +209,7 @@ impl FOLTerm {
     //      ∀1.(∀2.p(2)) ∧ p(1)
     fn rename_quantifier(
         binder_names: Vec<Name>,
-        term: Box<FOLTerm>,
+        term: FOLTerm,
         state: &mut SkolemState,
         sub: &mut ScopedRenameMap,
     ) -> (Vec<Name>, Box<FOLTerm>) {
@@ -219,7 +217,7 @@ impl FOLTerm {
         for name in binder_names.clone() {
             let fresh_var = state.get_fresh_var();
             new_binder_names.push(fresh_var.clone());
-            log::debug!("Renaming {} to {}", name, fresh_var);
+            log::debug!("Renaming {name} to {fresh_var}");
 
             if let Some(binders) = sub.0.get_mut(&name) {
                 binders.push(fresh_var);
@@ -253,12 +251,12 @@ impl FOLTerm {
             ),
             FOLTerm::Exist(n, t) => {
                 let (new_binder_names, renamed_fol_term) =
-                    FOLTerm::rename_quantifier(n, t, state, sub);
+                    FOLTerm::rename_quantifier(n, *t, state, sub);
                 FOLTerm::Exist(new_binder_names, renamed_fol_term)
             }
             FOLTerm::Forall(n, t) => {
                 let (new_binder_names, renamed_fol_term) =
-                    FOLTerm::rename_quantifier(n, t, state, sub);
+                    FOLTerm::rename_quantifier(n, *t, state, sub);
                 FOLTerm::Forall(new_binder_names, renamed_fol_term)
             }
         }
@@ -328,7 +326,7 @@ impl FOLTerm {
     // 2. Pulling up the quantifiers
     fn pnf(self, state: &mut SkolemState) -> FOLTerm {
         let renamed_term = self.rename_quants(state, &mut ScopedRenameMap(HashMap::new()));
-        log::debug!("Renamed Binders: {}", renamed_term);
+        log::debug!("Renamed Binders: {renamed_term}");
         renamed_term.pull_quants()
     }
 
@@ -366,10 +364,7 @@ impl FOLTerm {
                         name.clone(),
                         Term::Function(
                             name.clone(),
-                            binders
-                                .into_iter()
-                                .map(|n| Term::Variable(n.clone()))
-                                .collect(),
+                            binders.iter().map(|n| Term::Variable(n.clone())).collect(),
                         ),
                     );
                 }
@@ -397,7 +392,7 @@ impl From<FOLTerm> for SkolemTerm {
     fn from(f: FOLTerm) -> Self {
         let mut state = SkolemState { counter: 0 };
         let pnf_term = f.pnf(&mut state);
-        log::info!("PNF Term: {}", pnf_term);
+        log::info!("PNF Term: {pnf_term}");
         pnf_term.skolemize()
     }
 }
@@ -405,9 +400,9 @@ impl From<FOLTerm> for SkolemTerm {
 impl fmt::Display for SkolemTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SkolemTerm::Literal(l) => write!(f, "{}", l),
-            SkolemTerm::And(t1, t2) => write!(f, "({} & {})", t1, t2),
-            SkolemTerm::Or(t1, t2) => write!(f, "({} | {})", t1, t2),
+            SkolemTerm::Literal(l) => write!(f, "{l}"),
+            SkolemTerm::And(t1, t2) => write!(f, "({t1} & {t2})"),
+            SkolemTerm::Or(t1, t2) => write!(f, "({t1} | {t2})"),
         }
     }
 }
@@ -467,7 +462,7 @@ impl SkolemTerm {
 
     pub fn to_clauses(self, term_bank: &mut TermBank) -> Vec<Clause> {
         let mut state = TermBankConversionState {
-            term_bank: term_bank,
+            term_bank,
             var_map: HashMap::new(),
             func_map: HashMap::new(),
         };
@@ -483,8 +478,8 @@ pub struct TPTPProblem {
 
 // Parse into structure consisting of two lists: one with assumptions, one with goals (still FoF)
 // FIXME: we don't have any sanity checks for include stuff with conflicting names
-pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
-    log::info!("Opening {:?}", file);
+pub fn parse_file(file: PathBuf) -> TPTPProblem {
+    log::info!("Opening {file:?}");
     let mut f = File::open(&file).expect("Unable to open file");
     let mut vec = Vec::new();
     f.read_to_end(&mut vec).expect("Unable to read file");
@@ -497,20 +492,19 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
             TPTPInput::Include(include) => {
                 let include_file = include.file_name;
                 if let FormulaSelection(Some(a)) = include.selection {
-                    log::error!("Selection: '{}'", a);
-                    assert!(false, "Parsing doesn't handle a selection of input yet!");
+                    log::error!("Selection: '{a}'");
+                    panic!("Parsing doesn't handle a selection of input yet!");
                 }
                 let mut include_path = file.clone();
                 assert!(
                     include_path.pop(),
-                    "Couldn't fetch the directory of the tptp input: '{:?}'",
-                    file
+                    "Couldn't fetch the directory of the tptp input: '{file:?}'"
                 );
                 // The path is singlely-quoted, which does make this funny.
                 // But who would put single quotes in their filenames right.. right
                 let problem_path = include_file.0.to_string().replace("'", "");
                 include_path.push(problem_path);
-                log::info!("Include {:?}", include_path);
+                log::info!("Include {include_path:?}");
 
                 let mut tptp_problem = parse_file(include_path);
                 axioms.append(&mut tptp_problem.axioms);
@@ -534,17 +528,17 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
                             "The 'negated_conjecture'-role doesn't seem to be intended for this provers use-case."
                         );
                         let formula = *annotated_fof.formula;
-                        log::info!("Parse FOF: {}", formula);
+                        log::info!("Parse FOF: {formula}");
                         let fol_term = FOLTerm::from(formula.0);
-                        log::info!("Parsed FOLTerm: {}", fol_term);
+                        log::info!("Parsed FOLTerm: {fol_term}");
                         if role == "conjecture" {
                             conjectures.push(fol_term);
                         } else {
                             axioms.push(fol_term);
                         }
                     }
-                    AnnotatedFormula::Tfx(_) => assert!(false, "Parsing doesn't handle Tfx!"),
-                    AnnotatedFormula::Cnf(_) => assert!(false, "Parsing doesn't handle Cnf!"),
+                    AnnotatedFormula::Tfx(_) => panic!("Parsing doesn't handle Tfx!"),
+                    AnnotatedFormula::Cnf(_) => panic!("Parsing doesn't handle Cnf!"),
                 }
             }
         }
@@ -554,8 +548,8 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
         "Parser wasn't finished somehow!"
     );
     TPTPProblem {
-        axioms: axioms,
-        conjectures: conjectures,
+        axioms,
+        conjectures,
     }
 }
 
@@ -566,14 +560,14 @@ pub fn parse_file<'a>(file: PathBuf) -> TPTPProblem {
 // - we show False
 pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
     let mut acc;
-    if problem.conjectures.len() != 0 {
+    if !problem.conjectures.is_empty() {
         let neg_goals: Vec<FOLTerm> = problem
             .conjectures
             .into_iter()
             .map(FOLTerm::negate)
             .collect();
-        acc = FOLTerm::from(neg_goals[0].clone());
-        for t in neg_goals[1..].into_iter() {
+        acc = neg_goals[0].clone();
+        for t in neg_goals[1..].iter() {
             acc = FOLTerm::Or(Box::new(acc), Box::new(t.clone()));
         }
         for t in problem.axioms {
@@ -581,15 +575,15 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
         }
     } else {
         log::warn!("The TPTP Problem contains no goals!");
-        acc = FOLTerm::from(problem.axioms[0].clone());
-        for t in problem.axioms[1..].into_iter() {
+        acc = problem.axioms[0].clone();
+        for t in problem.axioms[1..].iter() {
             acc = FOLTerm::And(Box::new(acc), Box::new(t.clone()));
         }
     }
     let skolem_term = SkolemTerm::from(acc);
-    log::info!("SkolemTerm: {}", skolem_term);
+    log::info!("SkolemTerm: {skolem_term}");
     let cnf_term = skolem_term.cnf();
-    log::info!("CNF Term: {}", cnf_term);
+    log::info!("CNF Term: {cnf_term}");
     cnf_term
 }
 
@@ -616,11 +610,11 @@ impl TermBankConversionState<'_> {
     // the hashmap doesn't work correctly, but there is an assertion which does track this.
     fn get_func_id(&mut self, name: Name, arity: usize) -> FunctionIdentifier {
         if let Some(func) = self.func_map.get(&name) {
-            func.clone()
+            *func
         } else {
             let func = self.term_bank.add_function(FunctionInformation {
                 name: name.to_string(),
-                arity: arity,
+                arity,
             });
             self.func_map.insert(name, func);
             func
@@ -764,7 +758,7 @@ fn convert_op_into_binary(fs: &[fof::UnitFormula<'_>], op: &Op) -> FOLTerm {
         Op::And => FOLTerm::And,
         Op::Or => FOLTerm::Or,
     };
-    for f in fs[1..].into_iter() {
+    for f in fs[1..].iter() {
         let t = FOLTerm::from(f.clone());
         acc = op_fn(Box::new(acc), Box::new(t));
     }

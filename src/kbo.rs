@@ -218,10 +218,10 @@ impl<'a> KboComparator<'a> {
                 if x == y { Some(Ordering::Equal) } else { None }
             }
             (RawTerm::Var { id: x, .. }, RawTerm::App { .. }) => {
-                let contained = self.modify_balances_contains(&*rhs, &*x, LiteralSide::Right);
+                let contained = self.modify_balances_contains(rhs, x, LiteralSide::Right);
                 // Update variable and weight balance only for the variable part
                 self.inc_var(*x);
-                self.weight_balance = self.weight_balance + MU;
+                self.weight_balance += MU;
                 if contained {
                     Some(Ordering::Less)
                 } else {
@@ -229,10 +229,10 @@ impl<'a> KboComparator<'a> {
                 }
             }
             (RawTerm::App { .. }, RawTerm::Var { id: y, .. }) => {
-                let contained = self.modify_balances_contains(&*lhs, &*y, LiteralSide::Left);
+                let contained = self.modify_balances_contains(lhs, y, LiteralSide::Left);
                 // Update variable and weight balance only for the variable part
                 self.dec_var(*y);
-                self.weight_balance = self.weight_balance - MU;
+                self.weight_balance -= MU;
                 if contained {
                     Some(Ordering::Greater)
                 } else {
@@ -284,7 +284,7 @@ impl<'a> KboComparator<'a> {
 
     fn kbo(lhs: &Term, rhs: &Term, term_bank: &'a TermBank) -> Option<Ordering> {
         let mut cmp = Self {
-            term_bank: term_bank,
+            term_bank,
             var_balance: HashMap::new(),
             weight_balance: 0,
             num_neg: 0,

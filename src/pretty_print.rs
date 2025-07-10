@@ -28,14 +28,13 @@ fn print_term_into_aux(term: &Term, term_bank: &TermBank, acc: &mut String) {
             let info = term_bank.get_function_info(*id);
             acc.push_str(&info.name);
             if info.arity > 0 {
-                acc.push_str("(");
-                for arg_idx in 0..(args.len() - 1) {
-                    let arg = &args[arg_idx];
+                acc.push('(');
+                for arg in args.iter().take(args.len() - 1) {
                     print_term_into_aux(arg, term_bank, acc);
                     acc.push_str(", ");
                 }
                 print_term_into_aux(&args[args.len() - 1], term_bank, acc);
-                acc.push_str(")");
+                acc.push(')');
             }
         }
     }
@@ -50,8 +49,8 @@ impl BankPrettyPrint for Term {
 impl BankPrettyPrint for Polarity {
     fn print_into(&self, _term_bank: &TermBank, acc: &mut String) {
         match self {
-            Polarity::Eq => acc.push_str("="),
-            Polarity::Ne => acc.push_str("≠"),
+            Polarity::Eq => acc.push('='),
+            Polarity::Ne => acc.push('≠'),
         }
     }
 }
@@ -59,9 +58,9 @@ impl BankPrettyPrint for Polarity {
 impl BankPrettyPrint for Literal {
     fn print_into(&self, term_bank: &TermBank, acc: &mut String) {
         self.get_lhs().print_into(term_bank, acc);
-        acc.push_str(" ");
+        acc.push(' ');
         self.get_pol().print_into(term_bank, acc);
-        acc.push_str(" ");
+        acc.push(' ');
         self.get_rhs().print_into(term_bank, acc);
     }
 }

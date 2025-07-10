@@ -87,12 +87,12 @@ fn ordering_check(
     let check_lit = clause
         .get_literal(check_lit_id)
         .clone()
-        .subst_with(&subst, term_bank);
+        .subst_with(subst, term_bank);
     let ok = clause
         .iter()
         .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id)
         .all(|(_, other_lit)| {
-            let other_lit = other_lit.clone().subst_with(&subst, term_bank);
+            let other_lit = other_lit.clone().subst_with(subst, term_bank);
             if f(check_lit.kbo(&other_lit, term_bank)) {
                 new_literals.push(other_lit);
                 true
@@ -219,7 +219,7 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
     }
 }
 
-impl<'a> SuperpositionState<'a> {
+impl SuperpositionState<'_> {
     fn insert_active(&mut self, clause: Clause) {
         let clause_id = clause.get_id();
         info!(
@@ -251,7 +251,7 @@ impl<'a> SuperpositionState<'a> {
         }
 
         // Update the feature vector index for subsumption
-        self.subsumption_index.insert(&clause, &self.term_bank);
+        self.subsumption_index.insert(&clause, self.term_bank);
 
         self.active.insert(clause);
     }
@@ -293,8 +293,8 @@ impl<'a> SuperpositionState<'a> {
     ) {
         let l1_ord = lit1_lhs
             .clone()
-            .subst_with(&subst, term_bank)
-            .kbo(&lit1_rhs.clone().subst_with(&subst, term_bank), term_bank);
+            .subst_with(subst, term_bank)
+            .kbo(&lit1_rhs.clone().subst_with(subst, term_bank), term_bank);
         // Condition 3: The lhs of the rewriting literal must not be <= the rhs after
         // applying the substitution.
         if l1_ord == Some(Ordering::Equal) || l1_ord == Some(Ordering::Less) {
@@ -305,16 +305,15 @@ impl<'a> SuperpositionState<'a> {
         // rhs after applying the substitution.
         let l2_ord = lit2_lhs
             .clone()
-            .subst_with(&subst, term_bank)
-            .kbo(&lit2_rhs.clone().subst_with(&subst, term_bank), term_bank);
+            .subst_with(subst, term_bank)
+            .kbo(&lit2_rhs.clone().subst_with(subst, term_bank), term_bank);
         if l2_ord == Some(Ordering::Equal) || l2_ord == Some(Ordering::Less) {
             return;
         }
 
         // Condition 4: The literal being used for rewriting must be maximal after
         // applying the mgu to its clause.
-        if let Some(mut new_literals1) =
-            strict_maximality_check(clause1, lit1_id, &subst, term_bank)
+        if let Some(mut new_literals1) = strict_maximality_check(clause1, lit1_id, subst, term_bank)
         {
             // Condition 6: The literal being rewritten must be maximal or strictly
             // maximal after applying the mgu to its clause.
@@ -322,12 +321,12 @@ impl<'a> SuperpositionState<'a> {
                 Polarity::Eq => strict_maximality_check,
                 Polarity::Ne => maximality_check,
             };
-            if let Some(mut new_literals2) = checker(clause2, lit2_id, &subst, term_bank) {
+            if let Some(mut new_literals2) = checker(clause2, lit2_id, subst, term_bank) {
                 new_literals1.append(&mut new_literals2);
-                let new_rhs = lit2_rhs.clone().subst_with(&subst, term_bank);
+                let new_rhs = lit2_rhs.clone().subst_with(subst, term_bank);
                 let new_lhs = subterm_pos
                     .replace_term_at(lit2_lhs, lit1_rhs.clone(), term_bank)
-                    .subst_with(&subst, term_bank);
+                    .subst_with(subst, term_bank);
                 let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
                 new_literals1.push(new_lit);
                 let new_clause = Clause::new(new_literals1);
@@ -363,7 +362,7 @@ impl<'a> SuperpositionState<'a> {
                     }
 
                     // Condition 1: the lhs of the rewriting literal and the subposition must unify
-                    if let Some(subst) = lit1_lhs.unify(lit2_lhs_p, &term_bank) {
+                    if let Some(subst) = lit1_lhs.unify(lit2_lhs_p, term_bank) {
                         let clause_pos = &candidate_pos.clause_pos;
                         let literal_pos = &clause_pos.literal_pos;
                         let subterm_pos = &literal_pos.term_pos;
@@ -432,8 +431,8 @@ impl<'a> SuperpositionState<'a> {
                                 lit1_id,
                                 lit2_id,
                                 lit2_pol,
-                                &lit1_lhs,
-                                &lit1_rhs,
+                                lit1_lhs,
+                                lit1_rhs,
                                 &lit2_lhs,
                                 &lit2_rhs,
                                 &subterm_pos,
@@ -450,9 +449,9 @@ impl<'a> SuperpositionState<'a> {
 
     fn generate(&self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
-        equality_resolution(&clause, &mut acc, &self.term_bank);
-        equality_factoring(&clause, &mut acc, &self.term_bank);
-        self.superposition(&clause, &mut acc, &self.term_bank);
+        equality_resolution(&clause, &mut acc, self.term_bank);
+        equality_factoring(&clause, &mut acc, self.term_bank);
+        self.superposition(&clause, &mut acc, self.term_bank);
         acc
     }
 
@@ -481,16 +480,13 @@ impl<'a> SuperpositionState<'a> {
     }
 
     fn redundant(&self, g: &Clause) -> bool {
-        for active_clause_id in self
-            .subsumption_index
-            .forward_candidates(g, &self.term_bank)
-        {
+        for active_clause_id in self.subsumption_index.forward_candidates(g, self.term_bank) {
             let active_clause = self.active.get_by_id(active_clause_id).unwrap();
             if active_clause.subsumes(g) {
                 info!(
                     "Subsumption: {} subsumes {}",
-                    pretty_print(active_clause, &self.term_bank),
-                    pretty_print(active_clause, &self.term_bank)
+                    pretty_print(active_clause, self.term_bank),
+                    pretty_print(active_clause, self.term_bank)
                 );
                 return true;
             }
@@ -501,7 +497,7 @@ impl<'a> SuperpositionState<'a> {
     // TODO: full given-clause loop
     fn run(mut self) -> SuperpositionResult {
         while let Some(mut g) = self.passive.pop() {
-            g = g.fresh_variable_clone(&mut self.term_bank);
+            g = g.fresh_variable_clone(self.term_bank);
             g = simplify(g);
             if g.is_empty() {
                 return SuperpositionResult::ProofFound;
@@ -513,7 +509,7 @@ impl<'a> SuperpositionState<'a> {
             let new_clauses = self.generate(g);
             new_clauses
                 .into_iter()
-                .map(|c| cheap_simplify(c))
+                .map(cheap_simplify)
                 .filter(|c| !is_trivial(c))
                 .for_each(|clause| self.insert_passive(clause));
 

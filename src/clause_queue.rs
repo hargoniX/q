@@ -2,7 +2,7 @@
 //! This module contains the implementation of the clause queue used as the passive set in the
 //! given clause procedure. The key exported data structure is [ClauseQueue].
 
-use std::{cmp::Ordering, collections::BinaryHeap};
+use std::collections::BinaryHeap;
 
 use crate::clause::Clause;
 
@@ -19,10 +19,7 @@ impl PartialEq for WeightedClause {
 // We use reverse ordering as we want minimal clauses to be selected first.
 impl PartialOrd for WeightedClause {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0
-            .weight()
-            .partial_cmp(&other.0.weight())
-            .map(Ordering::reverse)
+        Some(self.cmp(other))
     }
 }
 
