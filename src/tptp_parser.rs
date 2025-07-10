@@ -7,7 +7,7 @@
 //! [Handbook of Practical Logic and Automated Reasoning](https://www.cambridge.org/core/books/abs/handbook-of-practical-logic-and-automated-reasoning/firstorder-logic/1DD3EC5827D7C7914EE6EC245344D140)
 //! about First-order logic.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
@@ -46,7 +46,7 @@ pub enum Term {
     Function(Name, Vec<Term>),
 }
 
-struct Substitution(HashMap<Name, Term>);
+struct Substitution(FxHashMap<Name, Term>);
 
 impl Term {
     fn substitute(&self, s: &Substitution) -> Term {
@@ -160,7 +160,7 @@ impl SkolemState {
 
 // Modelling scopes through a stack:
 // the currently active renaming is the last element of the vec
-struct ScopedRenameMap(HashMap<Name, Vec<Name>>);
+struct ScopedRenameMap(FxHashMap<Name, Vec<Name>>);
 
 fn rename_term(t: &Term, s: &mut ScopedRenameMap) -> Term {
     match t {
@@ -325,7 +325,7 @@ impl FOLTerm {
     //    where the substitution gets overwritten by the second occurence of x
     // 2. Pulling up the quantifiers
     fn pnf(self, state: &mut SkolemState) -> FOLTerm {
-        let renamed_term = self.rename_quants(state, &mut ScopedRenameMap(HashMap::new()));
+        let renamed_term = self.rename_quants(state, &mut ScopedRenameMap(FxHashMap::default()));
         log::debug!("Renamed Binders: {renamed_term}");
         renamed_term.pull_quants()
     }
@@ -374,7 +374,7 @@ impl FOLTerm {
     }
 
     fn skolemize(self) -> SkolemTerm {
-        self.skolemize_aux(&mut Substitution(HashMap::new()), &mut Vec::new())
+        self.skolemize_aux(&mut Substitution(FxHashMap::default()), &mut Vec::new())
     }
 }
 
@@ -463,8 +463,8 @@ impl SkolemTerm {
     pub fn to_clauses(self, term_bank: &mut TermBank) -> Vec<Clause> {
         let mut state = TermBankConversionState {
             term_bank,
-            var_map: HashMap::new(),
-            func_map: HashMap::new(),
+            var_map: FxHashMap::default(),
+            func_map: FxHashMap::default(),
         };
         state.to_clauses_aux(self)
     }
@@ -589,8 +589,8 @@ pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
 
 pub struct TermBankConversionState<'a> {
     pub term_bank: &'a mut TermBank,
-    pub var_map: HashMap<Name, VariableIdentifier>,
-    pub func_map: HashMap<Name, FunctionIdentifier>,
+    pub var_map: FxHashMap<Name, VariableIdentifier>,
+    pub func_map: FxHashMap<Name, FunctionIdentifier>,
 }
 
 impl TermBankConversionState<'_> {
