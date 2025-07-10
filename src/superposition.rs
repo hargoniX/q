@@ -522,12 +522,14 @@ impl SuperpositionState<'_> {
 }
 
 pub fn search_proof(
-    clauses: Vec<Clause>,
+    initial_clauses: Vec<Clause>,
     term_bank: &mut TermBank,
     resource_config: &ResourceLimitConfig,
 ) -> SuperpositionResult {
     let mut passive = ClauseQueue::new();
-    clauses.into_iter().for_each(|clause| passive.push(clause));
+    initial_clauses
+        .into_iter()
+        .for_each(|clause| passive.push(clause));
     let active = ClauseSet::new();
     let subterm_index = DiscriminationTree::new();
     let resource_limits = ResourceLimits::of_config(resource_config);

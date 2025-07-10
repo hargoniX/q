@@ -177,6 +177,11 @@ impl RawTerm {
         self.get_data().function_count
     }
 
+    /// `O(1)` computation for how many variables occur in the term.
+    pub fn variable_count(&self) -> u32 {
+        self.get_data().var_count
+    }
+
     /// Return `Some(x)` if the term is a variable, otherwise `None`.
     pub fn variable_id(&self) -> Option<VariableIdentifier> {
         match self {
@@ -199,14 +204,6 @@ impl RawTerm {
             RawTerm::Var { .. } => None,
             RawTerm::App { args, .. } => Some(args),
         }
-    }
-
-    /// Obtain the precomuted default weight for the term for the clause queue.
-    pub fn weight(&self) -> u32 {
-        // This is E's clause queue term weight heuristic:
-        // "standard weight (computed as two times function symbol count plus variable count)"
-        let data = self.get_data();
-        2 * data.function_count + data.var_count
     }
 
     /// Return `true` iff the term is a variable
