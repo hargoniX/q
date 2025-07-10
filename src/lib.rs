@@ -9,6 +9,7 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::len_without_is_empty)]
+#![allow(clippy::wrong_self_convention)]
 
 pub mod clause;
 pub mod clause_queue;
