@@ -313,8 +313,7 @@ impl SuperpositionState<'_> {
 
         // Condition 4: The literal being used for rewriting must be maximal after
         // applying the mgu to its clause.
-        if let Some(mut new_literals1) =
-            strict_maximality_check(clause1, lit1_id, subst, term_bank)
+        if let Some(mut new_literals1) = strict_maximality_check(clause1, lit1_id, subst, term_bank)
         {
             // Condition 6: The literal being rewritten must be maximal or strictly
             // maximal after applying the mgu to its clause.
@@ -481,10 +480,7 @@ impl SuperpositionState<'_> {
     }
 
     fn redundant(&self, g: &Clause) -> bool {
-        for active_clause_id in self
-            .subsumption_index
-            .forward_candidates(g, self.term_bank)
-        {
+        for active_clause_id in self.subsumption_index.forward_candidates(g, self.term_bank) {
             let active_clause = self.active.get_by_id(active_clause_id).unwrap();
             if active_clause.subsumes(g) {
                 info!(

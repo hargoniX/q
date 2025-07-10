@@ -108,12 +108,12 @@ impl<'a, V> Iterator for UnificationCandidateIter<'a, V> {
     fn next(&mut self) -> Option<Self::Item> {
         // If at the node we are currently stopped at something is still left, use it.
         if let &mut Some(ref mut found_node_iter) = &mut self.found_node_iter {
-    if let Some(next) = found_node_iter.next() {
-        return Some(next);
-    } else {
-        self.found_node_iter = None;
-    }
-}
+            if let Some(next) = found_node_iter.next() {
+                return Some(next);
+            } else {
+                self.found_node_iter = None;
+            }
+        }
         // Start looking for a new node.
         while let Some((mut query_pos, trie_pos)) = self.frontier.pop() {
             match query_pos.peek() {

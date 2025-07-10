@@ -58,10 +58,9 @@ impl Term {
                     self.clone()
                 }
             }
-            Term::Function(name, ts) => Term::Function(
-                name.clone(),
-                ts.iter().map(|t| t.substitute(s)).collect(),
-            ),
+            Term::Function(name, ts) => {
+                Term::Function(name.clone(), ts.iter().map(|t| t.substitute(s)).collect())
+            }
         }
     }
 }
@@ -173,10 +172,9 @@ fn rename_term(t: &Term, s: &mut ScopedRenameMap) -> Term {
             }
             t.clone()
         }
-        Term::Function(name, ts) => Term::Function(
-            name.clone(),
-            ts.iter().map(|t| rename_term(t, s)).collect(),
-        ),
+        Term::Function(name, ts) => {
+            Term::Function(name.clone(), ts.iter().map(|t| rename_term(t, s)).collect())
+        }
     }
 }
 
@@ -366,10 +364,7 @@ impl FOLTerm {
                         name.clone(),
                         Term::Function(
                             name.clone(),
-                            binders
-                                .iter()
-                                .map(|n| Term::Variable(n.clone()))
-                                .collect(),
+                            binders.iter().map(|n| Term::Variable(n.clone())).collect(),
                         ),
                     );
                 }
