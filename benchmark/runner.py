@@ -18,7 +18,12 @@ MEM_LIMIT = 10**9
 class Variant(Enum):
     PELLETIER = "pelletier"
     CASC24 = "casc24"
-    CASC29 = "casc24"
+    CASC29 = "casc29"
+
+
+class CASCCategory(Enum):
+    FOF = "fof"  # provable
+    FNT = "fnt"  # counterexample
 
 
 class Result(Enum):
@@ -77,34 +82,28 @@ def get_problems(filename: str) -> List[Problem]:
     return problems
 
 
-def get_problems_casc(variant: Variant) -> List[Problem]:
+def get_problems_casc(variant: Variant, category: CASCCategory) -> List[Problem]:
     problems = []
     base = f"problems/{variant.value}"
-    if variant is Variant.CASC24:
-        problem_sets = [
-            ("FEQ", Result.UNSAT),
-            ("FNE", Result.UNSAT),
-            ("FNN", Result.SAT),
-            ("FNQ", Result.SAT),
-        ]
-    elif variant is Variant.CASC29:
-        problem_sets = [
-            ("FEQ/FEQProblemFiles", Result.UNSAT),
-            ("FNE/FNEProblemFiles", Result.UNSAT),
-            ("FNN/FNNProblemFiles", Result.SAT),
-            ("FNQ/FNQProblemFiles", Result.SAT),
-        ]
+    if category is CASCCategory.FOF:
+        expected_result = Result.UNSAT
+        problem_sets = ["FEQ", "FNE"]
+    elif category is CASCCategory.FNT:
+        expected_result = Result.SAT
+        problem_sets = ["FNN", "FNQ"]
     else:
         assert False, f"No controlflow for given variant '{variant.value}'"
     for problem_set in problem_sets:
-        path = f"{base}/{problem_set[0]}"
+        path = f"{base}/{problem_set}"
+        if variant is Variant.CASC29:
+            path += f"/{problem_set}ProblemFiles"
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         for problem in files:
             if problem not in EXCLUDE_LIST:
                 problems.append(
                     Problem(
                         filename=f"{path}/{problem}",
-                        expected_result=problem_set[1],
+                        expected_result=expected_result,
                         result=None,
                         execution_time=None,
                     )
@@ -165,7 +164,6 @@ def go(
         problem = test(problem, duration)
         if problem.result is problem.expected_result:
             results.matching_problems.append(problem)
-            # FIXME: write csv file
             print(
                 f"{problem.filename} PASS: expected {problem.expected_result} got {problem.result}"
             )
@@ -205,6 +203,13 @@ def main():
         choices=list(Variant),
         help="Lowercase!",
     )
+    parser.add_argument(
+        "-c",
+        "--category",
+        type=CASCCategory,
+        choices=list(CASCCategory),
+        help="Lowercase!",
+    )
     args = parser.parse_args()
     root_dir = run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -220,8 +225,8 @@ def main():
         problems = get_problems(args.file)
         print(f"Start Testsuite 'pelletier' with '{args.file}'")
     elif variant in [Variant.CASC24, Variant.CASC29]:
-        problems = get_problems_casc(variant)
-        print(f"Start Testsuite '{variant.value}'")
+        print(f"Start Testsuite '{variant.value}' for category '{args.category.value}'")
+        problems = get_problems_casc(variant, args.category)
     else:
         assert False, f"No controlflow for given variant '{variant.value}'"
     print(80 * "-")
@@ -258,15 +263,18 @@ def main():
     print(f"- {len(timeout_problems)} timeout results")
     print(f"- {len(unknown_problems)} 'unknown' results")
     print(80 * "-")
-    out_file = f"benchmark/{variant.value}.csv"
+    if args.category is not None:
+        out_file = f"benchmark/{variant.value}_{args.category.value}.csv"
+    else:
+        out_file = f"benchmark/{variant.value}.csv"
     print(f"Writing summary output file: '{out_file}'")
     with open(out_file, "w") as f:
         f.write("problem,expected_result,result,duration\n")
         for result_set in [
             non_matching_problems,
-            unknown_problems,
             matching_problems,
             timeout_problems,
+            unknown_problems,
         ]:
             result_set.sort(key=lambda x: x.filename)
             for problem in result_set:
