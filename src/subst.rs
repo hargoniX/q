@@ -5,7 +5,7 @@
 //!   terms to replace them with.
 //! - [Substitutable] which may be implemented for types that have some notion of substitution.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::term_bank::{
     RawTerm::{App, Var},
@@ -16,7 +16,7 @@ use crate::term_bank::{
 #[derive(Debug, Clone)]
 pub struct Substitution {
     /// The map that is the substitution itself.
-    map: HashMap<VariableIdentifier, Term>,
+    map: FxHashMap<VariableIdentifier, Term>,
     /// A var bloom filter for the variables the substitution maps s.t. we can quickly see if a
     /// term we are called for is irrelevant.
     filter: VarBloomFilter,
@@ -26,7 +26,7 @@ impl Substitution {
     /// Create a new empty substitution.
     pub fn new() -> Self {
         Self {
-            map: HashMap::new(),
+            map: FxHashMap::default(),
             filter: VarBloomFilter::new(),
         }
     }
@@ -75,7 +75,7 @@ impl Term {
         self,
         subst: &Substitution,
         term_bank: &TermBank,
-        cache: &mut HashMap<Term, Term>,
+        cache: &mut FxHashMap<Term, Term>,
     ) -> Term {
         if (self.var_bloom_filter() & subst.filter).is_empty() {
             self
@@ -105,7 +105,7 @@ impl Substitutable for Term {
         if subst.is_nop() {
             self
         } else {
-            let mut cache = HashMap::new();
+            let mut cache = FxHashMap::default();
             self.subst_with_aux(subst, term_bank, &mut cache)
         }
     }

@@ -12,10 +12,12 @@
 //! 3. Assuming constant time hashing of a `T` a hashconsed `T` will have constant time hashing.
 //! 4. Comparing [HashConsed] managed by the same [Table] is constant time.
 
+use rustc_hash::FxHashMap;
+
 use std::{
     cell::RefCell,
     cmp::Ordering,
-    collections::{HashMap, hash_map::Entry},
+    collections::hash_map::Entry,
     fmt::{Debug, Display},
     hash::{Hash, Hasher},
     ops::Deref,
@@ -33,7 +35,7 @@ where
     /// to weak [InnerHashConsed] references with the idea that once the reference count of a value
     /// associated with a term drops to `0` we know the term may be removed (and thus free'd) from
     /// the `table`.
-    table: RefCell<HashMap<Rc<T>, Weak<InnerHashConsed<T>>>>,
+    table: RefCell<FxHashMap<Rc<T>, Weak<InnerHashConsed<T>>>>,
 }
 
 /// A term table that can be used to produce [HashConsed] smart pointers.
@@ -71,7 +73,7 @@ where
 impl<T: Eq + Hash> InnerTable<T> {
     pub fn new() -> Self {
         Self {
-            table: RefCell::new(HashMap::new()),
+            table: RefCell::new(FxHashMap::default()),
         }
     }
 

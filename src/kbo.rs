@@ -27,10 +27,9 @@
 //! mfyVWBc_tl | modify_balances_list_contains
 //! mfyVWB_tl  | modify_balances_list
 
-use std::{
-    cmp::Ordering,
-    collections::{HashMap, hash_map::Entry},
-};
+use std::{cmp::Ordering, collections::hash_map::Entry};
+
+use rustc_hash::FxHashMap;
 
 use crate::{
     clause::{Literal, Polarity},
@@ -47,7 +46,7 @@ const MU: i32 = 1;
 
 struct KboComparator<'a> {
     term_bank: &'a TermBank,
-    var_balance: HashMap<VariableIdentifier, i32>,
+    var_balance: FxHashMap<VariableIdentifier, i32>,
     weight_balance: i32,
     num_neg: usize,
     num_pos: usize,
@@ -285,7 +284,7 @@ impl<'a> KboComparator<'a> {
     fn kbo(lhs: &Term, rhs: &Term, term_bank: &'a TermBank) -> Option<Ordering> {
         let mut cmp = Self {
             term_bank,
-            var_balance: HashMap::new(),
+            var_balance: FxHashMap::default(),
             weight_balance: 0,
             num_neg: 0,
             num_pos: 0,
@@ -308,19 +307,23 @@ impl KboOrd for Term {
     }
 }
 
-fn literal_to_multiset(lit: &Literal) -> HashMap<&Term, usize> {
+fn literal_to_multiset(lit: &Literal) -> FxHashMap<&Term, usize> {
     match lit.get_pol() {
         // l = r becomes {l, r}
-        Polarity::Eq => HashMap::from([(lit.get_lhs(), 1), (lit.get_rhs(), 1)]),
+        Polarity::Eq => [(lit.get_lhs(), 1), (lit.get_rhs(), 1)]
+            .into_iter()
+            .collect(),
         // l != r becomes {l, l, r, r}
-        Polarity::Ne => HashMap::from([(lit.get_lhs(), 2), (lit.get_rhs(), 2)]),
+        Polarity::Ne => [(lit.get_lhs(), 2), (lit.get_rhs(), 2)]
+            .into_iter()
+            .collect(),
     }
 }
 
 // precondition lhs != rhs
 fn multiset_gt(
-    lhs: &HashMap<&Term, usize>,
-    rhs: &HashMap<&Term, usize>,
+    lhs: &FxHashMap<&Term, usize>,
+    rhs: &FxHashMap<&Term, usize>,
     term_bank: &TermBank,
 ) -> bool {
     // ∀ m ∈ M, rhs(m) > lhs(m)

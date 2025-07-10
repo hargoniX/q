@@ -6,10 +6,11 @@
 //! - [ClauseSet] for representing sets of clauses
 
 use std::{
-    collections::{HashMap, HashSet},
     hash::Hash,
     sync::atomic::{AtomicUsize, Ordering},
 };
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     pretty_print::BankPrettyPrint,
@@ -253,7 +254,7 @@ impl Clause {
     /// with unique variables. For ground clauses this is a very cheap `O(clause.len())`, otherwise
     /// worst case `O(clause.len() * max(dag_size(lit_i)))`.
     pub fn fresh_variable_clone(&self, term_bank: &mut TermBank) -> Clause {
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         for lit in self.literals.iter() {
             lit.get_lhs().collect_vars_into(&mut set);
             lit.get_rhs().collect_vars_into(&mut set);
@@ -337,14 +338,14 @@ impl BankPrettyPrint for Clause {
 
 /// A set of clauses indexed by unique clause identifiers.
 pub struct ClauseSet {
-    map: HashMap<ClauseId, Clause>,
+    map: FxHashMap<ClauseId, Clause>,
 }
 
 impl ClauseSet {
     /// Create an empty clause set.
     pub fn new() -> Self {
         Self {
-            map: HashMap::new(),
+            map: FxHashMap::default(),
         }
     }
 

@@ -3,7 +3,7 @@
 //! described in:
 //! ["E – A Brainiac Theorem Prover"](https://wwwlehre.dhbw-stuttgart.de/~sschulz/PAPERS/Schulz-AICOM-2002.pdf)
 
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::clause::{Clause, Literal};
 
@@ -17,7 +17,7 @@ pub fn cheap_simplify(clause: Clause) -> Clause {
         .filter(|lit| !(lit.is_ne() && lit.get_lhs() == lit.get_rhs()))
         // Rule DD, remove duplicate literals, note that literals both hash and eq up to symmetry
         // so we can use a HashSet for this
-        .collect::<HashSet<&Literal>>();
+        .collect::<FxHashSet<&Literal>>();
 
     if new_lits.len() != clause.len() {
         Clause::new(new_lits.into_iter().cloned().collect())

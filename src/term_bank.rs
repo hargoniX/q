@@ -7,9 +7,10 @@
 //!   comparison and hashing.
 //! - [TermBank] which holds information about and can be used to create new hash consed terms
 
+use rustc_hash::{FxHashSet, FxHasher};
+
 use std::{
-    collections::HashSet,
-    hash::{DefaultHasher, Hash, Hasher},
+    hash::{Hash, Hasher},
     ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign},
 };
 
@@ -134,7 +135,7 @@ impl VariableIdentifier {
     /// Check whether this identifier occurs in `term`. This check is `O(1)` if `term` is ground,
     /// for the general case its worse case `O(dag_size(term))`.
     pub fn occurs_in(&self, term: &Term) -> bool {
-        let mut visited = HashSet::new();
+        let mut visited = FxHashSet::default();
         let mut worklist = vec![term];
 
         while let Some(term) = worklist.pop() {
@@ -226,8 +227,8 @@ impl RawTerm {
 impl HashConsed<RawTerm> {
     /// Accumulate all variables from this term into `acc`. This check is `O(1)` if the term is
     /// ground, for the general case its worse case `O(dag_size(self))`.
-    pub fn collect_vars_into(&self, acc: &mut HashSet<VariableIdentifier>) {
-        let mut visited = HashSet::new();
+    pub fn collect_vars_into(&self, acc: &mut FxHashSet<VariableIdentifier>) {
+        let mut visited = FxHashSet::default();
         let mut front = vec![self];
         while let Some(term) = front.pop() {
             match &**term {
@@ -248,8 +249,8 @@ impl HashConsed<RawTerm> {
 
     /// Accumulate all variables from this term into a hash set. This check is `O(1)` if the term is
     /// ground, for the general case its worse case `O(dag_size(self))`.
-    pub fn collect_vars(&self) -> HashSet<VariableIdentifier> {
-        let mut set = HashSet::new();
+    pub fn collect_vars(&self) -> FxHashSet<VariableIdentifier> {
+        let mut set = FxHashSet::default();
         self.collect_vars_into(&mut set);
         set
     }
@@ -323,7 +324,7 @@ impl TermBank {
 
     /// Create a hash consed variable term for some variable identifier.
     pub fn mk_variable(&self, id: VariableIdentifier) -> Term {
-        let mut hasher = DefaultHasher::new();
+        let mut hasher = FxHasher::default();
         hasher.write_u32(id.0);
         let var = RawTerm::Var {
             id,
@@ -358,7 +359,7 @@ impl TermBank {
     /// Generate a hash consed function application of some function identifier to some arguments.
     /// For constants use either [TermBank::mk_const] or pass the empty vector to `args`.
     pub fn mk_app(&self, id: FunctionIdentifier, args: Vec<Term>) -> Term {
-        let mut hasher = DefaultHasher::new();
+        let mut hasher = FxHasher::default();
         hasher.write_u32(id.0);
         args.iter().for_each(|arg| arg.hash(&mut hasher));
         let hash = hasher.finish();
