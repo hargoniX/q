@@ -11,14 +11,14 @@ pub fn is_trivial(clause: &Clause, term_bank: &TermBank) -> bool {
     for (l1_id, l1) in clause.iter() {
         // Rule TD1, literals with reflexive literals are tautologies
         if l1.is_eq() && l1.get_lhs() == l1.get_rhs() {
-            info!("TD1 killed: {}", pretty_print(clause, &term_bank));
+            info!("TD1 killed: {}", pretty_print(clause, term_bank));
             return true;
         }
 
         for (_, l2) in clause.iter_after(l1_id) {
             // Rule TD2, clauses with a literal and the negation of that literal are tautologies.
             if l1.is_negation_of(l2) {
-                info!("TD2 killed: {}", pretty_print(clause, &term_bank));
+                info!("TD2 killed: {}", pretty_print(clause, term_bank));
                 return true;
             }
         }

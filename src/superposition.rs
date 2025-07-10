@@ -236,7 +236,7 @@ impl SuperpositionState<'_> {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    if term.variable_id().is_none() {
+                    if !term.is_variable() {
                         let pos = ClauseSetPosition::new(
                             ClausePosition::new(
                                 LiteralPosition::new(term_pos, literal_side),
@@ -331,8 +331,10 @@ impl SuperpositionState<'_> {
                 new_literals1.push(new_lit);
                 let new_clause = Clause::new(new_literals1);
                 info!(
-                    "SP derived clause: {}",
-                    pretty_print(&new_clause, term_bank)
+                    "SP derived clause: {} by superposing {} with {}",
+                    pretty_print(&new_clause, term_bank),
+                    pretty_print(clause1, term_bank),
+                    pretty_print(clause2, term_bank)
                 );
                 acc.push(new_clause);
             }
@@ -415,7 +417,7 @@ impl SuperpositionState<'_> {
                         let lit1_id = clause_pos.literal_id;
                         let lit1 = clause1.get_literal(lit1_id);
                         // Condition: The one being used for rewriting must be an equality
-                        if lit1.get_pol() != Polarity::Eq {
+                        if lit1.is_ne() {
                             continue;
                         }
                         let literal_pos = &clause_pos.literal_pos;
