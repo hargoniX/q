@@ -35,6 +35,8 @@ fn print_term_into_aux(term: &Term, term_bank: &TermBank, acc: &mut String) {
                 }
                 print_term_into_aux(&args[args.len() - 1], term_bank, acc);
                 acc.push(')');
+            } else {
+                acc.push_str("()");
             }
         }
     }

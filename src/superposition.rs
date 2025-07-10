@@ -486,7 +486,7 @@ impl SuperpositionState<'_> {
                 info!(
                     "Subsumption: {} subsumes {}",
                     pretty_print(active_clause, self.term_bank),
-                    pretty_print(active_clause, self.term_bank)
+                    pretty_print(g, self.term_bank)
                 );
                 return true;
             }
@@ -507,11 +507,13 @@ impl SuperpositionState<'_> {
             }
             self.insert_active(g.clone());
             let new_clauses = self.generate(g);
-            new_clauses
-                .into_iter()
-                .map(cheap_simplify)
-                .filter(|c| !is_trivial(c))
-                .for_each(|clause| self.insert_passive(clause));
+            for mut clause in new_clauses.into_iter() {
+                clause = cheap_simplify(clause);
+                if is_trivial(&clause, self.term_bank) {
+                    continue;
+                }
+                self.insert_passive(clause);
+            }
 
             if let Some(reason) = self.resources_exhausted() {
                 return SuperpositionResult::Unknown(reason);
