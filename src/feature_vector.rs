@@ -108,22 +108,29 @@ impl FeatureVector {
     }
 }
 
-pub struct SubsumerIterator<'a> {
+pub struct FeatureVectorIndexIter<'a, F: Fn(usize, usize) -> bool> {
     frontier: Vec<(PersistentVecIterator<usize>, &'a Trie<usize, ClauseId>)>,
     found_node_iter: Option<slice::Iter<'a, ClauseId>>,
+    comparator: F,
 }
 
-impl<'a> SubsumerIterator<'a> {
-    fn new(index: &'a FeatureVectorIndex, clause: &Clause, term_bank: &TermBank) -> Self {
+impl<'a, F: Fn(usize, usize) -> bool> FeatureVectorIndexIter<'a, F> {
+    fn new(
+        index: &'a FeatureVectorIndex,
+        clause: &Clause,
+        term_bank: &TermBank,
+        comparator: F,
+    ) -> Self {
         let iter = FeatureVector::new(clause, term_bank).into_persistent_iter();
         Self {
             frontier: vec![(iter, &index.trie)],
             found_node_iter: None,
+            comparator,
         }
     }
 }
 
-impl<'a> Iterator for SubsumerIterator<'a> {
+impl<'a, F: Fn(usize, usize) -> bool> Iterator for FeatureVectorIndexIter<'a, F> {
     type Item = ClauseId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -143,7 +150,9 @@ impl<'a> Iterator for SubsumerIterator<'a> {
                 Some(query_feature) => {
                     trie_pos
                         .iter_children()
-                        .filter(|(index_feature, _)| **index_feature <= query_feature)
+                        .filter(|(index_feature, _)| {
+                            (self.comparator)(**index_feature, query_feature)
+                        })
                         .for_each(|(_, child_pos)| {
                             self.frontier.push((query_pos.clone(), child_pos))
                         });
@@ -185,7 +194,16 @@ impl FeatureVectorIndex {
         &'a self,
         clause: &Clause,
         term_bank: &TermBank,
-    ) -> SubsumerIterator<'a> {
-        SubsumerIterator::new(self, clause, term_bank)
+    ) -> FeatureVectorIndexIter<'a, impl Fn(usize, usize) -> bool> {
+        FeatureVectorIndexIter::new(self, clause, term_bank, |lhs, rhs| lhs <= rhs)
+    }
+
+    /// Obtain an iterator over clauses from the index that might be subsumed by `clause`.
+    pub fn backward_candidates<'a>(
+        &'a self,
+        clause: &Clause,
+        term_bank: &TermBank,
+    ) -> FeatureVectorIndexIter<'a, impl Fn(usize, usize) -> bool> {
+        FeatureVectorIndexIter::new(self, clause, term_bank, |lhs, rhs| lhs >= rhs)
     }
 }
