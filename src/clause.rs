@@ -112,11 +112,6 @@ impl Literal {
         }
     }
 
-    /// Compute the default weight of the literal for the clause queue.
-    pub fn weight(&self) -> u32 {
-        self.lhs.weight() + self.rhs.weight()
-    }
-
     /// Iterator over both symmetries of a literal.
     pub fn symm_term_iter(&self) -> SymmLitIterator<'_> {
         SymmLitIterator { lit: self, idx: 0 }
@@ -191,7 +186,7 @@ fn next_clause_id() -> ClauseId {
 #[derive(Debug, Clone)]
 struct ClauseInfo {
     /// The clause was generated from the initial problem and is not derived via other means.
-    is_initial: bool
+    is_initial: bool,
 }
 
 /// Uniquely identifiable clauses consisting of a multiset of [Literal].
@@ -207,9 +202,7 @@ impl Clause {
     pub fn new(vec: Vec<Literal>) -> Self {
         Self {
             id: next_clause_id(),
-            info: ClauseInfo {
-                is_initial: false
-            },
+            info: ClauseInfo { is_initial: false },
             literals: vec,
         }
     }
@@ -218,11 +211,15 @@ impl Clause {
     pub fn new_initial(vec: Vec<Literal>) -> Self {
         Self {
             id: next_clause_id(),
-            info: ClauseInfo {
-                is_initial: true
-            },
+            info: ClauseInfo { is_initial: true },
             literals: vec,
         }
+    }
+
+    /// Return true iff the clause is initial, that is, part of the problem we were initially
+    /// given.
+    pub fn is_initial(&self) -> bool {
+        self.info.is_initial
     }
 
     /// Get how many literals are in the clause, counting duplicates, this operation is `O(1)`.
@@ -238,11 +235,6 @@ impl Clause {
     /// Check if the clause is unit, this operation is `O(1)`.
     pub fn is_unit(&self) -> bool {
         self.len() == 1
-    }
-
-    /// Get the default clause weight for the clause queue.
-    pub fn weight(&self) -> u32 {
-        self.literals.iter().map(Literal::weight).sum()
     }
 
     /// Obtain a literal from the clause by index.
