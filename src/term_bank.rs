@@ -210,18 +210,12 @@ impl RawTerm {
 
     /// Return `true` iff the term is a variable
     pub fn is_variable(&self) -> bool {
-        match self {
-            RawTerm::Var { .. } => true,
-            _ => false,
-        }
+        matches!(self, RawTerm::Var { .. })
     }
 
     /// Return `true` iff the term is a function application (including constants)
     pub fn is_app(&self) -> bool {
-        match self {
-            RawTerm::App { .. } => true,
-            _ => false,
-        }
+        matches!(self, RawTerm::App { .. })
     }
 
     pub fn var_bloom_filter(&self) -> VarBloomFilter {
@@ -353,8 +347,8 @@ impl TermBank {
         let mut info = self.get_variable_info(old_id).clone();
         let size = self.variable_bank.len();
         if info.name.ends_with("rep") {
-            let foo = info.name.rsplit_once("_").unwrap().0;
-            info.name = foo.to_owned() + &format!("_{}rep", size);
+            let new = info.name.rsplit_once("_").unwrap().0;
+            info.name = new.to_owned() + &format!("_{}rep", size);
         } else {
             info.name.push_str(&format!("_{}rep", size));
         }

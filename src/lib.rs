@@ -3,6 +3,12 @@
 //! It contains a couple of basic components that are eventually going to accumulate in a
 //! superposition based proof procedure. Additionally [tptp_parser] is able to read TPTP FOF
 //! problems into our internal problem formats.
+#![allow(clippy::new_without_default)]
+#![allow(clippy::mutable_key_type)]
+#![allow(clippy::derivable_impls)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::len_without_is_empty)]
 
 pub mod clause;
 pub mod clause_queue;

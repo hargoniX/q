@@ -152,7 +152,7 @@ pub struct SymmLitIterator<'a> {
     idx: u8,
 }
 
-impl<'a> Iterator for SymmLitIterator<'a> {
+impl Iterator for SymmLitIterator<'_> {
     type Item = (Term, Term);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -284,7 +284,7 @@ impl Eq for Clause {}
 impl PartialOrd for Clause {
     /// Clauses are compared by their unique id so comparison is always `O(1)`
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.id.partial_cmp(&other.id)
+        Some(self.cmp(other))
     }
 }
 
@@ -319,18 +319,18 @@ impl Substitutable for Clause {
 impl BankPrettyPrint for Clause {
     fn print_into(&self, term_bank: &TermBank, acc: &mut String) {
         if self.is_empty() {
-            acc.push_str("⊥");
+            acc.push('⊥');
         } else {
             for lit_idx in 0..(self.len() - 1) {
                 let lit = self.get_literal(LiteralId(lit_idx));
-                acc.push_str("(");
+                acc.push('(');
                 lit.print_into(term_bank, acc);
                 acc.push_str(") ∨ ");
             }
             let lit = self.get_literal(LiteralId(self.len() - 1));
-            acc.push_str("(");
+            acc.push('(');
             lit.print_into(term_bank, acc);
-            acc.push_str(")");
+            acc.push(')');
         }
     }
 }
@@ -359,7 +359,7 @@ impl ClauseSet {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Clause> {
-        self.map.iter().map(|(_, clause)| clause)
+        self.map.values()
     }
 }
 

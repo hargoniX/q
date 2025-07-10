@@ -84,7 +84,7 @@ impl<V> Trie<DiscrTreeKey, V> {
                     DiscrTreeKey::App { arity, .. } => (to_skip + *arity) - 1,
                 };
                 if to_skip == 0 {
-                    final_positions.push(&child_pos);
+                    final_positions.push(child_pos);
                 } else {
                     frontier.push((child_pos, to_skip));
                 }
@@ -107,17 +107,13 @@ impl<'a, V> Iterator for UnificationCandidateIter<'a, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // If at the node we are currently stopped at something is still left, use it.
-        match &mut self.found_node_iter {
-            &mut Some(ref mut found_node_iter) => {
-                if let Some(next) = found_node_iter.next() {
-                    return Some(next);
-                } else {
-                    self.found_node_iter = None;
-                }
-            }
-            None => {}
-        }
-
+        if let &mut Some(ref mut found_node_iter) = &mut self.found_node_iter {
+    if let Some(next) = found_node_iter.next() {
+        return Some(next);
+    } else {
+        self.found_node_iter = None;
+    }
+}
         // Start looking for a new node.
         while let Some((mut query_pos, trie_pos)) = self.frontier.pop() {
             match query_pos.peek() {
@@ -129,7 +125,7 @@ impl<'a, V> Iterator for UnificationCandidateIter<'a, V> {
                         .for_each(|subtrie| self.frontier.push((query_pos.clone(), subtrie)));
                 }
                 Some(key @ DiscrTreeKey::App { .. }) => {
-                    if let Some(subtrie) = trie_pos.get_child(&key) {
+                    if let Some(subtrie) = trie_pos.get_child(key) {
                         let mut next_query_pos = query_pos.clone();
                         next_query_pos.next();
                         self.frontier.push((next_query_pos, subtrie));

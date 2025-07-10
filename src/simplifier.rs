@@ -20,7 +20,7 @@ pub fn cheap_simplify(clause: Clause) -> Clause {
         .collect::<HashSet<&Literal>>();
 
     if new_lits.len() != clause.len() {
-        Clause::new(new_lits.into_iter().map(Clone::clone).collect())
+        Clause::new(new_lits.into_iter().cloned().collect())
     } else {
         clause
     }

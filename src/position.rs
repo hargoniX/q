@@ -82,12 +82,12 @@ impl<'a> TermPositionIterator<'a> {
 }
 
 impl Term {
-    pub fn subterm_iter<'a>(&'a self) -> TermPositionIterator<'a> {
+    pub fn subterm_iter(&self) -> TermPositionIterator<'_> {
         TermPositionIterator::new(self)
     }
 }
 
-impl<'a> Iterator for TermPositionIterator<'a> {
+impl Iterator for TermPositionIterator<'_> {
     type Item = (Term, TermPosition);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -101,7 +101,7 @@ impl<'a> Iterator for TermPositionIterator<'a> {
             }
         }
 
-        return Some((curr_term.clone(), curr_pos));
+        Some((curr_term.clone(), curr_pos))
     }
 }
 

@@ -19,7 +19,7 @@ impl Clause {
         unused: BitVec,
         subst: Substitution,
     ) -> bool {
-        if subsuming.len() == 0 {
+        if subsuming.is_empty() {
             return true;
         }
 
@@ -34,8 +34,8 @@ impl Clause {
             let t_rhs = t_lit.get_rhs();
             for (s_lhs, s_rhs) in subsuming[0].symm_term_iter() {
                 let subst = subst.clone();
-                if let Some(subst) = s_lhs.matching_partial(&t_lhs, Some(subst)) {
-                    if let Some(subst) = s_rhs.matching_partial(&t_rhs, Some(subst)) {
+                if let Some(subst) = s_lhs.matching_partial(t_lhs, Some(subst)) {
+                    if let Some(subst) = s_rhs.matching_partial(t_rhs, Some(subst)) {
                         let mut unused = unused.clone();
                         unused.set(t_idx, false);
                         if Clause::subsumes_aux(&subsuming[1..], target, unused, subst) {

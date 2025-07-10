@@ -130,20 +130,17 @@ impl<'a, F: Fn(usize, usize) -> bool> FeatureVectorIndexIter<'a, F> {
     }
 }
 
-impl<'a, F: Fn(usize, usize) -> bool> Iterator for FeatureVectorIndexIter<'a, F> {
+impl< F: Fn(usize, usize) -> bool> Iterator for FeatureVectorIndexIter<'_, F> {
     type Item = ClauseId;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match &mut self.found_node_iter {
-            &mut Some(ref mut found_node_iter) => {
-                if let Some(next) = found_node_iter.next() {
-                    return Some(*next);
-                } else {
-                    self.found_node_iter = None;
-                }
-            }
-            None => {}
-        }
+if let &mut Some(ref mut found_node_iter) = &mut self.found_node_iter {
+    if let Some(next) = found_node_iter.next() {
+        return Some(*next);
+    } else {
+        self.found_node_iter = None;
+    }
+}
 
         while let Some((mut query_pos, trie_pos)) = self.frontier.pop() {
             match query_pos.next() {
