@@ -671,7 +671,7 @@ impl TermBankConversionState<'_> {
     // TODO: change the approach of this function to accumulator-based
     pub fn to_clauses_aux(&mut self, t: SkolemTerm) -> Vec<Clause> {
         match t {
-            SkolemTerm::Literal(l) => vec![Clause::new(vec![self.add_literal_to_termbank(l)])],
+            SkolemTerm::Literal(l) => vec![Clause::new_initial(vec![self.add_literal_to_termbank(l)])],
             SkolemTerm::And(s, t) => {
                 let mut clause_s = self.to_clauses_aux(*s);
                 let mut clause_t = self.to_clauses_aux(*t);
@@ -682,7 +682,7 @@ impl TermBankConversionState<'_> {
                 let mut literals_s = self.to_literals(*s);
                 let mut literals_t = self.to_literals(*t);
                 literals_s.append(&mut literals_t);
-                vec![Clause::new(literals_s)]
+                vec![Clause::new_initial(literals_s)]
             }
         }
     }

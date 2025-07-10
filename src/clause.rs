@@ -188,10 +188,17 @@ fn next_clause_id() -> ClauseId {
     ClauseId(CLAUSE_ID_COUNT.fetch_add(1, Ordering::SeqCst))
 }
 
+#[derive(Debug, Clone)]
+struct ClauseInfo {
+    /// The clause was generated from the initial problem and is not derived via other means.
+    is_initial: bool
+}
+
 /// Uniquely identifiable clauses consisting of a multiset of [Literal].
 #[derive(Debug, Clone)]
 pub struct Clause {
     id: ClauseId,
+    info: ClauseInfo,
     pub(crate) literals: Vec<Literal>,
 }
 
@@ -200,6 +207,20 @@ impl Clause {
     pub fn new(vec: Vec<Literal>) -> Self {
         Self {
             id: next_clause_id(),
+            info: ClauseInfo {
+                is_initial: false
+            },
+            literals: vec,
+        }
+    }
+
+    /// Create a new clause that is marked as being an initial clause.
+    pub fn new_initial(vec: Vec<Literal>) -> Self {
+        Self {
+            id: next_clause_id(),
+            info: ClauseInfo {
+                is_initial: true
+            },
             literals: vec,
         }
     }
@@ -312,6 +333,7 @@ impl Substitutable for Clause {
             .collect();
         Self {
             id: next_clause_id(),
+            info: self.info,
             literals: new_lits,
         }
     }
