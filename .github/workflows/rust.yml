@@ -19,7 +19,7 @@ jobs:
     - name: Check Formatter
       run: cargo fmt --all -- --check
     - name: Check Linter
-      run: cargo clippy -Dwarnings
+      run: cargo clippy -- -Dwarnings
     - name: Build
       run: cargo build --verbose
     - name: Run tests
