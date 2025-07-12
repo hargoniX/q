@@ -537,6 +537,7 @@ impl SuperpositionState<'_> {
             g = g.fresh_variable_clone(self.term_bank);
             g = simplify(g);
             if g.is_empty() {
+                log::warn!("Active Set size: {}", self.active.len());
                 return SuperpositionResult::ProofFound;
             }
             if self.redundant(&g) {
@@ -571,6 +572,11 @@ impl SuperpositionState<'_> {
             }
 
             if let Some(reason) = self.resources_exhausted() {
+                log::warn!(
+                    "Active Set size: {} | Passive Set size {}",
+                    self.active.len(),
+                    self.passive.len()
+                );
                 return SuperpositionResult::Unknown(reason);
             }
         }

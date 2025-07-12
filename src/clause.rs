@@ -373,6 +373,11 @@ impl ClauseSet {
         self.map.remove(&clause.id);
     }
 
+    /// Length of the clause set
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
     /// Get clause by its unique identifier.
     pub fn get_by_id(&self, id: ClauseId) -> Option<&Clause> {
         self.map.get(&id)

@@ -125,4 +125,9 @@ impl ClauseQueue {
         self.step = (self.step + 1) % (WEIGHTED_RATIO + 1);
         next
     }
+
+    /// Length of the clause queue
+    pub fn len(&self) -> usize {
+        self.weighted_queue.len()
+    }
 }
