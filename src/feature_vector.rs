@@ -186,6 +186,12 @@ impl FeatureVectorIndex {
         self.trie.insert(vec.into_iter(), clause.get_id());
     }
 
+    /// Remove a clause from the feature vector index.
+    pub fn remove(&mut self, clause: &Clause, term_bank: &TermBank) {
+        let vec = FeatureVector::new(clause, term_bank);
+        self.trie.remove(vec.into_iter(), clause.get_id());
+    }
+
     /// Obtain an iterator over clauses from the index that might subsume `clause`.
     pub fn forward_candidates<'a>(
         &'a self,

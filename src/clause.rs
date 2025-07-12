@@ -368,6 +368,11 @@ impl ClauseSet {
         self.map.insert(clause.id, clause);
     }
 
+    /// Remove a clause from the set.
+    pub fn remove(&mut self, clause: Clause) {
+        self.map.remove(&clause.id);
+    }
+
     /// Get clause by its unique identifier.
     pub fn get_by_id(&self, id: ClauseId) -> Option<&Clause> {
         self.map.get(&id)

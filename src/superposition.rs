@@ -256,6 +256,41 @@ impl SuperpositionState<'_> {
         self.active.insert(clause);
     }
 
+    // remove from the active set
+    // remove from index structures
+    fn erase_active(&mut self, clause: Clause) {
+        let clause_id = clause.get_id();
+        info!("Erasing active: {}", pretty_print(&clause, self.term_bank));
+
+        // Erase all sub terms with their position into the term index for superposition
+
+        // TODO: There is a potential optimization here where we keep a second index that contains
+        // just the root terms of all literals. This is useful for superposing when the given
+        // clause is the one being substituted in.
+        for (literal_id, literal) in clause.iter() {
+            for literal_side in [LiteralSide::Left, LiteralSide::Right] {
+                let root_term = literal_side.get_side(literal);
+                for (term, term_pos) in root_term.subterm_iter() {
+                    if !term.is_variable() {
+                        let pos = ClauseSetPosition::new(
+                            ClausePosition::new(
+                                LiteralPosition::new(term_pos, literal_side),
+                                literal_id,
+                            ),
+                            clause_id,
+                        );
+                        self.subterm_index.remove(&term, pos);
+                    }
+                }
+            }
+        }
+
+        // Update the feature vector index for subsumption
+        self.subsumption_index.remove(&clause, self.term_bank);
+
+        self.active.remove(clause);
+    }
+
     fn insert_passive(&mut self, clause: Clause) {
         info!(
             "Inserting passive: {}",
@@ -506,6 +541,24 @@ impl SuperpositionState<'_> {
             }
             if self.redundant(&g) {
                 continue;
+            }
+            let mut clauses = Vec::new();
+            for active_clause_id in self
+                .subsumption_index
+                .backward_candidates(&g, self.term_bank)
+            {
+                let active_clause = self.active.get_by_id(active_clause_id).unwrap();
+                if g.subsumes(active_clause) {
+                    info!(
+                        "Subsumption: {} subsumes {}",
+                        pretty_print(&g, self.term_bank),
+                        pretty_print(active_clause, self.term_bank),
+                    );
+                    clauses.push(active_clause.clone());
+                }
+            }
+            for clause in clauses {
+                self.erase_active(clause);
             }
             self.insert_active(g.clone());
             let new_clauses = self.generate(g);

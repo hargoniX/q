@@ -256,19 +256,25 @@ def main():
         timeout_problems.extend(results.timeout_problems)
         unknown_problems.extend(results.unknown_problems)
 
-    print(80 * "-")
-    print("There are:")
-    print(f"- {len(matching_problems)} matching results")
-    print(f"- {len(non_matching_problems)} non-matching results")
-    print(f"- {len(timeout_problems)} timeout results")
-    print(f"- {len(unknown_problems)} 'unknown' results")
-    print(80 * "-")
     if args.category is not None:
-        out_file = f"benchmark/{variant.value}_{args.category.value}.csv"
+        out_file = f"benchmark/{variant.value}_{args.category.value}"
     else:
-        out_file = f"benchmark/{variant.value}.csv"
-    print(f"Writing summary output file: '{out_file}'")
-    with open(out_file, "w") as f:
+        out_file = f"benchmark/{variant.value}"
+    summary_file = f"{out_file}.summary"
+    print(80 * "-")
+    summary_str = f"""There are:
+- {len(matching_problems)} matching results
+- {len(non_matching_problems)} non-matching results
+- {len(timeout_problems)} timeout results
+- {len(unknown_problems)} 'unknown' results
+"""
+    print(summary_str)
+    with open(summary_file, "w") as f:
+        f.write(summary_str)
+    print(80 * "-")
+    csv_file = f"{out_file}.csv"
+    print(f"Writing summary output files: '{csv_file}' and '{summary_file}'")
+    with open(csv_file, "w") as f:
         f.write("problem,expected_result,result,duration\n")
         for result_set in [
             non_matching_problems,

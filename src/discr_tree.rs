@@ -72,7 +72,7 @@ fn skip_to_next_subterm<T: Iterator<Item = DiscrTreeKey>>(iter: &mut T) {
     }
 }
 
-impl<V> Trie<DiscrTreeKey, V> {
+impl<V: Eq> Trie<DiscrTreeKey, V> {
     /// Skip to the end of the current subterm in a discrimination tree.
     fn skip_to_next_subterm(&self) -> Vec<&Self> {
         let mut final_positions: Vec<&Self> = Vec::new();
@@ -94,7 +94,7 @@ impl<V> Trie<DiscrTreeKey, V> {
     }
 }
 
-pub struct UnificationCandidateIter<'a, V> {
+pub struct UnificationCandidateIter<'a, V: Eq> {
     frontier: Vec<(
         Peekable<PersistentVecIterator<DiscrTreeKey>>,
         &'a Trie<DiscrTreeKey, V>,
@@ -102,7 +102,7 @@ pub struct UnificationCandidateIter<'a, V> {
     found_node_iter: Option<slice::Iter<'a, V>>,
 }
 
-impl<'a, V> Iterator for UnificationCandidateIter<'a, V> {
+impl<'a, V: Eq> Iterator for UnificationCandidateIter<'a, V> {
     type Item = &'a V;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -165,6 +165,12 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
     pub fn insert(&mut self, term: &Term, value: V) {
         let iter = term.preorder_iter();
         self.trie.insert(iter, value);
+    }
+
+    /// Remove a term with some associated value from the discrimination tree.
+    pub fn remove(&mut self, term: &Term, value: V) {
+        let iter = term.preorder_iter();
+        self.trie.remove(iter, value);
     }
 
     /// Obtain the values associated with all potential unifications of `term` indexed in `self`,
@@ -372,14 +378,38 @@ mod test {
 
         let tests = [
             (
-                q1,
+                q1.clone(),
                 vec![t1.clone(), t2.clone(), t3.clone(), t7.clone(), t8.clone()],
             ),
-            (q2, vec![t1.clone(), t2.clone()]),
-            (q3, vec![t1.clone(), t3.clone(), t7.clone()]),
-            (q4, vec![t4.clone(), t5.clone(), t6.clone(), t9.clone()]),
-            (q5, vec![t5.clone(), t6.clone(), t9.clone()]),
-            (q6, vec![t1.clone(), t8.clone()]),
+            (q2.clone(), vec![t1.clone(), t2.clone()]),
+            (q3.clone(), vec![t1.clone(), t3.clone(), t7.clone()]),
+            (
+                q4.clone(),
+                vec![t4.clone(), t5.clone(), t6.clone(), t9.clone()],
+            ),
+            (q5.clone(), vec![t5.clone(), t6.clone(), t9.clone()]),
+            (q6.clone(), vec![t1.clone(), t8.clone()]),
+        ];
+
+        for (query_term, expected_query_results) in tests.iter() {
+            let query_result = discr_tree
+                .get_unification_candidates(query_term)
+                .collect::<HashSet<_>>();
+            assert_eq!(query_result.len(), expected_query_results.len());
+            for expected in expected_query_results.iter() {
+                assert!(query_result.contains(map.get(expected).unwrap()));
+            }
+        }
+        discr_tree.remove(&t1, 1);
+        discr_tree.remove(&t7, 7);
+        discr_tree.remove(&t9, 9);
+        let tests = [
+            (q1, vec![t2.clone(), t3.clone(), t8.clone()]),
+            (q2, vec![t2.clone()]),
+            (q3, vec![t3.clone()]),
+            (q4, vec![t4.clone(), t5.clone(), t6.clone()]),
+            (q5, vec![t5.clone(), t6.clone()]),
+            (q6, vec![t8.clone()]),
         ];
 
         for (query_term, expected_query_results) in tests.iter() {

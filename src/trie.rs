@@ -18,7 +18,7 @@ pub struct Trie<C, V> {
     children: BTreeMap<C, Box<Trie<C, V>>>,
 }
 
-impl<C: Eq + Ord, V> Trie<C, V> {
+impl<C: Copy + Eq + Ord, V: Eq> Trie<C, V> {
     /// Create a new empty try.
     pub fn new() -> Self {
         Self {
@@ -27,7 +27,7 @@ impl<C: Eq + Ord, V> Trie<C, V> {
         }
     }
 
-    /// Insert `value` at the position described by the string produce by `iter`.
+    /// Insert `value` at the position described by the string produced by `iter`.
     pub fn insert(&mut self, mut iter: impl Iterator<Item = C>, value: V) {
         match iter.next() {
             Some(char) => match self.children.entry(char) {
@@ -41,6 +41,31 @@ impl<C: Eq + Ord, V> Trie<C, V> {
                 }
             },
             None => self.values.push(value),
+        }
+    }
+
+    /// Remove `value` at the position described by the string produce by `iter`.
+    pub fn remove(&mut self, mut iter: impl Iterator<Item = C>, value: V) {
+        match iter.next() {
+            Some(char) => match self.children.entry(char) {
+                Entry::Occupied(mut occupied_entry) => {
+                    let entry = occupied_entry.get_mut();
+                    entry.remove(iter, value);
+                    // Remove the subtrie if:
+                    // - the subtrie has no values directly attached
+                    // - the subtrie has no elements in its subtrie
+                    if entry.values.is_empty() && entry.children.is_empty() {
+                        self.children.remove(&char);
+                    }
+                }
+                // Element not contained in the trie in the first place
+                Entry::Vacant(_) => (),
+            },
+            None => {
+                // Self is the final trie, where the value is stored
+                // Could also iter().enumerate() and swap_remove
+                self.values.retain(|x| *x != value);
+            }
         }
     }
 
