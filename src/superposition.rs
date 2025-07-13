@@ -6,7 +6,7 @@ use std::{
 use log::info;
 
 use crate::{
-    clause::{Clause, ClauseSet, Literal, LiteralId, Polarity},
+    clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId, Polarity},
     clause_queue::ClauseQueue,
     discr_tree::DiscriminationTree,
     feature_vector::FeatureVectorIndex,
@@ -55,11 +55,19 @@ impl ResourceLimits {
 }
 
 struct SuperpositionState<'a> {
+    /// The passive/unprocessed set.
     passive: ClauseQueue,
+    /// The active/processed set.
     active: ClauseSet,
+    /// The term bank for allocating our hashconsed terms.
     term_bank: &'a mut TermBank,
+    /// Term index containing all subterms from `active`.
     subterm_index: DiscriminationTree<ClauseSetPosition>,
+    /// Subsumption containing all clauses from `active`.
     subsumption_index: FeatureVectorIndex,
+    /// Term index containing all unit clauses from `active`.
+    rewriting_index: DiscriminationTree<(ClauseId, LiteralSide)>,
+    /// The resource limit configuration for aborting if they are exceeded.
     resource_limits: ResourceLimits,
 }
 
@@ -250,6 +258,12 @@ impl SuperpositionState<'_> {
             }
         }
 
+        if clause.is_unit() {
+            let (_, lit) = clause.iter().next().unwrap();
+            self.rewriting_index.insert(lit.get_lhs(), (clause.get_id(), LiteralSide::Left));
+            self.rewriting_index.insert(lit.get_rhs(), (clause.get_id(), LiteralSide::Right));
+        }
+
         // Update the feature vector index for subsumption
         self.subsumption_index.insert(&clause, self.term_bank);
 
@@ -283,6 +297,12 @@ impl SuperpositionState<'_> {
                     }
                 }
             }
+        }
+
+        if clause.is_unit() {
+            let (_, lit) = clause.iter().next().unwrap();
+            self.rewriting_index.remove(lit.get_lhs(), (clause.get_id(), LiteralSide::Left));
+            self.rewriting_index.remove(lit.get_rhs(), (clause.get_id(), LiteralSide::Right));
         }
 
         // Update the feature vector index for subsumption
@@ -613,6 +633,7 @@ pub fn search_proof(
     let subterm_index = DiscriminationTree::new();
     let resource_limits = ResourceLimits::of_config(resource_config);
     let subsumption_index = FeatureVectorIndex::new();
+    let rewriting_index = DiscriminationTree::new();
 
     let state = SuperpositionState {
         passive,
@@ -621,6 +642,7 @@ pub fn search_proof(
         subterm_index,
         resource_limits,
         subsumption_index,
+        rewriting_index,
     };
     state.run()
 }
