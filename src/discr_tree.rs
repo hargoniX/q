@@ -155,6 +155,121 @@ impl<'a, V: Eq> Iterator for UnificationCandidateIter<'a, V> {
     }
 }
 
+pub struct GeneralisationCandidateIter<'a, V: Eq> {
+    frontier: Vec<(
+        Peekable<PersistentVecIterator<DiscrTreeKey>>,
+        &'a Trie<DiscrTreeKey, V>,
+    )>,
+    found_node_iter: Option<slice::Iter<'a, V>>,
+}
+
+impl<'a, V: Eq> Iterator for GeneralisationCandidateIter<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If at the node we are currently stopped at something is still left, use it.
+        if let &mut Some(ref mut found_node_iter) = &mut self.found_node_iter {
+            if let Some(next) = found_node_iter.next() {
+                return Some(next);
+            } else {
+                self.found_node_iter = None;
+            }
+        }
+        // Start looking for a new node.
+        while let Some((mut query_pos, trie_pos)) = self.frontier.pop() {
+            match query_pos.peek() {
+                Some(DiscrTreeKey::Star) => {
+                    if let Some(subtrie) = trie_pos.get_child(&DiscrTreeKey::Star) {
+                        query_pos.next();
+                        self.frontier.push((query_pos, subtrie))
+                    }
+                }
+                Some(key @ DiscrTreeKey::App { .. }) => {
+                    if let Some(subtrie) = trie_pos.get_child(key) {
+                        let mut next_query_pos = query_pos.clone();
+                        next_query_pos.next();
+                        self.frontier.push((next_query_pos, subtrie));
+                    }
+
+                    if let Some(subtrie) = trie_pos.get_child(&DiscrTreeKey::Star) {
+                        skip_to_next_subterm(&mut query_pos);
+                        self.frontier.push((query_pos, subtrie));
+                    }
+                }
+                None => {
+                    if trie_pos.has_values() {
+                        assert!(self.found_node_iter.is_none());
+                        let mut next_iter = trie_pos.iter_values();
+                        // We know this will be some, the remainder of this node will be drained on
+                        // future calls to our next.
+                        let next_elem = next_iter.next();
+                        self.found_node_iter = Some(next_iter);
+                        return next_elem;
+                    }
+                }
+            }
+        }
+
+        // We were unable to find a new node, finished
+        None
+    }
+}
+
+pub struct InstanceCandidateIter<'a, V: Eq> {
+    frontier: Vec<(
+        Peekable<PersistentVecIterator<DiscrTreeKey>>,
+        &'a Trie<DiscrTreeKey, V>,
+    )>,
+    found_node_iter: Option<slice::Iter<'a, V>>,
+}
+
+impl<'a, V: Eq> Iterator for InstanceCandidateIter<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // If at the node we are currently stopped at something is still left, use it.
+        if let &mut Some(ref mut found_node_iter) = &mut self.found_node_iter {
+            if let Some(next) = found_node_iter.next() {
+                return Some(next);
+            } else {
+                self.found_node_iter = None;
+            }
+        }
+        // Start looking for a new node.
+        while let Some((mut query_pos, trie_pos)) = self.frontier.pop() {
+            match query_pos.peek() {
+                Some(DiscrTreeKey::Star) => {
+                    let subtries = trie_pos.skip_to_next_subterm();
+                    query_pos.next();
+                    subtries
+                        .iter()
+                        .for_each(|subtrie| self.frontier.push((query_pos.clone(), subtrie)));
+                }
+                Some(key @ DiscrTreeKey::App { .. }) => {
+                    if let Some(subtrie) = trie_pos.get_child(key) {
+                        query_pos.next();
+                        self.frontier.push((query_pos, subtrie));
+                    }
+                }
+                None => {
+                    if trie_pos.has_values() {
+                        assert!(self.found_node_iter.is_none());
+                        let mut next_iter = trie_pos.iter_values();
+                        // We know this will be some, the remainder of this node will be drained on
+                        // future calls to our next.
+                        let next_elem = next_iter.next();
+                        self.found_node_iter = Some(next_iter);
+                        return next_elem;
+                    }
+                }
+            }
+        }
+
+        // We were unable to find a new node, finished
+        None
+    }
+}
+
 impl<V: Hash + Eq> DiscriminationTree<V> {
     /// Create an empty discrimination tree.
     pub fn new() -> Self {
@@ -179,6 +294,28 @@ impl<V: Hash + Eq> DiscriminationTree<V> {
     pub fn get_unification_candidates(&self, term: &Term) -> UnificationCandidateIter<'_, V> {
         let iter = term.preorder_iter().peekable();
         UnificationCandidateIter {
+            frontier: vec![(iter, &self.trie)],
+            found_node_iter: None,
+        }
+    }
+
+    /// Obtain the values associated with all potential generalisations of `term` indexed in `self`,
+    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
+    /// `subst(term) = key`.
+    pub fn get_generalisation_candidates(&self, term: &Term) -> GeneralisationCandidateIter<'_, V> {
+        let iter = term.preorder_iter().peekable();
+        GeneralisationCandidateIter {
+            frontier: vec![(iter, &self.trie)],
+            found_node_iter: None,
+        }
+    }
+
+    /// Obtain the values associated with all potential instances of `term` indexed in `self`,
+    /// that is find all values for whose keys there might exist a substitution `subst` s.t.
+    /// `term = subst(key)`.
+    pub fn get_instance_candidates(&self, term: &Term) -> InstanceCandidateIter<'_, V> {
+        let iter = term.preorder_iter().peekable();
+        InstanceCandidateIter {
             frontier: vec![(iter, &self.trie)],
             found_node_iter: None,
         }
