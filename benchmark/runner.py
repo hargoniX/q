@@ -257,9 +257,9 @@ def main():
         unknown_problems.extend(results.unknown_problems)
 
     if args.category is not None:
-        out_file = f"benchmark/{variant.value}_{args.category.value}"
+        out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}"
     else:
-        out_file = f"benchmark/{variant.value}"
+        out_file = f"benchmark/{variant.value}_{args.duration}"
     summary_file = f"{out_file}.summary"
     print(80 * "-")
     summary_str = f"""There are:
@@ -276,18 +276,16 @@ def main():
     print(f"Writing summary output files: '{csv_file}' and '{summary_file}'")
     with open(csv_file, "w") as f:
         f.write("problem,expected_result,result,duration\n")
-        for result_set in [
-            non_matching_problems,
-            matching_problems,
-            timeout_problems,
-            unknown_problems,
-        ]:
-            result_set.sort(key=lambda x: x.filename)
-            for problem in result_set:
-                basename = os.path.basename(problem.filename)
-                f.write(
-                    f"{basename},{problem.expected_result.value},{problem.result.value},{problem.execution_time:.2f}\n"
-                )
+        result_set = non_matching_problems
+        result_set.extend(matching_problems)
+        result_set.extend(timeout_problems)
+        result_set.extend(unknown_problems)
+        result_set.sort(key=lambda x: x.filename)
+        for problem in result_set:
+            basename = os.path.basename(problem.filename)
+            f.write(
+                f"{basename},{problem.expected_result.value},{problem.result.value},{problem.execution_time:.1f}\n"
+            )
 
 
 if __name__ == "__main__":
