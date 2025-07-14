@@ -284,6 +284,10 @@ impl Clause {
             self.clone().subst_with(&subst, term_bank)
         }
     }
+
+    pub fn to_vec(self) -> Vec<Literal> {
+        self.literals
+    }
 }
 
 impl PartialEq for Clause {

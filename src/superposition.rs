@@ -6,16 +6,17 @@ use std::{
 use log::info;
 
 use crate::{
-    clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId, Polarity},
+    clause::{Clause, ClauseSet, Literal, LiteralId, Polarity},
     clause_queue::ClauseQueue,
     discr_tree::DiscriminationTree,
     feature_vector::FeatureVectorIndex,
     kbo::KboOrd,
     position::{
-        ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position, TermPosition,
+        ClausePosition, ClauseSetLiteralPosition, ClauseSetPosition, LiteralPosition, LiteralSide,
+        Position, TermPosition,
     },
     pretty_print::pretty_print,
-    simplifier::{cheap_simplify, simplify},
+    simplifier::{cheap_simplify, forward_simplify},
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
     trivial::is_trivial,
@@ -65,8 +66,8 @@ struct SuperpositionState<'a> {
     subterm_index: DiscriminationTree<ClauseSetPosition>,
     /// Subsumption containing all clauses from `active`.
     subsumption_index: FeatureVectorIndex,
-    /// Term index containing all unit clauses from `active`.
-    rewriting_index: DiscriminationTree<(ClauseId, LiteralSide)>,
+    /// Term index containing all equational unit clauses from `active`.
+    rewriting_index: DiscriminationTree<ClauseSetLiteralPosition>,
     /// The resource limit configuration for aborting if they are exceeded.
     resource_limits: ResourceLimits,
 }
@@ -259,9 +260,17 @@ impl SuperpositionState<'_> {
         }
 
         if clause.is_unit() {
-            let (_, lit) = clause.iter().next().unwrap();
-            self.rewriting_index.insert(lit.get_lhs(), (clause.get_id(), LiteralSide::Left));
-            self.rewriting_index.insert(lit.get_rhs(), (clause.get_id(), LiteralSide::Right));
+            let (lit_id, lit) = clause.iter().next().unwrap();
+            if lit.is_eq() {
+                self.rewriting_index.insert(
+                    lit.get_lhs(),
+                    ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
+                );
+                self.rewriting_index.insert(
+                    lit.get_rhs(),
+                    ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
+                );
+            }
         }
 
         // Update the feature vector index for subsumption
@@ -300,9 +309,17 @@ impl SuperpositionState<'_> {
         }
 
         if clause.is_unit() {
-            let (_, lit) = clause.iter().next().unwrap();
-            self.rewriting_index.remove(lit.get_lhs(), (clause.get_id(), LiteralSide::Left));
-            self.rewriting_index.remove(lit.get_rhs(), (clause.get_id(), LiteralSide::Right));
+            let (lit_id, lit) = clause.iter().next().unwrap();
+            if lit.is_eq() {
+                self.rewriting_index.remove(
+                    lit.get_lhs(),
+                    ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
+                );
+                self.rewriting_index.remove(
+                    lit.get_rhs(),
+                    ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
+                );
+            }
         }
 
         // Update the feature vector index for subsumption
@@ -571,7 +588,7 @@ impl SuperpositionState<'_> {
     fn run(mut self) -> SuperpositionResult {
         while let Some(mut g) = self.passive.pop() {
             g = g.fresh_variable_clone(self.term_bank);
-            g = simplify(g);
+            g = forward_simplify(g, &self.rewriting_index, &self.active, self.term_bank);
             if g.is_empty() {
                 log::warn!("Active Set size: {}", self.active.len());
                 return SuperpositionResult::ProofFound;
@@ -600,7 +617,7 @@ impl SuperpositionState<'_> {
             self.insert_active(g.clone());
             let new_clauses = self.generate(g);
             for mut clause in new_clauses.into_iter() {
-                clause = cheap_simplify(clause);
+                clause = cheap_simplify(clause, self.term_bank);
                 if is_trivial(&clause, self.term_bank) {
                     continue;
                 }
