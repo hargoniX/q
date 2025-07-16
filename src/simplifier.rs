@@ -93,7 +93,6 @@ impl ForwardRewriter<'_> {
             'lit_loop: for (lit_lhs, lit_rhs) in lit.clone().symm_term_iter() {
                 for (subterm, subterm_pos) in lit_lhs.subterm_iter() {
                     if let Some(result) = self.cache.get(&subterm) {
-                        println!("Cache hit yes, is success: {}", result.is_some());
                         match result {
                             Some(res) => {
                                 let new_lhs = subterm_pos.replace_term_at(
