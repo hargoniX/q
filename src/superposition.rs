@@ -245,16 +245,14 @@ impl SuperpositionState<'_> {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    if !term.is_variable() {
-                        let pos = ClauseSetPosition::new(
-                            ClausePosition::new(
-                                LiteralPosition::new(term_pos, literal_side),
-                                literal_id,
-                            ),
-                            clause_id,
-                        );
-                        self.subterm_index.insert(&term, pos);
-                    }
+                    let pos = ClauseSetPosition::new(
+                        ClausePosition::new(
+                            LiteralPosition::new(term_pos, literal_side),
+                            literal_id,
+                        ),
+                        clause_id,
+                    );
+                    self.subterm_index.insert(&term, pos);
                 }
             }
         }
@@ -319,16 +317,14 @@ impl SuperpositionState<'_> {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    if !term.is_variable() {
-                        let pos = ClauseSetPosition::new(
-                            ClausePosition::new(
-                                LiteralPosition::new(term_pos, literal_side),
-                                literal_id,
-                            ),
-                            clause_id,
-                        );
-                        self.subterm_index.remove(&term, pos);
-                    }
+                    let pos = ClauseSetPosition::new(
+                        ClausePosition::new(
+                            LiteralPosition::new(term_pos, literal_side),
+                            literal_id,
+                        ),
+                        clause_id,
+                    );
+                    self.subterm_index.remove(&term, pos);
                 }
             }
         }
@@ -669,6 +665,9 @@ impl SuperpositionState<'_> {
                 return SuperpositionResult::Unknown(reason);
             }
         }
+
+        log::warn!("Active Set size: {}", self.active.len(),);
+
         SuperpositionResult::StatementFalse
     }
 }
