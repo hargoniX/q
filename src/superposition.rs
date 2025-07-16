@@ -262,14 +262,39 @@ impl SuperpositionState<'_> {
         if clause.is_unit() {
             let (lit_id, lit) = clause.iter().next().unwrap();
             if lit.is_eq() {
-                self.rewriting_index.insert(
-                    lit.get_lhs(),
-                    ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
-                );
-                self.rewriting_index.insert(
-                    lit.get_rhs(),
-                    ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
-                );
+                // If the literal is already orientable at this point there is no need to insert
+                // both symmetries.
+                let lhs = lit.get_lhs();
+                let rhs = lit.get_rhs();
+                match lhs.kbo(rhs, self.term_bank) {
+                    // Can never fulfill the criteria
+                    Some(Ordering::Equal) => {},
+                    // lhs < rhs -> we always want to rewrite from rhs to lhs
+                    Some(Ordering::Less) => {
+                        self.rewriting_index.insert(
+                            lit.get_rhs(),
+                            ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
+                        );
+                    },
+                    // rhs < lhs -> we always want to rewrite from lhs to rhs
+                    Some(Ordering::Greater) => {
+                        self.rewriting_index.insert(
+                            lit.get_lhs(),
+                            ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
+                        );
+                    },
+                    // not orientable -> both orderings could be valid
+                    None => {
+                        self.rewriting_index.insert(
+                            lit.get_lhs(),
+                            ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
+                        );
+                        self.rewriting_index.insert(
+                            lit.get_rhs(),
+                            ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
+                        );
+                    },
+                }
             }
         }
 
