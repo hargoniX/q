@@ -252,7 +252,7 @@ impl<'a, 'b> BackwardRewriter<'a, 'b> {
         for (rw_rule_lhs, rw_rule_rhs) in self.equation.symm_term_iter() {
             // if we have lhs = rhs and know lhs < rhs we know we will never rewrite in this
             // orientation already
-            if rw_rule_lhs.kbo(&rw_rule_lhs, self.state.term_bank) == Some(Ordering::Less) {
+            if rw_rule_lhs.kbo(&rw_rule_rhs, self.state.term_bank) == Some(Ordering::Less) {
                 continue;
             }
 
