@@ -32,7 +32,7 @@ use std::{cmp::Ordering, collections::hash_map::Entry};
 use rustc_hash::FxHashMap;
 
 use crate::{
-    clause::{Clause, Literal, LiteralId, Polarity},
+    clause::{Literal, Polarity},
     position::LiteralSide,
     term_bank::{FunctionIdentifier, RawTerm, Term, TermBank, VariableIdentifier},
 };
@@ -358,25 +358,6 @@ impl KboOrd for Literal {
                 None
             }
         }
-    }
-}
-
-impl Clause {
-    fn is_kbo_maximal_aux(&self, lit_id: LiteralId, term_bank: &TermBank, strict: bool) -> bool {
-        let lit = self.get_literal(lit_id);
-        self.iter()
-            .filter(|(id, _)| *id != lit_id)
-            .all(|(_, other_lit)| {
-                let ord = lit.kbo(other_lit, term_bank);
-                ord != Some(Ordering::Less) && (!strict || ord != Some(Ordering::Equal))
-            })
-    }
-    pub fn is_kbo_maximal(&self, lit_id: LiteralId, term_bank: &TermBank) -> bool {
-        self.is_kbo_maximal_aux(lit_id, term_bank, false)
-    }
-
-    pub fn is_kbo_strictly_maximal(&self, lit_id: LiteralId, term_bank: &TermBank) -> bool {
-        self.is_kbo_maximal_aux(lit_id, term_bank, true)
     }
 }
 
