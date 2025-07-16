@@ -21,6 +21,7 @@ pub mod persistent_vec_iter;
 pub mod position;
 pub mod pretty_print;
 pub mod proofs;
+pub mod selection;
 pub mod simplifier;
 pub mod subst;
 pub mod subsume;

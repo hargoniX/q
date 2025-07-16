@@ -19,6 +19,7 @@ use crate::{
     },
     pretty_print::pretty_print,
     proofs::{GraphvizMode, ProofLog, ProofRule},
+    selection::{Selection, SelectionStrategy, select_literals},
     simplifier::{backward_simplify, cheap_simplify, forward_simplify},
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
@@ -79,6 +80,8 @@ pub(crate) struct SuperpositionState<'a> {
     pub(crate) proof_log: ProofLog,
     /// The resource limit configuration for aborting if they are exceeded.
     resource_limits: ResourceLimits,
+    /// The Literal Selection Algorithm
+    selection_strategy: SelectionStrategy,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -334,24 +337,40 @@ impl SuperpositionState<'_> {
         self.passive.push(clause);
     }
 
-    fn equality_resolution(&mut self, clause: &Clause, acc: &mut Vec<Clause>) {
+    fn equality_resolution(
+        &mut self,
+        clause: &Clause,
+        acc: &mut Vec<Clause>,
+        selection: Option<Selection>,
+    ) {
         info!(
             "ERes working clause: {}",
             pretty_print(clause, self.term_bank)
         );
-        for (literal_id, literal) in clause.iter() {
+        let (iter, has_selection): (Box<dyn Iterator<Item = (LiteralId, &Literal)>>, bool) =
+            if let Some(sel_literals) = selection {
+                (Box::new(sel_literals.into_iter()), true)
+            } else {
+                (Box::new(clause.iter()), false)
+            };
+        for (literal_id, literal) in iter {
             // Condition: the literal must be an inequality
-            if literal.is_eq() {
+            if !has_selection && literal.is_eq() {
                 continue;
             }
 
             // Condition 1: the lhs and rhs of the literal must unify
             if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), self.term_bank) {
-                // Condition 2: The literal must be maximal in the clause with the mgu applied
-                if let Some(new_literals) =
-                    maximality_check(clause, literal_id, &subst, self.term_bank)
-                {
-                    let new_clause = Clause::new(new_literals);
+                if has_selection {
+                    // Maximality check is irrelevant for selections with only one element
+                    // TODO: change this for different selection modes
+                    let filtered_literals = clause
+                        .iter()
+                        .filter(|(id, _)| *id != literal_id)
+                        .map(|(_, l)| l.clone())
+                        .collect();
+                    let new_clause =
+                        Clause::new(filtered_literals).subst_with(&subst, self.term_bank);
                     info!(
                         "ERes derived clause: {}",
                         pretty_print(&new_clause, self.term_bank)
@@ -363,6 +382,24 @@ impl SuperpositionState<'_> {
                         self.term_bank,
                     );
                     acc.push(new_clause);
+                } else {
+                    // Condition 2: The literal must be maximal in the clause with the mgu applied
+                    if let Some(new_literals) =
+                        maximality_check(clause, literal_id, &subst, self.term_bank)
+                    {
+                        let new_clause = Clause::new(new_literals);
+                        info!(
+                            "ERes derived clause: {}",
+                            pretty_print(&new_clause, self.term_bank)
+                        );
+                        self.proof_log.log_clause(
+                            &new_clause,
+                            ProofRule::EqualityResolution,
+                            &[clause.get_id()],
+                            self.term_bank,
+                        );
+                        acc.push(new_clause);
+                    }
                 }
             }
         }
@@ -618,7 +655,8 @@ impl SuperpositionState<'_> {
 
     fn generate(&mut self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
-        self.equality_resolution(&clause, &mut acc);
+        let selection = select_literals(&clause, &self.selection_strategy);
+        self.equality_resolution(&clause, &mut acc, selection);
         self.equality_factoring(&clause, &mut acc);
         self.superposition(&clause, &mut acc);
         acc
@@ -731,6 +769,9 @@ impl SuperpositionState<'_> {
         }
 
         log::warn!("Active Set size: {}", self.active.len(),);
+        for clause in self.active.iter() {
+            log::warn!("Active: {}", pretty_print(clause, self.term_bank));
+        }
 
         SuperpositionResult::StatementFalse
     }
@@ -740,6 +781,7 @@ pub fn search_proof(
     initial_clauses: Vec<Clause>,
     term_bank: &mut TermBank,
     resource_config: &ResourceLimitConfig,
+    selection_strategy: SelectionStrategy,
     gcfg: Option<(GraphvizMode, String)>,
 ) -> SuperpositionResult {
     let mut passive = ClauseQueue::new();
@@ -764,6 +806,7 @@ pub fn search_proof(
         subsumption_index,
         rewriting_index,
         eq_literal_index,
+        selection_strategy,
         proof_log,
     };
     let ret = state.run();
@@ -779,6 +822,7 @@ pub fn search_proof(
 mod test {
     use crate::{
         clause::{Clause, Literal, Polarity},
+        selection::SelectionStrategy,
         superposition::SuperpositionResult,
         term_bank::{FunctionInformation, TermBank, VariableInformation},
     };
@@ -815,7 +859,13 @@ mod test {
         let lit3 = Literal::new(fx, ft, Polarity::Ne);
         let clause = Clause::new(vec![lit1, lit2, lit3]);
         assert_eq!(
-            search_proof(vec![clause], &mut term_bank, &Default::default(), None),
+            search_proof(
+                vec![clause],
+                &mut term_bank,
+                &Default::default(),
+                SelectionStrategy::SelectFirstNegLit,
+                None,
+            ),
             SuperpositionResult::ProofFound
         );
     }
@@ -849,7 +899,8 @@ mod test {
                 vec![clause1, clause2, clause3],
                 &mut term_bank,
                 &Default::default(),
-                None
+                SelectionStrategy::SelectFirstNegLit,
+                None,
             ),
             SuperpositionResult::ProofFound
         );

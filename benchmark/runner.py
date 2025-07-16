@@ -33,6 +33,17 @@ class Result(Enum):
     UNKNOWN = "Unknown()"
 
 
+class SelectionStrategy(Enum):
+    NOSELECTION = "no-selection"
+    SELECTFIRSTNEGLIT = "select-first-neg-lit"
+    SELECTDIFFNEGLIT = "select-diff-neg-lit"
+    SELECTFIRSTMAXIMALNEGLIT = "select-first-maximal-neg-lit"
+
+
+# TODO: make it into flag of runner.[py|sh] and include it in the output files
+SELECTION_STRATEGY = SelectionStrategy.SELECTFIRSTNEGLIT
+
+
 @dataclass
 class Problem:
     filename: str
@@ -112,13 +123,16 @@ def get_problems_casc(variant: Variant, category: CASCCategory) -> List[Problem]
     return problems
 
 
-def test(problem: Problem, duration: int) -> Problem:
+def test(
+    problem: Problem, duration: int, selection_strategy: SelectionStrategy
+) -> Problem:
     env = os.environ.copy()
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
     cmd = [
         "target/release/qprover",
         problem.filename,
+        selection_strategy.value,
         str(duration),
         str(MEM_LIMIT // 1_000_000),
     ]
@@ -164,7 +178,7 @@ def go(
 ) -> ResultLists:
     for problem in problems:
         print(f"Running {problem.filename}")
-        problem = test(problem, duration)
+        problem = test(problem, duration, SELECTION_STRATEGY)
         if problem.result is problem.expected_result:
             results.matching_problems.append(problem)
             print(
