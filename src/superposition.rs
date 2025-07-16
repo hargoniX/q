@@ -19,6 +19,7 @@ use crate::{
     },
     pretty_print::pretty_print,
     proofs::{GraphvizMode, ProofLog, ProofRule},
+    selection::{Selection, SelectionStrategy, select_literals},
     simplifier::{backward_simplify, cheap_simplify, forward_simplify},
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
@@ -79,6 +80,8 @@ pub(crate) struct SuperpositionState<'a> {
     pub(crate) proof_log: ProofLog,
     /// The resource limit configuration for aborting if they are exceeded.
     resource_limits: ResourceLimits,
+    /// The Literal Selection Algorithm
+    selection_strategy: SelectionStrategy,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -325,24 +328,40 @@ impl SuperpositionState<'_> {
         self.passive.push(clause);
     }
 
-    fn equality_resolution(&mut self, clause: &Clause, acc: &mut Vec<Clause>) {
+    fn equality_resolution(
+        &mut self,
+        clause: &Clause,
+        acc: &mut Vec<Clause>,
+        selection: Option<Selection>,
+    ) {
         info!(
             "ERes working clause: {}",
             pretty_print(clause, self.term_bank)
         );
-        for (literal_id, literal) in clause.iter() {
+        let (iter, has_selection): (Box<dyn Iterator<Item = (LiteralId, &Literal)>>, bool) =
+            if let Some(sel_literals) = selection {
+                (Box::new(sel_literals.into_iter()), true)
+            } else {
+                (Box::new(clause.iter()), false)
+            };
+        for (literal_id, literal) in iter {
             // Condition: the literal must be an inequality
-            if literal.is_eq() {
+            if !has_selection && literal.is_eq() {
                 continue;
             }
 
             // Condition 1: the lhs and rhs of the literal must unify
             if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), self.term_bank) {
-                // Condition 2: The literal must be maximal in the clause with the mgu applied
-                if let Some(new_literals) =
-                    maximality_check(clause, literal_id, &subst, self.term_bank)
-                {
-                    let new_clause = Clause::new(new_literals);
+                if has_selection {
+                    // Maximality check is irrelevant for selections with only one element
+                    // TODO: change this for different selection modes
+                    let filtered_literals = clause
+                        .iter()
+                        .filter(|(id, _)| *id != literal_id)
+                        .map(|(_, l)| l.clone())
+                        .collect();
+                    let new_clause =
+                        Clause::new(filtered_literals).subst_with(&subst, self.term_bank);
                     info!(
                         "ERes derived clause: {}",
                         pretty_print(&new_clause, self.term_bank)
@@ -354,6 +373,24 @@ impl SuperpositionState<'_> {
                         self.term_bank,
                     );
                     acc.push(new_clause);
+                } else {
+                    // Condition 2: The literal must be maximal in the clause with the mgu applied
+                    if let Some(new_literals) =
+                        maximality_check(clause, literal_id, &subst, self.term_bank)
+                    {
+                        let new_clause = Clause::new(new_literals);
+                        info!(
+                            "ERes derived clause: {}",
+                            pretty_print(&new_clause, self.term_bank)
+                        );
+                        self.proof_log.log_clause(
+                            &new_clause,
+                            ProofRule::EqualityResolution,
+                            &[clause.get_id()],
+                            self.term_bank,
+                        );
+                        acc.push(new_clause);
+                    }
                 }
             }
         }
@@ -441,6 +478,7 @@ impl SuperpositionState<'_> {
         lit1_id: LiteralId,
         lit2_id: LiteralId,
         lit2_pol: Polarity,
+        selection2: Option<Selection>,
         lit1_lhs: &Term,
         lit1_rhs: &Term,
         lit2_lhs: &Term,
@@ -467,30 +505,71 @@ impl SuperpositionState<'_> {
         }
 
         if let Some(mut new_literals1) = maximality_check(clause1, lit1_id, subst, self.term_bank) {
-            if let Some(mut new_literals2) =
-                maximality_check(clause2, lit2_id, subst, self.term_bank)
-            {
-                new_literals1.append(&mut new_literals2);
-                let new_rhs = l2_rhs_subst;
-                let new_lhs = subterm_pos
-                    .replace_term_at(lit2_lhs, lit1_rhs.clone(), self.term_bank)
+            // Non-empty selection: has to be maximal either in the intersection with C- or C+
+            // TODO: Implement the currently irrelevant Maximality check is irrelevant
+            // for selections with only one element
+            if let Some(selection) = selection2 {
+                let sel_literal = selection
+                    .first()
+                    .unwrap()
+                    .1
+                    .clone()
                     .subst_with(subst, self.term_bank);
-                let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
-                new_literals1.push(new_lit);
-                let new_clause = Clause::new(new_literals1);
-                info!(
-                    "SP derived clause: {} by superposing {} with {}",
-                    pretty_print(&new_clause, self.term_bank),
-                    pretty_print(clause1, self.term_bank),
-                    pretty_print(clause2, self.term_bank)
-                );
-                self.proof_log.log_clause(
-                    &new_clause,
-                    ProofRule::Superposition,
-                    &[clause1.get_id(), clause2.get_id()],
-                    self.term_bank,
-                );
-                acc.push(new_clause);
+                let check_lit = clause2
+                    .get_literal(lit2_id)
+                    .clone()
+                    .subst_with(subst, self.term_bank);
+                // TODO: this has to be != Less with maximality
+                if check_lit.kbo(&sel_literal, self.term_bank) == Some(Ordering::Equal) {
+                    let mut new_literals2 = clause2
+                        .iter()
+                        .filter(|(id, _)| *id != lit2_id)
+                        .map(|(_, l)| l.clone())
+                        .map(|l| l.subst_with(subst, self.term_bank))
+                        .collect();
+                    new_literals1.append(&mut new_literals2);
+                    let new_rhs = l2_rhs_subst;
+                    let new_lhs = subterm_pos
+                        .replace_term_at(lit2_lhs, lit1_rhs.clone(), self.term_bank)
+                        .subst_with(subst, self.term_bank);
+                    let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
+                    new_literals1.push(new_lit);
+                    let new_clause = Clause::new(new_literals1);
+                    self.proof_log.log_clause(
+                        &new_clause,
+                        ProofRule::Superposition,
+                        &[clause1.get_id(), clause2.get_id()],
+                        self.term_bank,
+                    );
+                    acc.push(new_clause);
+                }
+            } else {
+                // Empty selection: literal has to be maximal in the full clause
+                if let Some(mut new_literals2) =
+                    maximality_check(clause2, lit2_id, subst, self.term_bank)
+                {
+                    new_literals1.append(&mut new_literals2);
+                    let new_rhs = l2_rhs_subst;
+                    let new_lhs = subterm_pos
+                        .replace_term_at(lit2_lhs, lit1_rhs.clone(), self.term_bank)
+                        .subst_with(subst, self.term_bank);
+                    let new_lit = Literal::new(new_lhs, new_rhs, lit2_pol);
+                    new_literals1.push(new_lit);
+                    let new_clause = Clause::new(new_literals1);
+                    info!(
+                        "SP derived clause: {} by superposing {} with {}",
+                        pretty_print(&new_clause, self.term_bank),
+                        pretty_print(clause1, self.term_bank),
+                        pretty_print(clause2, self.term_bank)
+                    );
+                    self.proof_log.log_clause(
+                        &new_clause,
+                        ProofRule::Superposition,
+                        &[clause1.get_id(), clause2.get_id()],
+                        self.term_bank,
+                    );
+                    acc.push(new_clause);
+                }
             }
         }
     }
@@ -503,47 +582,62 @@ impl SuperpositionState<'_> {
 
         let clause1 = given_clause;
         // Part 1: given_clause is the one being used for rewriting.
-        for (lit1_id, lit1) in clause1.iter() {
-            // Condition: The one being used for rewriting must be an equality
-            if lit1.is_ne() {
-                continue;
-            }
-            // Try to orient the equation using stability under substitution
-            for (lit1_lhs, lit1_rhs) in lit1.oriented_symm_term_iter(self.term_bank) {
-                // Iterate over all possible unifying subpositions in the active set
-                for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
-                    let lit2_lhs_p = candidate_pos.term_at(&self.active);
-                    // The term at the subposition must not be a variable
-                    if lit2_lhs_p.is_variable() {
+        let selection1 = select_literals(clause1, &self.selection_strategy, self.term_bank, true);
+        if selection1.is_none() {
+            for (lit1_id, lit1) in clause1.iter() {
+                // Condition: The one being used for rewriting must be an equality
+                if lit1.is_ne() {
+                    continue;
+                }
+                for (lit1_lhs, lit1_rhs) in lit1.oriented_symm_term_iter(self.term_bank) {
+                    // Try to orient the equation using stability under substitution
+                    let l1_ord = lit1_lhs.kbo(&lit1_rhs, self.term_bank);
+                    if l1_ord == Some(Ordering::Less) {
                         continue;
                     }
 
-                    // The lhs of the rewriting literal and the subposition must unify
-                    if let Some(subst) = lit1_lhs.unify(lit2_lhs_p, self.term_bank) {
-                        let clause_pos = &candidate_pos.clause_pos;
-                        let literal_pos = &clause_pos.literal_pos;
-                        let subterm_pos = &literal_pos.term_pos;
-                        let clause2 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
-                        let lit2_id = clause_pos.literal_id;
-                        let lit2 = clause2.get_literal(lit2_id);
-                        let lit2_lhs = literal_pos.literal_side.get_side(lit2);
-                        let lit2_rhs = literal_pos.literal_side.swap().get_side(lit2);
-                        let lit2_pol = lit2.get_pol();
+                    // Iterate over all possible unifying subpositions in the active set
+                    for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
+                        let lit2_lhs_p = candidate_pos.term_at(&self.active);
+                        // The term at the subposition must not be a variable
+                        if lit2_lhs_p.is_variable() {
+                            continue;
+                        }
 
-                        self.superposition_core(
-                            clause1,
-                            clause2,
-                            lit1_id,
-                            lit2_id,
-                            lit2_pol,
-                            &lit1_lhs,
-                            &lit1_rhs,
-                            lit2_lhs,
-                            lit2_rhs,
-                            subterm_pos,
-                            &subst,
-                            acc,
-                        );
+                        // The lhs of the rewriting literal and the subposition must unify
+                        if let Some(subst) = lit1_lhs.unify(lit2_lhs_p, self.term_bank) {
+                            let clause_pos = &candidate_pos.clause_pos;
+                            let literal_pos = &clause_pos.literal_pos;
+                            let subterm_pos = &literal_pos.term_pos;
+                            let clause2 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
+                            let selection2 = select_literals(
+                                clause2,
+                                &self.selection_strategy,
+                                self.term_bank,
+                                true,
+                            );
+                            let lit2_id = clause_pos.literal_id;
+                            let lit2 = clause2.get_literal(lit2_id);
+                            let lit2_lhs = literal_pos.literal_side.get_side(lit2);
+                            let lit2_rhs = literal_pos.literal_side.swap().get_side(lit2);
+                            let lit2_pol = lit2.get_pol();
+
+                            self.superposition_core(
+                                clause1,
+                                clause2,
+                                lit1_id,
+                                lit2_id,
+                                lit2_pol,
+                                selection2,
+                                &lit1_lhs,
+                                &lit1_rhs,
+                                lit2_lhs,
+                                lit2_rhs,
+                                subterm_pos,
+                                &subst,
+                                acc,
+                            );
+                        }
                     }
                 }
             }
@@ -551,6 +645,7 @@ impl SuperpositionState<'_> {
 
         // Part 2: the given clause is the one being rewritten
         let clause2 = given_clause;
+        let selection2 = select_literals(clause2, &self.selection_strategy, self.term_bank, true);
         for (lit2_id, lit2) in clause2.iter() {
             let lit2_pol = lit2.get_pol();
             // Try to orient the equation using stability under substitution
@@ -567,6 +662,15 @@ impl SuperpositionState<'_> {
                     {
                         let clause_id = candidate_pos.clause_id;
                         let clause1 = self.active.get_by_id(clause_id).unwrap();
+                        let selection1 = select_literals(
+                            clause1,
+                            &self.selection_strategy,
+                            self.term_bank,
+                            true,
+                        );
+                        if selection1.is_some() {
+                            continue;
+                        }
                         let lit1_id = candidate_pos.literal_id;
                         let lit1 = clause1.get_literal(lit1_id);
                         debug_assert!(lit1.is_eq());
@@ -582,6 +686,7 @@ impl SuperpositionState<'_> {
                                 lit1_id,
                                 lit2_id,
                                 lit2_pol,
+                                selection2.clone(),
                                 lit1_lhs,
                                 lit1_rhs,
                                 &lit2_lhs,
@@ -599,8 +704,12 @@ impl SuperpositionState<'_> {
 
     fn generate(&mut self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
-        self.equality_resolution(&clause, &mut acc);
-        self.equality_factoring(&clause, &mut acc);
+        let selection = select_literals(&clause, &self.selection_strategy, self.term_bank, true);
+        let has_selection = selection.is_some();
+        self.equality_resolution(&clause, &mut acc, selection);
+        if !has_selection {
+            self.equality_factoring(&clause, &mut acc);
+        }
         self.superposition(&clause, &mut acc);
         acc
     }
@@ -721,6 +830,7 @@ pub fn search_proof(
     initial_clauses: Vec<Clause>,
     term_bank: &mut TermBank,
     resource_config: &ResourceLimitConfig,
+    selection_strategy: SelectionStrategy,
     gcfg: Option<(GraphvizMode, String)>,
 ) -> SuperpositionResult {
     let mut passive = ClauseQueue::new();
@@ -745,6 +855,7 @@ pub fn search_proof(
         subsumption_index,
         rewriting_index,
         eq_literal_index,
+        selection_strategy,
         proof_log,
     };
     let ret = state.run();
@@ -760,6 +871,7 @@ pub fn search_proof(
 mod test {
     use crate::{
         clause::{Clause, Literal, Polarity},
+        selection::SelectionStrategy,
         superposition::SuperpositionResult,
         term_bank::{FunctionInformation, Sort, TermBank, VariableInformation},
     };
@@ -799,7 +911,13 @@ mod test {
         let lit3 = Literal::new(fx, ft, Polarity::Ne);
         let clause = Clause::new(vec![lit1, lit2, lit3]);
         assert_eq!(
-            search_proof(vec![clause], &mut term_bank, &Default::default(), None),
+            search_proof(
+                vec![clause],
+                &mut term_bank,
+                &Default::default(),
+                SelectionStrategy::SelectFirstMaximalNegLitAndAllPosLits,
+                None,
+            ),
             SuperpositionResult::ProofFound
         );
     }
@@ -836,7 +954,8 @@ mod test {
                 vec![clause1, clause2, clause3],
                 &mut term_bank,
                 &Default::default(),
-                None
+                SelectionStrategy::SelectFirstMaximalNegLitAndAllPosLits,
+                None,
             ),
             SuperpositionResult::ProofFound
         );

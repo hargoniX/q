@@ -3,6 +3,7 @@ use clap::Parser;
 use env_logger::Env;
 use qlib::pretty_print::pretty_print;
 use qlib::proofs::GraphvizMode;
+use qlib::selection::SelectionStrategy;
 use qlib::superposition::{ResourceLimitConfig, search_proof};
 use std::io::Write;
 use std::path::PathBuf;
@@ -13,6 +14,8 @@ use std::time::Duration;
 struct Cli {
     /// Path to a tptp problem file
     file: PathBuf,
+    /// Literal Selection Algorithm
+    selection_strategy: SelectionStrategy,
     /// Duration limit in seconds
     duration: Option<u64>,
     /// Memory limit in MB,
@@ -68,6 +71,12 @@ fn main() {
     let gcfg = args
         .graphviz
         .map(|file| (args.gmode.unwrap_or(GraphvizMode::Last), file));
-    let result = search_proof(clauses, &mut term_bank, &resource_limit, gcfg);
+    let result = search_proof(
+        clauses,
+        &mut term_bank,
+        &resource_limit,
+        args.selection_strategy,
+        gcfg,
+    );
     log::warn!("Result superposition: '{result:?}'");
 }

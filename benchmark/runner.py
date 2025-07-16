@@ -33,6 +33,12 @@ class Result(Enum):
     UNKNOWN = "Unknown()"
 
 
+class SelectionStrategy(Enum):
+    NOSELECTION = "no-selection"
+    SELECTFIRSTNEGLIT = "select-first-neg-lit"
+    SELECTFIRSTMAXIMALNEGLIT = "select-first-maximal-neg-lit-and-all-pos-lits"
+
+
 @dataclass
 class Problem:
     filename: str
@@ -112,13 +118,16 @@ def get_problems_casc(variant: Variant, category: CASCCategory) -> List[Problem]
     return problems
 
 
-def test(problem: Problem, duration: int) -> Problem:
+def test(
+    problem: Problem, duration: int, selection_strategy: SelectionStrategy
+) -> Problem:
     env = os.environ.copy()
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
     cmd = [
         "target/release/qprover",
         problem.filename,
+        selection_strategy.value,
         str(duration),
         str(MEM_LIMIT // 1_000_000),
     ]
@@ -161,10 +170,11 @@ def go(
     problems: List[Problem],
     duration: int,
     results: ResultLists,
+    selection_strategy: SelectionStrategy,
 ) -> ResultLists:
     for problem in problems:
         print(f"Running {problem.filename}")
-        problem = test(problem, duration)
+        problem = test(problem, duration, selection_strategy)
         if problem.result is problem.expected_result:
             results.matching_problems.append(problem)
             print(
@@ -213,6 +223,13 @@ def main():
         choices=list(CASCCategory),
         help="Lowercase!",
     )
+    parser.add_argument(
+        "-s",
+        "--selection-strategy",
+        type=SelectionStrategy,
+        choices=list(SelectionStrategy),
+        help="Lowercase!",
+    )
     args = parser.parse_args()
     root_dir = run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -244,6 +261,7 @@ def main():
                     problems[i::NUM_THREADS],
                     args.duration,
                     ResultLists([], [], [], []),
+                    args.selection_strategy,
                 ],
             )
         )
@@ -259,6 +277,8 @@ def main():
         timeout_problems.extend(results.timeout_problems)
         unknown_problems.extend(results.unknown_problems)
 
+    # TODO: when we have landed on sap4 and benchmarking everything all the time becomes trivial,
+    # we should include the selection strategy within the filenames
     if args.category is not None:
         out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}"
     else:
