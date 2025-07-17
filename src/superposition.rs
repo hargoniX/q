@@ -17,7 +17,7 @@ use crate::{
     },
     pretty_print::pretty_print,
     simplifier::{backward_simplify, cheap_simplify, forward_simplify},
-    subst::{Substitutable, Substitution},
+    subst::{HashSubstitution, Substitutable},
     term_bank::{Term, TermBank},
     trivial::is_trivial,
 };
@@ -92,7 +92,7 @@ pub enum SuperpositionResult {
 fn ordering_check(
     clause: &Clause,
     check_lit_id: LiteralId,
-    subst: &Substitution,
+    subst: &HashSubstitution,
     f: impl Fn(Option<Ordering>) -> bool,
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
@@ -126,7 +126,7 @@ Returns `None` if maximality check fails, otherwise `Some(subst(clause) \ subst(
 fn maximality_check(
     clause: &Clause,
     check_lit_id: LiteralId,
-    subst: &Substitution,
+    subst: &HashSubstitution,
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
     ordering_check(
@@ -148,7 +148,7 @@ Returns `None` if maximality check fails, otherwise `Some(subst(clause) \ subst(
 fn strict_maximality_check(
     clause: &Clause,
     check_lit_id: LiteralId,
-    subst: &Substitution,
+    subst: &HashSubstitution,
     term_bank: &TermBank,
 ) -> Option<Vec<Literal>> {
     ordering_check(
@@ -397,7 +397,7 @@ impl SuperpositionState<'_> {
         lit2_lhs: &Term,
         lit2_rhs: &Term,
         subterm_pos: &TermPosition,
-        subst: &Substitution,
+        subst: &HashSubstitution,
         acc: &mut Vec<Clause>,
         term_bank: &TermBank,
     ) {

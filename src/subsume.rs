@@ -9,7 +9,7 @@ use bitvec::{bitvec, vec::BitVec};
 
 use crate::{
     clause::{Clause, Literal},
-    subst::Substitution,
+    subst::{BacktrackSubst, Substitution},
 };
 
 impl Clause {
@@ -17,7 +17,7 @@ impl Clause {
         subsuming: &[Literal],
         target: &[Literal],
         unused: BitVec,
-        subst: Substitution,
+        subst: BacktrackSubst,
     ) -> bool {
         if subsuming.is_empty() {
             return true;
@@ -68,7 +68,7 @@ impl Clause {
             &self.literals,
             &other.literals,
             bitvec![1; other.len()],
-            Substitution::new(),
+            BacktrackSubst::new(),
         )
     }
 }

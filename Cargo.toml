@@ -12,6 +12,7 @@ memory-stats = { version = "1.2", features = ["always_use_statm"] }
 tptp = "0.31.1"
 bitvec = "1.0"
 rustc-hash = "2.1"
+rpds = "1.1"
 
 [lib]
 name = "qlib"

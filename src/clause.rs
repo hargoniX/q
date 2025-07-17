@@ -14,7 +14,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     pretty_print::BankPrettyPrint,
-    subst::{Substitutable, Substitution},
+    subst::{HashSubstitution, Substitutable, Substitution},
     term_bank::{Term, TermBank},
 };
 
@@ -131,7 +131,7 @@ impl Substitutable for Literal {
     /// Apply `subst` to the literal, this is constant time if the substitution is a nop
     /// or lhs and rhs are ground, otherwise the worst case complexity is
     /// `O(dag_size(lhs) + dag_size(rhs))`.
-    fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self {
+    fn subst_with<S: Substitution>(self, subst: &S, term_bank: &TermBank) -> Self {
         let new_lhs = self.lhs.subst_with(subst, term_bank);
         let new_rhs = self.rhs.subst_with(subst, term_bank);
         Self {
@@ -280,7 +280,7 @@ impl Clause {
         if set.is_empty() {
             self.clone()
         } else {
-            let mut subst = Substitution::new();
+            let mut subst = HashSubstitution::new();
             for old_var in set.iter() {
                 subst.insert(*old_var, term_bank.mk_replacement_variable(*old_var));
             }
@@ -335,7 +335,7 @@ impl Hash for Clause {
 }
 
 impl Substitutable for Clause {
-    fn subst_with(self, subst: &Substitution, term_bank: &TermBank) -> Self {
+    fn subst_with<S: Substitution>(self, subst: &S, term_bank: &TermBank) -> Self {
         let new_lits = self
             .literals
             .into_iter()
@@ -408,9 +408,10 @@ impl ClauseSet {
 
 #[cfg(test)]
 mod test {
+    use crate::subst::Substitution;
     use crate::{
         clause::Clause,
-        subst::{Substitutable, Substitution},
+        subst::{HashSubstitution, Substitutable},
         term_bank::{FunctionInformation, TermBank, VariableInformation},
     };
 
@@ -455,7 +456,7 @@ mod test {
         let c1 = term_bank.mk_const(c1_id);
         let c2 = term_bank.mk_const(c2_id);
 
-        let mut subst = Substitution::new();
+        let mut subst = HashSubstitution::new();
         subst.insert(x_id, c1);
         subst.insert(y_id, c2);
         assert_eq!(

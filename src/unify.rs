@@ -7,13 +7,13 @@ use log::debug;
 
 use crate::{
     pretty_print::pretty_print,
-    subst::{Substitutable, Substitution},
+    subst::{HashSubstitution, Substitutable, Substitution},
     term_bank::{Term, TermBank},
 };
 
 struct UnificationProblem {
     equations: Vec<(Term, Term)>,
-    substitution: Substitution,
+    substitution: HashSubstitution,
 }
 
 enum UnificationState {
@@ -26,7 +26,7 @@ enum UnificationState {
 impl UnificationProblem {
     fn new(lhs: Term, rhs: Term) -> Self {
         let equations = vec![(lhs, rhs)];
-        let substitution = Substitution::new();
+        let substitution = HashSubstitution::new();
         Self {
             equations,
             substitution,
@@ -63,7 +63,7 @@ impl UnificationProblem {
                                 UnificationState::Failure
                             } else {
                                 // x = t, E => x = t, E {x |-> t} if x in var(E) and x not in var(t)
-                                let mut new_subst = Substitution::new();
+                                let mut new_subst = HashSubstitution::new();
                                 new_subst.insert(var_id, rhs.clone());
                                 self.equations = self
                                     .equations
@@ -91,7 +91,7 @@ impl UnificationProblem {
         }
     }
 
-    fn run(mut self, term_bank: &TermBank) -> Option<Substitution> {
+    fn run(mut self, term_bank: &TermBank) -> Option<HashSubstitution> {
         loop {
             match self.step(term_bank) {
                 UnificationState::Success => return Some(self.substitution),
@@ -106,7 +106,7 @@ impl Term {
     /// Try to unify `self` and `other`, returning `Some(subst)` on success and `None` otherwise.
     /// If both `self` and `other` are ground this operation is `O(1)` otherwise potentially
     /// expensive.
-    pub fn unify(&self, other: &Self, term_bank: &TermBank) -> Option<Substitution> {
+    pub fn unify(&self, other: &Self, term_bank: &TermBank) -> Option<HashSubstitution> {
         debug!(
             "Unifying, {} with {}",
             pretty_print(self, term_bank),
@@ -115,7 +115,7 @@ impl Term {
 
         let res = if self.is_ground() && other.is_ground() {
             if self == other {
-                Some(Substitution::new())
+                Some(HashSubstitution::new())
             } else {
                 None
             }
