@@ -257,41 +257,38 @@ impl SuperpositionState<'_> {
             }
         }
 
-        if clause.is_unit() {
-            let lit = clause.first_lit();
-            if lit.is_eq() {
-                // If the literal is already orientable at this point there is no need to insert
-                // both symmetries.
-                let lhs = lit.get_lhs();
-                let rhs = lit.get_rhs();
-                match lhs.kbo(rhs, self.term_bank) {
-                    // Can never fulfill the criteria
-                    Some(Ordering::Equal) => {}
-                    // lhs < rhs -> we always want to rewrite from rhs to lhs
-                    Some(Ordering::Less) => {
-                        self.rewriting_index.insert(
-                            lit.get_rhs(),
-                            UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
-                        );
-                    }
-                    // rhs < lhs -> we always want to rewrite from lhs to rhs
-                    Some(Ordering::Greater) => {
-                        self.rewriting_index.insert(
-                            lit.get_lhs(),
-                            UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
-                        );
-                    }
-                    // not orientable -> both orderings could be valid
-                    None => {
-                        self.rewriting_index.insert(
-                            lit.get_lhs(),
-                            UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
-                        );
-                        self.rewriting_index.insert(
-                            lit.get_rhs(),
-                            UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
-                        );
-                    }
+        if let Some(lit) = clause.is_rewrite_rule() {
+            // If the literal is already orientable at this point there is no need to insert
+            // both symmetries.
+            let lhs = lit.get_lhs();
+            let rhs = lit.get_rhs();
+            match lhs.kbo(rhs, self.term_bank) {
+                // Can never fulfill the criteria
+                Some(Ordering::Equal) => {}
+                // lhs < rhs -> we always want to rewrite from rhs to lhs
+                Some(Ordering::Less) => {
+                    self.rewriting_index.insert(
+                        lit.get_rhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
+                    );
+                }
+                // rhs < lhs -> we always want to rewrite from lhs to rhs
+                Some(Ordering::Greater) => {
+                    self.rewriting_index.insert(
+                        lit.get_lhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
+                    );
+                }
+                // not orientable -> both orderings could be valid
+                None => {
+                    self.rewriting_index.insert(
+                        lit.get_lhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
+                    );
+                    self.rewriting_index.insert(
+                        lit.get_rhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
+                    );
                 }
             }
         }
@@ -304,7 +301,7 @@ impl SuperpositionState<'_> {
 
     // remove from the active set
     // remove from index structures
-    pub fn erase_active(&mut self, clause: &Clause) {
+    pub(crate) fn erase_active(&mut self, clause: &Clause) {
         let clause_id = clause.get_id();
         info!("Erasing active: {}", pretty_print(clause, self.term_bank));
 
@@ -329,18 +326,15 @@ impl SuperpositionState<'_> {
             }
         }
 
-        if clause.is_unit() {
-            let lit = clause.first_lit();
-            if lit.is_eq() {
-                self.rewriting_index.remove(
-                    lit.get_lhs(),
-                    UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
-                );
-                self.rewriting_index.remove(
-                    lit.get_rhs(),
-                    UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
-                );
-            }
+        if let Some(lit) = clause.is_rewrite_rule() {
+            self.rewriting_index.remove(
+                lit.get_lhs(),
+                UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
+            );
+            self.rewriting_index.remove(
+                lit.get_rhs(),
+                UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
+            );
         }
 
         self.subsumption_index.remove(clause, self.term_bank);

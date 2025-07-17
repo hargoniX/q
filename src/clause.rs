@@ -292,6 +292,16 @@ impl Clause {
     pub fn to_vec(self) -> Vec<Literal> {
         self.literals
     }
+
+    pub fn is_rewrite_rule(&self) -> Option<&Literal> {
+        if self.is_unit() {
+            let lit = self.first_lit();
+            if lit.is_eq() {
+                return Some(lit);
+            }
+        }
+        None
+    }
 }
 
 impl PartialEq for Clause {

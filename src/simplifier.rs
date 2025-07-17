@@ -228,32 +228,34 @@ struct BackwardRewriter<'a, 'b> {
 
 impl<'a, 'b> BackwardRewriter<'a, 'b> {
     fn backward_rewrite(clause: &Clause, state: &mut SuperpositionState<'_>) -> Vec<Clause> {
-        if clause.is_unit() {
-            let lit = clause.first_lit();
-            if lit.is_eq() {
-                info!(
-                    "Backward rewriting using: {}",
-                    pretty_print(lit, state.term_bank)
-                );
-                let mut rewriter = BackwardRewriter {
-                    state,
-                    equation: lit,
-                    new_clauses: FxHashMap::default(),
-                    cache: FxHashMap::default(),
-                };
-                rewriter.find_candidates();
-                return rewriter.new_clauses.into_values().collect();
-            }
+        if let Some(lit) = clause.is_rewrite_rule() {
+            info!(
+                "Backward rewriting using: {}",
+                pretty_print(lit, state.term_bank)
+            );
+            let mut rewriter = BackwardRewriter {
+                state,
+                equation: lit,
+                new_clauses: FxHashMap::default(),
+                cache: FxHashMap::default(),
+            };
+            rewriter.find_candidates();
+            return rewriter.new_clauses.into_values().collect();
         }
         vec![]
     }
 
     fn find_candidates(&mut self) {
         for (rw_rule_lhs, rw_rule_rhs) in self.equation.symm_term_iter() {
-            // if we have lhs = rhs and know lhs < rhs we know we will never rewrite in this
-            // orientation already
-            if rw_rule_lhs.kbo(&rw_rule_rhs, self.state.term_bank) == Some(Ordering::Less) {
+            let ord = rw_rule_lhs.kbo(&rw_rule_rhs, self.state.term_bank);
+            if ord == Some(Ordering::Less) {
+                // if we have a literal lhs = rhs and know lhs < rhs we know we will never rewrite
+                // in this orientation already
                 continue;
+            } else if ord == Some(Ordering::Equal) {
+                // if we know they are ordering equal we know we will never rewrite in any
+                // orientation.
+                break;
             }
 
             for tgt_pos in self
@@ -262,8 +264,8 @@ impl<'a, 'b> BackwardRewriter<'a, 'b> {
                 .get_instance_candidates(&rw_rule_lhs)
             {
                 if self.new_clauses.contains_key(&tgt_pos.clause_id) {
-                    // We already performed backward rewriting on this one, let's wait for
-                    // cheap_simplify to handle further business.
+                    // We already performed backward rewriting on this one, let's wait for further
+                    // rewrites to handle further business.
                     continue;
                 }
 
@@ -354,8 +356,6 @@ impl<'a, 'b> BackwardRewriter<'a, 'b> {
                             );
                             self.cache.insert(tgt_subterm.clone(), subst_rhs);
 
-                            // Ordering here is actually crucial to maintain subterm indexing
-                            // consistency.
                             let new_lit =
                                 Literal::new(new_lhs, tgt_lit_rhs.clone(), tgt_lit.get_pol());
 
