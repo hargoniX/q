@@ -52,6 +52,8 @@ def set_limits(duration: int):
     resource.setrlimit(resource.RLIMIT_CPU, (duration, duration))
     # heap size in bytes
     resource.setrlimit(resource.RLIMIT_DATA, (MEM_LIMIT, MEM_LIMIT))
+    # call stack size
+    resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
 
 
 def get_problems(filename: str) -> List[Problem]:
