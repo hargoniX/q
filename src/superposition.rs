@@ -645,9 +645,9 @@ impl SuperpositionState<'_> {
             self.insert_active(g.clone());
 
             let new_clauses = self.generate(g);
-            for mut clause in new_clauses
+            for mut clause in backward_simplified
                 .into_iter()
-                .chain(backward_simplified.into_iter())
+                .chain(new_clauses.into_iter())
             {
                 clause = cheap_simplify(clause, &self);
                 if is_trivial(&clause, self.term_bank) {
