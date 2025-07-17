@@ -3,7 +3,7 @@
 //! substitution `sigma` s.t. `sigma(s) = t`. The implementation is based on [PyRes](https://github.com/eprover/PyRes/blob/master/matching.py).
 
 use crate::{
-    subst::Substitution,
+    subst::{HashSubstitution, Substitution},
     term_bank::{RawTerm, Term},
 };
 
@@ -13,9 +13,9 @@ impl Term {
     pub fn matching_partial(
         &self,
         other: &Self,
-        subst: Option<Substitution>,
-    ) -> Option<Substitution> {
-        let mut subst = subst.unwrap_or_else(Substitution::new);
+        subst: Option<HashSubstitution>,
+    ) -> Option<HashSubstitution> {
+        let mut subst = subst.unwrap_or_else(HashSubstitution::new);
         let mut matcher_list = vec![self];
         let mut target_list = vec![other];
         while let Some(matcher) = matcher_list.pop() {
@@ -60,7 +60,7 @@ impl Term {
     }
 
     /// Attempt to compute a substitution `sigma` s.t. `sigma(self) = other`.
-    pub fn matching(&self, other: &Self) -> Option<Substitution> {
+    pub fn matching(&self, other: &Self) -> Option<HashSubstitution> {
         self.matching_partial(other, None)
     }
 }
