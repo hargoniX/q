@@ -10,12 +10,12 @@ use crate::{
 impl Term {
     /// Attempt to compute a subsitution `sigma` s.t. `sigma(self) = other` where `sigma` strictly
     /// extends the already provided `subst` (if it was provided).
-    pub fn matching_partial(
+    pub fn matching_partial<S: Substitution>(
         &self,
         other: &Self,
-        subst: Option<HashSubstitution>,
-    ) -> Option<HashSubstitution> {
-        let mut subst = subst.unwrap_or_else(HashSubstitution::new);
+        subst: Option<S>,
+    ) -> Option<S> {
+        let mut subst = subst.unwrap_or_else(S::new);
         let mut matcher_list = vec![self];
         let mut target_list = vec![other];
         while let Some(matcher) = matcher_list.pop() {

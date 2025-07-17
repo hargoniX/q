@@ -6,6 +6,7 @@
 //! - [HashSubstitution] implementing a substitution as a hash map
 //! - [Substitutable] which may be implemented for types that have some notion of substitution.
 
+use rpds::HashTrieMap;
 use rustc_hash::FxHashMap;
 
 use crate::term_bank::{
@@ -14,14 +15,61 @@ use crate::term_bank::{
 };
 
 pub trait Substitution {
+    /// Create a new empty substitution.
     fn new() -> Self;
+    /// Associate `var` with `term` in the substitution.
     fn insert(&mut self, var: VariableIdentifier, term: Term);
+    /// Obtain the term associated with `var` if it exists.
     fn get(&self, var: VariableIdentifier) -> Option<Term>;
+    /// Return `true` if the substitution is an identity substitution.
     fn is_nop(&self) -> bool;
+    /// Whether the substitution may apply to `term`, if this returns false
+    /// it is guaranteed that no variable from the substitution is contained in
+    /// the term.
     fn may_apply(&self, term: &Term) -> bool;
 }
 
-/// A first order substitution, mapping variables to terms to replace them with.
+// TODO: check hash function
+
+/// A first order substitution, mapping variables to terms to replace them with, implemented as a
+/// hash array mapped trie to allow for cheap copies.
+#[derive(Debug, Clone)]
+pub struct BacktrackSubst {
+    /// The map that is the substitution itself.
+    map: HashTrieMap<VariableIdentifier, Term>,
+    /// A var bloom filter for the variables the substitution maps s.t. we can quickly see if a
+    /// term we are called for is irrelevant.
+    filter: VarBloomFilter
+}
+
+impl Substitution for BacktrackSubst {
+    fn new() -> Self {
+        Self {
+            map: HashTrieMap::new(),
+            filter: VarBloomFilter::new(),
+        }
+    }
+
+    fn insert(&mut self, var: VariableIdentifier, term: Term) {
+        self.map = self.map.insert(var, term);
+        self.filter |= var.to_bloom_filter();
+    }
+
+    fn get(&self, var: VariableIdentifier) -> Option<Term> {
+        self.map.get(&var).cloned()
+    }
+
+    fn is_nop(&self) -> bool {
+        self.filter.is_empty()
+    }
+
+    fn may_apply(&self, term: &Term) -> bool {
+        !(term.var_bloom_filter() & self.filter).is_empty()
+    }
+}
+
+/// A first order substitution, mapping variables to terms to replace them with, implemented as a
+/// hashmap for highest insert and lookup performance.
 #[derive(Debug, Clone)]
 pub struct HashSubstitution {
     /// The map that is the substitution itself.
@@ -50,7 +98,6 @@ impl HashSubstitution {
 }
 
 impl Substitution for HashSubstitution {
-    /// Create a new empty substitution.
     fn new() -> Self {
         Self {
             map: FxHashMap::default(),
@@ -58,18 +105,15 @@ impl Substitution for HashSubstitution {
         }
     }
 
-    /// Associate `var` with `term` in the substitution.
     fn insert(&mut self, var: VariableIdentifier, term: Term) {
         self.map.insert(var, term);
         self.filter |= var.to_bloom_filter();
     }
 
-    /// Obtain the term associated with `var` if it exists.
     fn get(&self, var: VariableIdentifier) -> Option<Term> {
         self.map.get(&var).cloned()
     }
 
-    /// Return `true` if the substitution is an identity substitution.
     fn is_nop(&self) -> bool {
         self.filter.is_empty()
     }
