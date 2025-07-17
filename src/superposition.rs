@@ -12,8 +12,8 @@ use crate::{
     feature_vector::FeatureVectorIndex,
     kbo::KboOrd,
     position::{
-        ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position, TermPosition,
-        UnitClauseSetPosition,
+        ClausePosition, ClauseSetLiteralPosition, ClauseSetTermPosition, LiteralPosition,
+        LiteralSide, Position, TermPosition, UnitClauseSetPosition,
     },
     pretty_print::pretty_print,
     simplifier::{backward_simplify, cheap_simplify, forward_simplify},
@@ -62,9 +62,13 @@ pub(crate) struct SuperpositionState<'a> {
     pub(crate) active: ClauseSet,
     /// The term bank for allocating our hashconsed terms.
     pub(crate) term_bank: &'a mut TermBank,
-    /// Term index containing all subterms from `active`.
-    pub(crate) subterm_index: DiscriminationTree<ClauseSetPosition>,
-    /// Subsumption containing all clauses from `active`.
+    /// Term index containing all subterms from `active`, used when superposing using the given
+    /// clause as the one providing the equality.
+    pub(crate) subterm_index: DiscriminationTree<ClauseSetTermPosition>,
+    /// Term index containing all equational literals from `active`, used when superposing while
+    /// rewriting inside of the given clause.
+    pub(crate) eq_literal_index: DiscriminationTree<ClauseSetLiteralPosition>,
+    /// Subsumption index containing all clauses from `active`.
     pub(crate) subsumption_index: FeatureVectorIndex,
     /// Term index containing all equational unit clauses from `active`.
     pub(crate) rewriting_index: DiscriminationTree<UnitClauseSetPosition>,
@@ -237,15 +241,11 @@ impl SuperpositionState<'_> {
         );
 
         // Insert all sub terms with their position into the term index for superposition
-
-        // TODO: There is a potential optimization here where we keep a second index that contains
-        // just the root terms of all literals. This is useful for superposing when the given
-        // clause is the one being substituted in.
         for (literal_id, literal) in clause.iter() {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    let pos = ClauseSetPosition::new(
+                    let pos = ClauseSetTermPosition::new(
                         ClausePosition::new(
                             LiteralPosition::new(term_pos, literal_side),
                             literal_id,
@@ -254,6 +254,23 @@ impl SuperpositionState<'_> {
                     );
                     self.subterm_index.insert(&term, pos);
                 }
+            }
+        }
+
+        // Insert all equational literals into the term index for superposition
+        for (literal_id, literal) in clause.iter() {
+            if literal.is_ne() {
+                continue;
+            }
+            for literal_side in [LiteralSide::Left, LiteralSide::Right] {
+                let lhs = literal_side.get_side(literal);
+                let rhs = literal_side.swap().get_side(literal);
+                let ord = lhs.kbo(rhs, self.term_bank);
+                if ord == Some(Ordering::Less) || ord == Some(Ordering::Less) {
+                    continue;
+                }
+                let pos = ClauseSetLiteralPosition::new(clause.get_id(), literal_id, literal_side);
+                self.eq_literal_index.insert(lhs, pos);
             }
         }
 
@@ -305,16 +322,12 @@ impl SuperpositionState<'_> {
         let clause_id = clause.get_id();
         info!("Erasing active: {}", pretty_print(clause, self.term_bank));
 
-        // Erase all sub terms with their position into the term index for superposition
-
-        // TODO: There is a potential optimization here where we keep a second index that contains
-        // just the root terms of all literals. This is useful for superposing when the given
-        // clause is the one being substituted in.
+        // Erase all sub terms with their position in the term index for superposition
         for (literal_id, literal) in clause.iter() {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    let pos = ClauseSetPosition::new(
+                    let pos = ClauseSetTermPosition::new(
                         ClausePosition::new(
                             LiteralPosition::new(term_pos, literal_side),
                             literal_id,
@@ -323,6 +336,18 @@ impl SuperpositionState<'_> {
                     );
                     self.subterm_index.remove(&term, pos);
                 }
+            }
+        }
+
+        // Erase all equational literals in the term index for superposition
+        for (literal_id, literal) in clause.iter() {
+            if literal.is_ne() {
+                continue;
+            }
+            for literal_side in [LiteralSide::Left, LiteralSide::Right] {
+                let lhs = literal_side.get_side(literal);
+                let pos = ClauseSetLiteralPosition::new(clause.get_id(), literal_id, literal_side);
+                self.eq_literal_index.remove(lhs, pos);
             }
         }
 
@@ -507,23 +532,17 @@ impl SuperpositionState<'_> {
                         continue;
                     }
 
-                    // Iterate over all top level terms that potentially unify with our subterm
-                    let candidates = self.subterm_index.get_unification_candidates(&subterm);
-                    for candidate_pos in candidates
-                        .into_iter()
-                        .filter(|p| p.clause_pos.literal_pos.term_pos.is_root())
+                    // Iterate over all equational literals that potentially unify with our subterm
+                    for candidate_pos in self.eq_literal_index.get_unification_candidates(&subterm)
                     {
-                        let clause_pos = &candidate_pos.clause_pos;
-                        let clause1 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
-                        let lit1_id = clause_pos.literal_id;
+                        let clause_id = candidate_pos.clause_id;
+                        let clause1 = self.active.get_by_id(clause_id).unwrap();
+                        let lit1_id = candidate_pos.literal_id;
                         let lit1 = clause1.get_literal(lit1_id);
-                        // Condition: The one being used for rewriting must be an equality
-                        if lit1.is_ne() {
-                            continue;
-                        }
-                        let literal_pos = &clause_pos.literal_pos;
-                        let lit1_lhs = literal_pos.literal_side.get_side(lit1);
-                        let lit1_rhs = literal_pos.literal_side.swap().get_side(lit1);
+                        debug_assert!(lit1.is_eq());
+                        let literal_side = &candidate_pos.literal_side;
+                        let lit1_lhs = literal_side.get_side(lit1);
+                        let lit1_rhs = literal_side.swap().get_side(lit1);
 
                         // Condition 1: The lhs of the rewriting literal and the subposition must
                         // unify
@@ -680,6 +699,7 @@ pub fn search_proof(
     let resource_limits = ResourceLimits::of_config(resource_config);
     let subsumption_index = FeatureVectorIndex::new();
     let rewriting_index = DiscriminationTree::new();
+    let eq_literal_index = DiscriminationTree::new();
 
     let state = SuperpositionState {
         passive,
@@ -689,6 +709,7 @@ pub fn search_proof(
         resource_limits,
         subsumption_index,
         rewriting_index,
+        eq_literal_index,
     };
     state.run()
 }

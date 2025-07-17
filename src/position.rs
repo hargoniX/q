@@ -178,12 +178,12 @@ impl Position for ClausePosition {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ClauseSetPosition {
+pub struct ClauseSetTermPosition {
     pub clause_pos: ClausePosition,
     pub clause_id: ClauseId,
 }
 
-impl ClauseSetPosition {
+impl ClauseSetTermPosition {
     pub fn new(clause_pos: ClausePosition, clause_id: ClauseId) -> Self {
         Self {
             clause_pos,
@@ -192,7 +192,7 @@ impl ClauseSetPosition {
     }
 }
 
-impl Position for ClauseSetPosition {
+impl Position for ClauseSetTermPosition {
     type T = ClauseSet;
 
     fn term_at<'a>(&self, t: &'a Self::T) -> &'a Term {
@@ -218,13 +218,19 @@ impl UnitClauseSetPosition {
     }
 }
 
-impl Position for UnitClauseSetPosition {
-    type T = ClauseSet;
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ClauseSetLiteralPosition {
+    pub literal_side: LiteralSide,
+    pub literal_id: LiteralId,
+    pub clause_id: ClauseId,
+}
 
-    fn term_at<'a>(&self, t: &'a Self::T) -> &'a Term {
-        let clause = t
-            .get_by_id(self.clause_id)
-            .expect("Clause id not found in clause set");
-        self.literal_side.get_side(clause.first_lit())
+impl ClauseSetLiteralPosition {
+    pub fn new(clause_id: ClauseId, literal_id: LiteralId, literal_side: LiteralSide) -> Self {
+        Self {
+            literal_side,
+            literal_id,
+            clause_id,
+        }
     }
 }
