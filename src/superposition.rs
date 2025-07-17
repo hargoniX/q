@@ -13,9 +13,10 @@ use crate::{
     kbo::KboOrd,
     position::{
         ClausePosition, ClauseSetPosition, LiteralPosition, LiteralSide, Position, TermPosition,
+        UnitClauseSetPosition,
     },
     pretty_print::pretty_print,
-    simplifier::{cheap_simplify, simplify},
+    simplifier::{backward_simplify, cheap_simplify, forward_simplify},
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
     trivial::is_trivial,
@@ -54,12 +55,20 @@ impl ResourceLimits {
     }
 }
 
-struct SuperpositionState<'a> {
-    passive: ClauseQueue,
-    active: ClauseSet,
-    term_bank: &'a mut TermBank,
-    subterm_index: DiscriminationTree<ClauseSetPosition>,
-    subsumption_index: FeatureVectorIndex,
+pub(crate) struct SuperpositionState<'a> {
+    /// The passive/unprocessed set.
+    pub(crate) passive: ClauseQueue,
+    /// The active/processed set.
+    pub(crate) active: ClauseSet,
+    /// The term bank for allocating our hashconsed terms.
+    pub(crate) term_bank: &'a mut TermBank,
+    /// Term index containing all subterms from `active`.
+    pub(crate) subterm_index: DiscriminationTree<ClauseSetPosition>,
+    /// Subsumption containing all clauses from `active`.
+    pub(crate) subsumption_index: FeatureVectorIndex,
+    /// Term index containing all equational unit clauses from `active`.
+    pub(crate) rewriting_index: DiscriminationTree<UnitClauseSetPosition>,
+    /// The resource limit configuration for aborting if they are exceeded.
     resource_limits: ResourceLimits,
 }
 
@@ -236,16 +245,50 @@ impl SuperpositionState<'_> {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    if !term.is_variable() {
-                        let pos = ClauseSetPosition::new(
-                            ClausePosition::new(
-                                LiteralPosition::new(term_pos, literal_side),
-                                literal_id,
-                            ),
-                            clause_id,
-                        );
-                        self.subterm_index.insert(&term, pos);
-                    }
+                    let pos = ClauseSetPosition::new(
+                        ClausePosition::new(
+                            LiteralPosition::new(term_pos, literal_side),
+                            literal_id,
+                        ),
+                        clause_id,
+                    );
+                    self.subterm_index.insert(&term, pos);
+                }
+            }
+        }
+
+        if let Some(lit) = clause.is_rewrite_rule() {
+            // If the literal is already orientable at this point there is no need to insert
+            // both symmetries.
+            let lhs = lit.get_lhs();
+            let rhs = lit.get_rhs();
+            match lhs.kbo(rhs, self.term_bank) {
+                // Can never fulfill the criteria
+                Some(Ordering::Equal) => {}
+                // lhs < rhs -> we always want to rewrite from rhs to lhs
+                Some(Ordering::Less) => {
+                    self.rewriting_index.insert(
+                        lit.get_rhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
+                    );
+                }
+                // rhs < lhs -> we always want to rewrite from lhs to rhs
+                Some(Ordering::Greater) => {
+                    self.rewriting_index.insert(
+                        lit.get_lhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
+                    );
+                }
+                // not orientable -> both orderings could be valid
+                None => {
+                    self.rewriting_index.insert(
+                        lit.get_lhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
+                    );
+                    self.rewriting_index.insert(
+                        lit.get_rhs(),
+                        UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
+                    );
                 }
             }
         }
@@ -258,9 +301,9 @@ impl SuperpositionState<'_> {
 
     // remove from the active set
     // remove from index structures
-    fn erase_active(&mut self, clause: Clause) {
+    pub(crate) fn erase_active(&mut self, clause: &Clause) {
         let clause_id = clause.get_id();
-        info!("Erasing active: {}", pretty_print(&clause, self.term_bank));
+        info!("Erasing active: {}", pretty_print(clause, self.term_bank));
 
         // Erase all sub terms with their position into the term index for superposition
 
@@ -271,23 +314,30 @@ impl SuperpositionState<'_> {
             for literal_side in [LiteralSide::Left, LiteralSide::Right] {
                 let root_term = literal_side.get_side(literal);
                 for (term, term_pos) in root_term.subterm_iter() {
-                    if !term.is_variable() {
-                        let pos = ClauseSetPosition::new(
-                            ClausePosition::new(
-                                LiteralPosition::new(term_pos, literal_side),
-                                literal_id,
-                            ),
-                            clause_id,
-                        );
-                        self.subterm_index.remove(&term, pos);
-                    }
+                    let pos = ClauseSetPosition::new(
+                        ClausePosition::new(
+                            LiteralPosition::new(term_pos, literal_side),
+                            literal_id,
+                        ),
+                        clause_id,
+                    );
+                    self.subterm_index.remove(&term, pos);
                 }
             }
         }
 
-        // Update the feature vector index for subsumption
-        self.subsumption_index.remove(&clause, self.term_bank);
+        if let Some(lit) = clause.is_rewrite_rule() {
+            self.rewriting_index.remove(
+                lit.get_lhs(),
+                UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
+            );
+            self.rewriting_index.remove(
+                lit.get_rhs(),
+                UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
+            );
+        }
 
+        self.subsumption_index.remove(clause, self.term_bank);
         self.active.remove(clause);
     }
 
@@ -537,7 +587,7 @@ impl SuperpositionState<'_> {
             let active_clause = self.active.get_by_id(active_clause_id).unwrap();
             if active_clause.subsumes(g) {
                 info!(
-                    "Subsumption: {} subsumes {}",
+                    "Forward Subsumption: {} subsumes {}",
                     pretty_print(active_clause, self.term_bank),
                     pretty_print(g, self.term_bank)
                 );
@@ -547,19 +597,27 @@ impl SuperpositionState<'_> {
         false
     }
 
-    // TODO: full given-clause loop
     fn run(mut self) -> SuperpositionResult {
         while let Some(mut g) = self.passive.pop() {
             g = g.fresh_variable_clone(self.term_bank);
-            g = simplify(g);
+            info!("Next given clause: {}", pretty_print(&g, self.term_bank));
+
+            g = forward_simplify(g, &self);
+
+            if is_trivial(&g, self.term_bank) {
+                continue;
+            }
+
             if g.is_empty() {
                 log::warn!("Active Set size: {}", self.active.len());
                 return SuperpositionResult::ProofFound;
             }
+
             if self.redundant(&g) {
                 continue;
             }
-            let mut clauses = Vec::new();
+
+            let mut redundant_active = Vec::new();
             for active_clause_id in self
                 .subsumption_index
                 .backward_candidates(&g, self.term_bank)
@@ -567,20 +625,25 @@ impl SuperpositionState<'_> {
                 let active_clause = self.active.get_by_id(active_clause_id).unwrap();
                 if g.subsumes(active_clause) {
                     info!(
-                        "Subsumption: {} subsumes {}",
+                        "Backward Subsumption: {} subsumes {}",
                         pretty_print(&g, self.term_bank),
                         pretty_print(active_clause, self.term_bank),
                     );
-                    clauses.push(active_clause.clone());
+                    redundant_active.push(active_clause.clone());
                 }
             }
-            for clause in clauses {
-                self.erase_active(clause);
-            }
+            redundant_active.iter().for_each(|c| self.erase_active(c));
+
+            let backward_simplified = backward_simplify(&g, &mut self);
+
             self.insert_active(g.clone());
+
             let new_clauses = self.generate(g);
-            for mut clause in new_clauses.into_iter() {
-                clause = cheap_simplify(clause);
+            for mut clause in backward_simplified
+                .into_iter()
+                .chain(new_clauses.into_iter())
+            {
+                clause = cheap_simplify(clause, &self);
                 if is_trivial(&clause, self.term_bank) {
                     continue;
                 }
@@ -596,6 +659,9 @@ impl SuperpositionState<'_> {
                 return SuperpositionResult::Unknown(reason);
             }
         }
+
+        log::warn!("Active Set size: {}", self.active.len(),);
+
         SuperpositionResult::StatementFalse
     }
 }
@@ -613,6 +679,7 @@ pub fn search_proof(
     let subterm_index = DiscriminationTree::new();
     let resource_limits = ResourceLimits::of_config(resource_config);
     let subsumption_index = FeatureVectorIndex::new();
+    let rewriting_index = DiscriminationTree::new();
 
     let state = SuperpositionState {
         passive,
@@ -621,6 +688,7 @@ pub fn search_proof(
         subterm_index,
         resource_limits,
         subsumption_index,
+        rewriting_index,
     };
     state.run()
 }

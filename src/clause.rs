@@ -169,7 +169,7 @@ impl Iterator for SymmLitIterator<'_> {
 
 /// A unique identifier for a literal within a clause.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct LiteralId(usize);
+pub struct LiteralId(pub(crate) usize);
 
 // We want to maintain unique clause identifiers for ease of indexing in a [ClauseSet], this
 // counter provides us with these identifiers.
@@ -214,6 +214,10 @@ impl Clause {
             info: ClauseInfo { is_initial: true },
             literals: vec,
         }
+    }
+
+    pub fn first_lit(&self) -> &Literal {
+        &self.literals[0]
     }
 
     /// Return true iff the clause is initial, that is, part of the problem we were initially
@@ -283,6 +287,20 @@ impl Clause {
 
             self.clone().subst_with(&subst, term_bank)
         }
+    }
+
+    pub fn to_vec(self) -> Vec<Literal> {
+        self.literals
+    }
+
+    pub fn is_rewrite_rule(&self) -> Option<&Literal> {
+        if self.is_unit() {
+            let lit = self.first_lit();
+            if lit.is_eq() {
+                return Some(lit);
+            }
+        }
+        None
     }
 }
 
@@ -369,7 +387,7 @@ impl ClauseSet {
     }
 
     /// Remove a clause from the set.
-    pub fn remove(&mut self, clause: Clause) {
+    pub fn remove(&mut self, clause: &Clause) {
         self.map.remove(&clause.id);
     }
 
