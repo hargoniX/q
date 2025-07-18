@@ -23,7 +23,15 @@ pub fn pretty_print<T: BankPrettyPrint>(t: &T, term_bank: &TermBank) -> String {
 
 fn print_term_into_aux(term: &Term, term_bank: &TermBank, acc: &mut String) {
     match &**term {
-        RawTerm::Var { id, .. } => acc.push_str(&term_bank.get_variable_info(*id).name),
+        RawTerm::Var { id, .. } => {
+            let name = &term_bank.get_variable_info(*id).name;
+            if name.ends_with("rep") {
+                let prefix = name.rsplit_once("_").unwrap().0;
+                acc.push_str(prefix);
+            } else {
+                acc.push_str(name);
+            }
+        } 
         RawTerm::App { id, args, .. } => {
             let info = term_bank.get_function_info(*id);
             acc.push_str(&info.name);
