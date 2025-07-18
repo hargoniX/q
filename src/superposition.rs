@@ -464,10 +464,11 @@ impl SuperpositionState<'_> {
             return;
         }
 
+        let l2_rhs_subst = lit2_rhs.clone().subst_with(subst, term_bank);
         let l2_ord = lit2_lhs
             .clone()
             .subst_with(subst, term_bank)
-            .kbo(&lit2_rhs.clone().subst_with(subst, term_bank), term_bank);
+            .kbo(&l2_rhs_subst, term_bank);
         if l2_ord == Some(Ordering::Less) {
             return;
         }
@@ -476,7 +477,7 @@ impl SuperpositionState<'_> {
         {
             if let Some(mut new_literals2) = maximality_check(clause2, lit2_id, subst, term_bank) {
                 new_literals1.append(&mut new_literals2);
-                let new_rhs = lit2_rhs.clone().subst_with(subst, term_bank);
+                let new_rhs = l2_rhs_subst;
                 let new_lhs = subterm_pos
                     .replace_term_at(lit2_lhs, lit1_rhs.clone(), term_bank)
                     .subst_with(subst, term_bank);
