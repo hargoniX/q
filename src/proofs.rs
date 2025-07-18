@@ -60,7 +60,7 @@ struct ProofStep {
 
 impl ProofStep {
     fn to_graphiz(&self, buf: &mut String) {
-        let description = format!("{}\\ninference: {}", self.new_clause_str, self.rule);
+        let description = format!("{}\\ninference: {} ({})", self.new_clause_str, self.rule, self.id.0);
         buf.push_str(&format!(
             "{:?} [shape=box,label=\"{}\"]\n",
             self.id.0, &description
@@ -138,6 +138,9 @@ impl ProofLog {
         let mut visited = FxHashSet::default();
         let mut worklist = vec![*graph.last_key_value().unwrap().0];
         while let Some(id) = worklist.pop() {
+            if visited.contains(&id) {
+                continue;
+            }
             let step = graph.get(&id).unwrap();
             step.to_graphiz(&mut buf);
             visited.insert(id);
