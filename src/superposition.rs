@@ -433,8 +433,13 @@ impl SuperpositionState<'_> {
     /// - subterm_pos is a term position within lit2_lhs that is not a variable (Condition 2)
     /// - subst is the mgu of the term at subterm_pos and lit1_lhs (Condition 1)
     ///
-    /// This function will check condition 3 through 6 for both positive and negative superposition
-    /// and add a new clause to acc if applicable.
+    /// This function will check:
+    /// - ~(subst(lit1_lhs) < subst(lit1_rhs))
+    /// - ~(subst(lit2_lhs) < subst(lit2_rhs))
+    /// - subst(lit1_lhs = lit1_rhs) is eligible for paramodulation
+    /// - subst(lit2_lhs =/!= lit2_rhs) is eligible for resolution
+    ///
+    /// and add a new clause to acc on success.
     fn superposition_core(
         &self,
         clause1: &Clause,
@@ -455,33 +460,21 @@ impl SuperpositionState<'_> {
             .clone()
             .subst_with(subst, term_bank)
             .kbo(&lit1_rhs.clone().subst_with(subst, term_bank), term_bank);
-        // Condition 3: The lhs of the rewriting literal must not be <= the rhs after
-        // applying the substitution.
-        if l1_ord == Some(Ordering::Equal) || l1_ord == Some(Ordering::Less) {
+        if l1_ord == Some(Ordering::Less) {
             return;
         }
 
-        // Condition 5: The lhs of the literal being rewritten must not be <= the
-        // rhs after applying the substitution.
         let l2_ord = lit2_lhs
             .clone()
             .subst_with(subst, term_bank)
             .kbo(&lit2_rhs.clone().subst_with(subst, term_bank), term_bank);
-        if l2_ord == Some(Ordering::Equal) || l2_ord == Some(Ordering::Less) {
+        if l2_ord == Some(Ordering::Less) {
             return;
         }
 
-        // Condition 4: The literal being used for rewriting must be maximal after
-        // applying the mgu to its clause.
-        if let Some(mut new_literals1) = strict_maximality_check(clause1, lit1_id, subst, term_bank)
+        if let Some(mut new_literals1) = maximality_check(clause1, lit1_id, subst, term_bank)
         {
-            // Condition 6: The literal being rewritten must be maximal or strictly
-            // maximal after applying the mgu to its clause.
-            let checker = match lit2_pol {
-                Polarity::Eq => strict_maximality_check,
-                Polarity::Ne => maximality_check,
-            };
-            if let Some(mut new_literals2) = checker(clause2, lit2_id, subst, term_bank) {
+            if let Some(mut new_literals2) = maximality_check(clause2, lit2_id, subst, term_bank) {
                 new_literals1.append(&mut new_literals2);
                 let new_rhs = lit2_rhs.clone().subst_with(subst, term_bank);
                 let new_lhs = subterm_pos
@@ -515,23 +508,21 @@ impl SuperpositionState<'_> {
                 continue;
             }
             for (lit1_lhs, lit1_rhs) in lit1.symm_term_iter() {
-                // Due to stability under substitution we can pre-check condition 3 at this point,
-                // if the check already fails here we know for sure it will fail after subst. If it
-                // doesn't we need to check again later
+                // Try to orient the equation using stability under substitution
                 let l1_ord = lit1_lhs.kbo(&lit1_rhs, term_bank);
-                if l1_ord == Some(Ordering::Equal) || l1_ord == Some(Ordering::Less) {
+                if l1_ord == Some(Ordering::Less) {
                     continue;
                 }
 
                 // Iterate over all possible unifying subpositions in the active set
                 for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
                     let lit2_lhs_p = candidate_pos.term_at(&self.active);
-                    // Condition 2: The term at the subposition must not be a variable
+                    // The term at the subposition must not be a variable
                     if lit2_lhs_p.is_variable() {
                         continue;
                     }
 
-                    // Condition 1: the lhs of the rewriting literal and the subposition must unify
+                    // The lhs of the rewriting literal and the subposition must unify
                     if let Some(subst) = lit1_lhs.unify(lit2_lhs_p, term_bank) {
                         let clause_pos = &candidate_pos.clause_pos;
                         let literal_pos = &clause_pos.literal_pos;
@@ -568,16 +559,15 @@ impl SuperpositionState<'_> {
         for (lit2_id, lit2) in clause2.iter() {
             let lit2_pol = lit2.get_pol();
             for (lit2_lhs, lit2_rhs) in lit2.symm_term_iter() {
-                // Due to stability under substitution we can pre-check condition 5 at this point,
-                // if the check already fails here we know for sure it will fail after subst. If it
-                // doesn't we need to check again later.
+                // Try to orient the equation using stability under substitution
                 let l2_ord = lit2_lhs.kbo(&lit2_rhs, term_bank);
-                if l2_ord == Some(Ordering::Equal) || l2_ord == Some(Ordering::Less) {
+                if l2_ord == Some(Ordering::Less) {
                     continue;
                 }
 
                 // Iterate over all subterms to look for unifying partners in the active set
                 for (subterm, subterm_pos) in lit2_lhs.subterm_iter() {
+                    // The term at the subposition must not be a variable
                     if subterm.is_variable() {
                         continue;
                     }
@@ -594,8 +584,7 @@ impl SuperpositionState<'_> {
                         let lit1_lhs = literal_side.get_side(lit1);
                         let lit1_rhs = literal_side.swap().get_side(lit1);
 
-                        // Condition 1: The lhs of the rewriting literal and the subposition must
-                        // unify
+                        // The lhs of the rewriting literal and the subposition must unify
                         if let Some(subst) = subterm.unify(lit1_lhs, term_bank) {
                             self.superposition_core(
                                 clause1,
