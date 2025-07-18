@@ -6,7 +6,7 @@ use std::{
 use log::info;
 
 use crate::{
-    clause::{Clause, ClauseSet, Literal, LiteralId, Polarity},
+    clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId, Polarity},
     clause_queue::ClauseQueue,
     discr_tree::DiscriminationTree,
     feature_vector::FeatureVectorIndex,
@@ -234,6 +234,22 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
 }
 
 impl SuperpositionState<'_> {
+    fn insert_subterms(
+        &mut self,
+        root_term: &Term,
+        clause_id: ClauseId,
+        literal_id: LiteralId,
+        literal_side: LiteralSide,
+    ) {
+        for (term, term_pos) in root_term.subterm_iter() {
+            let pos = ClauseSetTermPosition::new(
+                ClausePosition::new(LiteralPosition::new(term_pos, literal_side), literal_id),
+                clause_id,
+            );
+            self.subterm_index.insert(&term, pos);
+        }
+    }
+
     fn insert_active(&mut self, clause: Clause) {
         let clause_id = clause.get_id();
         info!(
@@ -243,38 +259,71 @@ impl SuperpositionState<'_> {
 
         // Insert all sub terms with their position into the term index for superposition
         for (literal_id, literal) in clause.iter() {
-            for literal_side in [LiteralSide::Left, LiteralSide::Right] {
-                let root_term = literal_side.get_side(literal);
-                for (term, term_pos) in root_term.subterm_iter() {
-                    let pos = ClauseSetTermPosition::new(
-                        ClausePosition::new(
-                            LiteralPosition::new(term_pos, literal_side),
-                            literal_id,
-                        ),
-                        clause_id,
-                    );
-                    self.subterm_index.insert(&term, pos);
+            let lhs = literal.get_lhs();
+            let rhs = literal.get_rhs();
+
+            // If the literal is already orientable at this point there is no need to insert
+            // both symmetries.
+            match lhs.kbo(rhs, self.term_bank) {
+                // Can never fulfill the criteria
+                Some(Ordering::Equal) => {}
+                // lhs < rhs -> we always want to use the rhs lhs orientation
+                Some(Ordering::Less) => {
+                    self.insert_subterms(rhs, clause_id, literal_id, LiteralSide::Right);
+                }
+                // lhs > rhs -> we always want to use the lhs rhs orientation
+                Some(Ordering::Greater) => {
+                    self.insert_subterms(lhs, clause_id, literal_id, LiteralSide::Left);
+                }
+                // not orientable -> both orderings could be valid
+                None => {
+                    self.insert_subterms(lhs, clause_id, literal_id, LiteralSide::Left);
+                    self.insert_subterms(rhs, clause_id, literal_id, LiteralSide::Right);
                 }
             }
         }
 
         // Insert all equational literals into the term index for superposition
-        for (literal_id, literal) in clause.iter() {
-            if literal.is_ne() {
+        for (lit_id, lit) in clause.iter() {
+            if lit.is_ne() {
                 continue;
             }
-            for literal_side in [LiteralSide::Left, LiteralSide::Right] {
-                let lhs = literal_side.get_side(literal);
-                let rhs = literal_side.swap().get_side(literal);
-                let ord = lhs.kbo(rhs, self.term_bank);
-                if ord == Some(Ordering::Less) || ord == Some(Ordering::Less) {
-                    continue;
+            let lhs = lit.get_lhs();
+            let rhs = lit.get_rhs();
+            // If the literal is already orientable at this point there is no need to insert
+            // both symmetries.
+            match lhs.kbo(rhs, self.term_bank) {
+                // Can never fulfill the criteria
+                Some(Ordering::Equal) => {}
+                // lhs < rhs -> we always want to rewrite from rhs to lhs
+                Some(Ordering::Less) => {
+                    self.eq_literal_index.insert(
+                        rhs,
+                        ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
+                    );
                 }
-                let pos = ClauseSetLiteralPosition::new(clause.get_id(), literal_id, literal_side);
-                self.eq_literal_index.insert(lhs, pos);
+                // rhs < lhs -> we always want to rewrite from lhs to rhs
+                Some(Ordering::Greater) => {
+                    self.eq_literal_index.insert(
+                        lhs,
+                        ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
+                    );
+                }
+                // not orientable -> both orderings could be valid
+                None => {
+                    self.eq_literal_index.insert(
+                        lhs,
+                        ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
+                    );
+                    self.eq_literal_index.insert(
+                        rhs,
+                        ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
+                    );
+                }
             }
         }
 
+        // TODO: merge this with the above
         if let Some(lit) = clause.is_rewrite_rule() {
             // If the literal is already orientable at this point there is no need to insert
             // both symmetries.
@@ -286,25 +335,25 @@ impl SuperpositionState<'_> {
                 // lhs < rhs -> we always want to rewrite from rhs to lhs
                 Some(Ordering::Less) => {
                     self.rewriting_index.insert(
-                        lit.get_rhs(),
+                        rhs,
                         UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
                     );
                 }
                 // rhs < lhs -> we always want to rewrite from lhs to rhs
                 Some(Ordering::Greater) => {
                     self.rewriting_index.insert(
-                        lit.get_lhs(),
+                        lhs,
                         UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
                     );
                 }
                 // not orientable -> both orderings could be valid
                 None => {
                     self.rewriting_index.insert(
-                        lit.get_lhs(),
+                        lhs,
                         UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
                     );
                     self.rewriting_index.insert(
-                        lit.get_rhs(),
+                        rhs,
                         UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
                     );
                 }
