@@ -656,8 +656,11 @@ impl SuperpositionState<'_> {
     fn generate(&mut self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
         let selection = select_literals(&clause, &self.selection_strategy);
+        let has_selection = selection.is_some();
         self.equality_resolution(&clause, &mut acc, selection);
-        self.equality_factoring(&clause, &mut acc);
+        if !has_selection {
+            self.equality_factoring(&clause, &mut acc);
+        }
         self.superposition(&clause, &mut acc);
         acc
     }
