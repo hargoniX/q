@@ -177,7 +177,7 @@ static CLAUSE_ID_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 /// A unique identifier for clauses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ClauseId(usize);
+pub struct ClauseId(pub(crate) usize);
 
 fn next_clause_id() -> ClauseId {
     ClauseId(CLAUSE_ID_COUNT.fetch_add(1, Ordering::SeqCst))
@@ -277,16 +277,12 @@ impl Clause {
             lit.get_rhs().collect_vars_into(&mut set);
         }
 
-        if set.is_empty() {
-            self.clone()
-        } else {
-            let mut subst = Substitution::new();
-            for old_var in set.iter() {
-                subst.insert(*old_var, term_bank.mk_replacement_variable(*old_var));
-            }
-
-            self.clone().subst_with(&subst, term_bank)
+        let mut subst = Substitution::new();
+        for old_var in set.iter() {
+            subst.insert(*old_var, term_bank.mk_replacement_variable(*old_var));
         }
+
+        self.clone().subst_with(&subst, term_bank)
     }
 
     pub fn to_vec(self) -> Vec<Literal> {

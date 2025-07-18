@@ -2,6 +2,7 @@ use chrono::Local;
 use clap::Parser;
 use env_logger::Env;
 use qlib::pretty_print::pretty_print;
+use qlib::proofs::GraphvizMode;
 use qlib::superposition::{ResourceLimitConfig, search_proof};
 use qlib::term_bank::TermBank;
 use std::io::Write;
@@ -17,6 +18,12 @@ struct Cli {
     duration: Option<u64>,
     /// Memory limit in MB,
     mem: Option<usize>,
+    /// Path to graphviz output file
+    #[arg(long)]
+    graphviz: Option<String>,
+    /// Graphviz output mode, if not set defaults to last
+    #[arg(long)]
+    gmode: Option<GraphvizMode>,
 }
 
 fn main() {
@@ -59,6 +66,9 @@ fn main() {
     for clause in &clauses {
         log::info!("Clause: {}", pretty_print(clause, &term_bank));
     }
-    let result = search_proof(clauses, &mut term_bank, &resource_limit);
+    let gcfg = args
+        .graphviz
+        .map(|file| (args.gmode.unwrap_or(GraphvizMode::Last), file));
+    let result = search_proof(clauses, &mut term_bank, &resource_limit, gcfg);
     log::warn!("Result superposition: '{result:?}'");
 }

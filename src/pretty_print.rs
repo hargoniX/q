@@ -25,12 +25,13 @@ fn print_term_into_aux(term: &Term, term_bank: &TermBank, acc: &mut String) {
     match &**term {
         RawTerm::Var { id, .. } => {
             let name = &term_bank.get_variable_info(*id).name;
-            if name.ends_with("rep") {
-                let prefix = name.rsplit_once("_").unwrap().0;
-                acc.push_str(prefix);
-            } else {
-                acc.push_str(name);
-            }
+            acc.push_str(name);
+            //if name.ends_with("rep") {
+            //    let prefix = name.rsplit_once("_").unwrap().0;
+            //    acc.push_str(prefix);
+            //} else {
+            //    acc.push_str(name);
+            //}
         }
         RawTerm::App { id, args, .. } => {
             let info = term_bank.get_function_info(*id);

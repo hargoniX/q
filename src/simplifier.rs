@@ -14,6 +14,7 @@ use crate::{
     kbo::KboOrd,
     position::{Position, UnitClauseSetPosition},
     pretty_print::pretty_print,
+    proofs::{ProofLog, ProofRule},
     subst::Substitutable,
     superposition::SuperpositionState,
     term_bank::{Term, TermBank},
@@ -25,11 +26,12 @@ struct RuleResult {
 }
 
 /// Apply the DR and DD rules to `clause` if possible.
-fn rule_dr_dd(clause: Clause, term_bank: &TermBank) -> RuleResult {
+fn rule_dr_dd(clause: Clause, term_bank: &TermBank, proof_log: &ProofLog) -> RuleResult {
     info!(
         "Applying DR DD to clause: {}",
         pretty_print(&clause, term_bank)
     );
+    let orig_id = clause.get_id();
     let new_lits = clause
         .iter()
         .map(|(_, lit)| lit)
@@ -39,18 +41,21 @@ fn rule_dr_dd(clause: Clause, term_bank: &TermBank) -> RuleResult {
         // so we can use a HashSet for this
         .collect::<FxHashSet<&Literal>>();
 
-    if new_lits.len() != clause.len() {
-        let clause = Clause::new(new_lits.into_iter().cloned().collect());
+    let new_clause = Clause::new(new_lits.into_iter().cloned().collect());
+
+    proof_log.log_clause(&new_clause, ProofRule::DRDD, &[orig_id], term_bank);
+
+    if new_clause.len() != clause.len() {
         info!("DR DD result: {}", pretty_print(&clause, term_bank));
         RuleResult {
             modified: true,
-            clause,
+            clause: new_clause,
         }
     } else {
         info!("DR DD: no change");
         RuleResult {
             modified: false,
-            clause,
+            clause: new_clause,
         }
     }
 }
@@ -67,6 +72,7 @@ struct ForwardRewriter<'a> {
     /// - Some(r) we know we can rewrite `t` to `r`
     /// - None we know `t` cannot be rewritten with any clause from `active`.
     cache: FxHashMap<Term, Option<Term>>,
+    used_clauses: Vec<ClauseId>,
 }
 
 // TODO: we could do this in one term traversal instead of like this but let's stick with a naive
@@ -77,7 +83,7 @@ impl ForwardRewriter<'_> {
         rewriting_index: &DiscriminationTree<UnitClauseSetPosition>,
         active: &ClauseSet,
         term_bank: &TermBank,
-    ) -> RuleResult {
+    ) -> (RuleResult, Vec<ClauseId>) {
         info!(
             "Forward rewriting clause: {}",
             pretty_print(&clause, term_bank)
@@ -88,6 +94,7 @@ impl ForwardRewriter<'_> {
             active,
             term_bank,
             cache: FxHashMap::default(),
+            used_clauses: vec![],
         };
 
         rewriter.fixpoint_rewrite()
@@ -176,6 +183,7 @@ impl ForwardRewriter<'_> {
                                     self.literals[tgt_lit_idx] = new_lit;
                                     modified = true;
                                     self.cache.insert(tgt_subterm, Some(subst_rhs));
+                                    self.used_clauses.push(rw_rule_pos.clause_id);
                                     info!(
                                         "Forward rewritten using: {}",
                                         pretty_print(rw_rule_literal, self.term_bank)
@@ -195,7 +203,7 @@ impl ForwardRewriter<'_> {
         modified
     }
 
-    fn fixpoint_rewrite(mut self) -> RuleResult {
+    fn fixpoint_rewrite(mut self) -> (RuleResult, Vec<ClauseId>) {
         let mut modified = false;
         loop {
             let res = self.step();
@@ -215,7 +223,7 @@ impl ForwardRewriter<'_> {
             info!("No forward rewrites found");
         }
 
-        RuleResult { clause, modified }
+        (RuleResult { clause, modified }, self.used_clauses)
     }
 }
 
@@ -227,7 +235,10 @@ struct BackwardRewriter<'a, 'b> {
 }
 
 impl<'a, 'b> BackwardRewriter<'a, 'b> {
-    fn backward_rewrite(clause: &Clause, state: &mut SuperpositionState<'_>) -> Vec<Clause> {
+    fn backward_rewrite(
+        clause: &Clause,
+        state: &mut SuperpositionState<'_>,
+    ) -> Vec<(ClauseId, Clause)> {
         if let Some(lit) = clause.is_rewrite_rule() {
             info!(
                 "Backward rewriting using: {}",
@@ -240,7 +251,7 @@ impl<'a, 'b> BackwardRewriter<'a, 'b> {
                 cache: FxHashMap::default(),
             };
             rewriter.find_candidates();
-            return rewriter.new_clauses.into_values().collect();
+            return rewriter.new_clauses.into_iter().collect();
         }
         vec![]
     }
@@ -388,22 +399,28 @@ pub(crate) fn forward_simplify(clause: Clause, state: &SuperpositionState) -> Cl
 
     // We could do a round of DR DD here but we already know that clauses from passive are in DR/DD
     // normal form due to cheap_simplify so we can skip it.
-    let res = ForwardRewriter::forward_rewrite(
+    let orig_id = clause.get_id();
+    let (res, mut used) = ForwardRewriter::forward_rewrite(
         clause,
         &state.rewriting_index,
         &state.active,
         state.term_bank,
     );
+    used.push(orig_id);
+    state
+        .proof_log
+        .log_clause(&res.clause, ProofRule::Rewriting, &used, state.term_bank);
     clause = res.clause;
 
     // Maybe we got more useless clauses to remove from rewriting
     if res.modified {
-        let res = rule_dr_dd(clause, state.term_bank);
+        let res = rule_dr_dd(clause, state.term_bank, &state.proof_log);
         clause = res.clause;
     }
 
     // Finally we give the clause a little sort according to `(weight, is_neg)` in order to
     // increase the likelihood of finding maximal clauses earlier:
+    let orig_id = clause.get_id();
     let mut vec = clause.to_vec();
     vec.sort_by(|lhs, rhs| {
         lhs.weight()
@@ -412,7 +429,12 @@ pub(crate) fn forward_simplify(clause: Clause, state: &SuperpositionState) -> Cl
             .then(lhs.is_ne().cmp(&rhs.is_ne()))
     });
 
-    clause = Clause::new(vec);
+    let new_clause = Clause::new(vec);
+
+    state
+        .proof_log
+        .log_clause(&new_clause, ProofRule::Sorting, &[orig_id], state.term_bank);
+    clause = new_clause;
 
     clause
 }
@@ -421,11 +443,23 @@ pub(crate) fn forward_simplify(clause: Clause, state: &SuperpositionState) -> Cl
 /// them from active if they are found to be simplifiable. Return the simplified versions of
 /// clauses if they were found.
 pub(crate) fn backward_simplify(clause: &Clause, state: &mut SuperpositionState) -> Vec<Clause> {
-    BackwardRewriter::backward_rewrite(clause, state)
+    let new_clauses = BackwardRewriter::backward_rewrite(clause, state);
+    new_clauses
+        .into_iter()
+        .map(|(old_id, new_clause)| {
+            state.proof_log.log_clause(
+                &new_clause,
+                ProofRule::Rewriting,
+                &[clause.get_id(), old_id],
+                state.term_bank,
+            );
+            new_clause
+        })
+        .collect()
 }
 
 pub(crate) fn cheap_simplify(clause: Clause, state: &SuperpositionState) -> Clause {
     // We implement no "non cheap" simplifications for now
     //forward_simplify(clause, state)
-    rule_dr_dd(clause, state.term_bank).clause
+    rule_dr_dd(clause, state.term_bank, &state.proof_log).clause
 }
