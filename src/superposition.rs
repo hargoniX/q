@@ -139,6 +139,7 @@ fn maximality_check(
 }
 
 /*
+/*
 Takes a `clause` and an index `check_lit_id` to some literal `check_lit` in `clause` together
 with a substitution `subst`. Then checks whether `subst(check_lit)` is strictly maximal in
 `subst(clause)`.
@@ -158,7 +159,7 @@ fn strict_maximality_check(
         |ord| ord != Some(Ordering::Less) && ord != Some(Ordering::Equal),
         term_bank,
     )
-}
+} */
 
 fn equality_resolution(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBank) {
     info!("ERes working clause: {}", pretty_print(clause, term_bank));
@@ -627,7 +628,9 @@ impl SuperpositionState<'_> {
 
         if let Some(memory_limit) = self.resource_limits.memory_limit {
             if let Some(stats) = memory_stats() {
-                if memory_limit < stats.physical_mem {
+                // We only start to try and GC one we are about to explode to go fast in the normal
+                // case
+                if memory_limit as f64 * 0.98 < stats.physical_mem as f64 {
                     self.term_bank.gc();
                     if let Some(stats) = memory_stats() {
                         if memory_limit < stats.physical_mem {

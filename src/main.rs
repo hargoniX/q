@@ -13,8 +13,10 @@ use std::time::Duration;
 struct Cli {
     /// Path to a tptp problem file
     file: PathBuf,
-    /// Duration limit
+    /// Duration limit in seconds
     duration: Option<u64>,
+    /// Memory limit in MB,
+    mem: Option<usize>,
 }
 
 fn main() {
@@ -32,15 +34,12 @@ fn main() {
             )
         })
         .init();
-    let resource_limit;
-    if let Some(duration) = args.duration {
-        resource_limit = ResourceLimitConfig {
-            duration: Some(Duration::from_secs(duration)),
-            memory_limit: None,
-        };
-    } else {
-        resource_limit = Default::default();
-    }
+    let duration = args.duration.map(Duration::from_secs);
+    let memory_limit = args.mem.map(|val| val * 1_000_000);
+    let resource_limit = ResourceLimitConfig {
+        duration,
+        memory_limit
+    };
     log::info!("Path to TPTP problem: '{:?}'", args.file);
 
     let tptp_problem = qlib::tptp_parser::parse_file(args.file);

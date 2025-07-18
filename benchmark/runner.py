@@ -112,13 +112,11 @@ def get_problems_casc(variant: Variant, category: CASCCategory) -> List[Problem]
     return problems
 
 
-def test(problem: Problem, duration: Optional[int]) -> Problem:
+def test(problem: Problem, duration: int) -> Problem:
     env = os.environ.copy()
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
-    cmd = ["target/release/qprover", problem.filename]
-    if duration is not None:
-        cmd.append(str(duration))
+    cmd = ["target/release/qprover", problem.filename, str(duration), str(MEM_LIMIT // 1_000_000)]
     start = datetime.now()
     output = run(
         cmd,
