@@ -38,7 +38,7 @@ fn main() {
     let memory_limit = args.mem.map(|val| val * 1_000_000);
     let resource_limit = ResourceLimitConfig {
         duration,
-        memory_limit
+        memory_limit,
     };
     log::info!("Path to TPTP problem: '{:?}'", args.file);
 

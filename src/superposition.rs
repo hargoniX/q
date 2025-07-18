@@ -474,8 +474,7 @@ impl SuperpositionState<'_> {
             return;
         }
 
-        if let Some(mut new_literals1) = maximality_check(clause1, lit1_id, subst, term_bank)
-        {
+        if let Some(mut new_literals1) = maximality_check(clause1, lit1_id, subst, term_bank) {
             if let Some(mut new_literals2) = maximality_check(clause2, lit2_id, subst, term_bank) {
                 new_literals1.append(&mut new_literals2);
                 let new_rhs = l2_rhs_subst;

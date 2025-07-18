@@ -31,7 +31,7 @@ fn print_term_into_aux(term: &Term, term_bank: &TermBank, acc: &mut String) {
             } else {
                 acc.push_str(name);
             }
-        } 
+        }
         RawTerm::App { id, args, .. } => {
             let info = term_bank.get_function_info(*id);
             acc.push_str(&info.name);
