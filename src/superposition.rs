@@ -199,12 +199,13 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
                 for (l2_lhs, l2_rhs) in lit2.symm_term_iter() {
                     // Condition 1: the lhs of both literals must unify
                     if let Some(subst) = l1_lhs.unify(&l2_lhs, term_bank) {
-                        let ord = l1_rhs
+                        let l1_rhs_subst = l1_rhs.clone().subst_with(&subst, term_bank);
+                        let ord = l1_lhs
                             .clone()
                             .subst_with(&subst, term_bank)
-                            .kbo(&l1_lhs.clone().subst_with(&subst, term_bank), term_bank);
-                        // Condition 2: after applying the mgu the rhs must not be <= than the lhs
-                        if ord == Some(Ordering::Equal) || ord == Some(Ordering::Less) {
+                            .kbo(&l1_rhs_subst, term_bank);
+                        // Condition 2: after applying the mgu we must have ~(lhs < rhs)
+                        if ord == Some(Ordering::Less) {
                             continue;
                         }
 
@@ -214,7 +215,7 @@ fn equality_factoring(clause: &Clause, acc: &mut Vec<Clause>, term_bank: &TermBa
                             maximality_check(clause, literal1_id, &subst, term_bank)
                         {
                             let final_lit = Literal::mk_ne(
-                                l1_rhs.clone().subst_with(&subst, term_bank),
+                                l1_rhs_subst,
                                 l2_rhs.clone().subst_with(&subst, term_bank),
                             );
                             new_literals.push(final_lit);
