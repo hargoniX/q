@@ -60,7 +60,10 @@ struct ProofStep {
 
 impl ProofStep {
     fn to_graphiz(&self, buf: &mut String) {
-        let description = format!("{}\\ninference: {} ({})", self.new_clause_str, self.rule, self.id.0);
+        let description = format!(
+            "{}\\ninference: {} ({})",
+            self.new_clause_str, self.rule, self.id.0
+        );
         buf.push_str(&format!(
             "{:?} [shape=box,label=\"{}\"]\n",
             self.id.0, &description
