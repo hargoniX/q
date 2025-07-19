@@ -1,0 +1,1075 @@
+[problems]
+[problems."AGT042+1"]
+filename = "problems/tptp-full/AGT/AGT042+1.p"
+result = "SAT"
+[problems."ALG443+1"]
+filename = "problems/tptp-full/ALG/ALG443+1.p"
+result = "SAT"
+[problems."BIO001+1"]
+filename = "problems/tptp-full/BIO/BIO001+1.p"
+result = "SAT"
+[problems."COM150+1"]
+filename = "problems/tptp-full/COM/COM150+1.p"
+result = "SAT"
+[problems."COM151+1"]
+filename = "problems/tptp-full/COM/COM151+1.p"
+result = "SAT"
+[problems."CSR010+1"]
+filename = "problems/tptp-full/CSR/CSR010+1.p"
+result = "SAT"
+[problems."CSR111+2"]
+filename = "problems/tptp-full/CSR/CSR111+2.p"
+result = "SAT"
+[problems."CSR111+3"]
+filename = "problems/tptp-full/CSR/CSR111+3.p"
+result = "SAT"
+[problems."CSR111+4"]
+filename = "problems/tptp-full/CSR/CSR111+4.p"
+result = "SAT"
+[problems."CSR111+5"]
+filename = "problems/tptp-full/CSR/CSR111+5.p"
+result = "SAT"
+[problems."CSR154+1"]
+filename = "problems/tptp-full/CSR/CSR154+1.p"
+result = "SAT"
+[problems."CSR155+1"]
+filename = "problems/tptp-full/CSR/CSR155+1.p"
+result = "SAT"
+[problems."CSR156+1"]
+filename = "problems/tptp-full/CSR/CSR156+1.p"
+result = "SAT"
+[problems."GEG001+1"]
+filename = "problems/tptp-full/GEG/GEG001+1.p"
+result = "SAT"
+[problems."GEO158+1"]
+filename = "problems/tptp-full/GEO/GEO158+1.p"
+result = "SAT"
+[problems."GEO159+1"]
+filename = "problems/tptp-full/GEO/GEO159+1.p"
+result = "SAT"
+[problems."GEO160+1"]
+filename = "problems/tptp-full/GEO/GEO160+1.p"
+result = "SAT"
+[problems."GEO161+1"]
+filename = "problems/tptp-full/GEO/GEO161+1.p"
+result = "SAT"
+[problems."GEO353+1"]
+filename = "problems/tptp-full/GEO/GEO353+1.p"
+result = "SAT"
+[problems."GEO354+1"]
+filename = "problems/tptp-full/GEO/GEO354+1.p"
+result = "SAT"
+[problems."GEO355+1"]
+filename = "problems/tptp-full/GEO/GEO355+1.p"
+result = "SAT"
+[problems."GEO540+1"]
+filename = "problems/tptp-full/GEO/GEO540+1.p"
+result = "SAT"
+[problems."GRA075+1"]
+filename = "problems/tptp-full/GRA/GRA075+1.p"
+result = "SAT"
+[problems."GRP394+3"]
+filename = "problems/tptp-full/GRP/GRP394+3.p"
+result = "SAT"
+[problems."GRP396+1"]
+filename = "problems/tptp-full/GRP/GRP396+1.p"
+result = "SAT"
+[problems."GRP733+1"]
+filename = "problems/tptp-full/GRP/GRP733+1.p"
+result = "SAT"
+[problems."GRP734+1"]
+filename = "problems/tptp-full/GRP/GRP734+1.p"
+result = "SAT"
+[problems."GRP760+1"]
+filename = "problems/tptp-full/GRP/GRP760+1.p"
+result = "SAT"
+[problems."GRP761+1"]
+filename = "problems/tptp-full/GRP/GRP761+1.p"
+result = "SAT"
+[problems."GRP762+1"]
+filename = "problems/tptp-full/GRP/GRP762+1.p"
+result = "SAT"
+[problems."GRP763+1"]
+filename = "problems/tptp-full/GRP/GRP763+1.p"
+result = "SAT"
+[problems."HAL007+1"]
+filename = "problems/tptp-full/HAL/HAL007+1.p"
+result = "SAT"
+[problems."HWV053+1"]
+filename = "problems/tptp-full/HWV/HWV053+1.p"
+result = "SAT"
+[problems."HWV054+1"]
+filename = "problems/tptp-full/HWV/HWV054+1.p"
+result = "SAT"
+[problems."HWV062+1"]
+filename = "problems/tptp-full/HWV/HWV062+1.p"
+result = "SAT"
+[problems."HWV063+1"]
+filename = "problems/tptp-full/HWV/HWV063+1.p"
+result = "SAT"
+[problems."HWV066+1"]
+filename = "problems/tptp-full/HWV/HWV066+1.p"
+result = "SAT"
+[problems."HWV067+1"]
+filename = "problems/tptp-full/HWV/HWV067+1.p"
+result = "SAT"
+[problems."HWV070+1"]
+filename = "problems/tptp-full/HWV/HWV070+1.p"
+result = "SAT"
+[problems."HWV071+1"]
+filename = "problems/tptp-full/HWV/HWV071+1.p"
+result = "SAT"
+[problems."HWV072+1"]
+filename = "problems/tptp-full/HWV/HWV072+1.p"
+result = "SAT"
+[problems."HWV073+1"]
+filename = "problems/tptp-full/HWV/HWV073+1.p"
+result = "SAT"
+[problems."HWV074+1"]
+filename = "problems/tptp-full/HWV/HWV074+1.p"
+result = "SAT"
+[problems."HWV075+1"]
+filename = "problems/tptp-full/HWV/HWV075+1.p"
+result = "SAT"
+[problems."HWV076+1"]
+filename = "problems/tptp-full/HWV/HWV076+1.p"
+result = "SAT"
+[problems."HWV077+1"]
+filename = "problems/tptp-full/HWV/HWV077+1.p"
+result = "SAT"
+[problems."HWV079+1"]
+filename = "problems/tptp-full/HWV/HWV079+1.p"
+result = "SAT"
+[problems."HWV080+1"]
+filename = "problems/tptp-full/HWV/HWV080+1.p"
+result = "SAT"
+[problems."HWV082+1"]
+filename = "problems/tptp-full/HWV/HWV082+1.p"
+result = "SAT"
+[problems."HWV085+1"]
+filename = "problems/tptp-full/HWV/HWV085+1.p"
+result = "SAT"
+[problems."HWV086+1"]
+filename = "problems/tptp-full/HWV/HWV086+1.p"
+result = "SAT"
+[problems."KLE173+1"]
+filename = "problems/tptp-full/KLE/KLE173+1.p"
+result = "SAT"
+[problems."KLE174+1"]
+filename = "problems/tptp-full/KLE/KLE174+1.p"
+result = "SAT"
+[problems."KLE175+1"]
+filename = "problems/tptp-full/KLE/KLE175+1.p"
+result = "SAT"
+[problems."KLE176+1"]
+filename = "problems/tptp-full/KLE/KLE176+1.p"
+result = "SAT"
+[problems."KLE177+1"]
+filename = "problems/tptp-full/KLE/KLE177+1.p"
+result = "SAT"
+[problems."KLE178+1"]
+filename = "problems/tptp-full/KLE/KLE178+1.p"
+result = "SAT"
+[problems."KLE179+1"]
+filename = "problems/tptp-full/KLE/KLE179+1.p"
+result = "SAT"
+[problems."KLE180+1"]
+filename = "problems/tptp-full/KLE/KLE180+1.p"
+result = "SAT"
+[problems."KLE181+1"]
+filename = "problems/tptp-full/KLE/KLE181+1.p"
+result = "SAT"
+[problems."KLE182+1"]
+filename = "problems/tptp-full/KLE/KLE182+1.p"
+result = "SAT"
+[problems."KRS018+1"]
+filename = "problems/tptp-full/KRS/KRS018+1.p"
+result = "SAT"
+[problems."KRS019+1"]
+filename = "problems/tptp-full/KRS/KRS019+1.p"
+result = "SAT"
+[problems."KRS020+1"]
+filename = "problems/tptp-full/KRS/KRS020+1.p"
+result = "SAT"
+[problems."KRS021+1"]
+filename = "problems/tptp-full/KRS/KRS021+1.p"
+result = "SAT"
+[problems."KRS022+1"]
+filename = "problems/tptp-full/KRS/KRS022+1.p"
+result = "SAT"
+[problems."KRS023+1"]
+filename = "problems/tptp-full/KRS/KRS023+1.p"
+result = "SAT"
+[problems."KRS024+1"]
+filename = "problems/tptp-full/KRS/KRS024+1.p"
+result = "SAT"
+[problems."KRS025+1"]
+filename = "problems/tptp-full/KRS/KRS025+1.p"
+result = "SAT"
+[problems."KRS026+1"]
+filename = "problems/tptp-full/KRS/KRS026+1.p"
+result = "SAT"
+[problems."KRS027+1"]
+filename = "problems/tptp-full/KRS/KRS027+1.p"
+result = "SAT"
+[problems."KRS028+1"]
+filename = "problems/tptp-full/KRS/KRS028+1.p"
+result = "SAT"
+[problems."KRS029+1"]
+filename = "problems/tptp-full/KRS/KRS029+1.p"
+result = "SAT"
+[problems."KRS030+1"]
+filename = "problems/tptp-full/KRS/KRS030+1.p"
+result = "SAT"
+[problems."KRS031+1"]
+filename = "problems/tptp-full/KRS/KRS031+1.p"
+result = "SAT"
+[problems."KRS032+1"]
+filename = "problems/tptp-full/KRS/KRS032+1.p"
+result = "SAT"
+[problems."KRS033+1"]
+filename = "problems/tptp-full/KRS/KRS033+1.p"
+result = "SAT"
+[problems."KRS034+1"]
+filename = "problems/tptp-full/KRS/KRS034+1.p"
+result = "SAT"
+[problems."KRS035+1"]
+filename = "problems/tptp-full/KRS/KRS035+1.p"
+result = "SAT"
+[problems."KRS036+1"]
+filename = "problems/tptp-full/KRS/KRS036+1.p"
+result = "SAT"
+[problems."KRS037+1"]
+filename = "problems/tptp-full/KRS/KRS037+1.p"
+result = "SAT"
+[problems."KRS038+1"]
+filename = "problems/tptp-full/KRS/KRS038+1.p"
+result = "SAT"
+[problems."KRS039+1"]
+filename = "problems/tptp-full/KRS/KRS039+1.p"
+result = "SAT"
+[problems."KRS040+1"]
+filename = "problems/tptp-full/KRS/KRS040+1.p"
+result = "SAT"
+[problems."KRS041+1"]
+filename = "problems/tptp-full/KRS/KRS041+1.p"
+result = "SAT"
+[problems."KRS042+1"]
+filename = "problems/tptp-full/KRS/KRS042+1.p"
+result = "SAT"
+[problems."KRS043+1"]
+filename = "problems/tptp-full/KRS/KRS043+1.p"
+result = "SAT"
+[problems."KRS044+1"]
+filename = "problems/tptp-full/KRS/KRS044+1.p"
+result = "SAT"
+[problems."KRS045+1"]
+filename = "problems/tptp-full/KRS/KRS045+1.p"
+result = "SAT"
+[problems."KRS046+1"]
+filename = "problems/tptp-full/KRS/KRS046+1.p"
+result = "SAT"
+[problems."KRS047+1"]
+filename = "problems/tptp-full/KRS/KRS047+1.p"
+result = "SAT"
+[problems."KRS048+1"]
+filename = "problems/tptp-full/KRS/KRS048+1.p"
+result = "SAT"
+[problems."KRS049+1"]
+filename = "problems/tptp-full/KRS/KRS049+1.p"
+result = "SAT"
+[problems."KRS050+1"]
+filename = "problems/tptp-full/KRS/KRS050+1.p"
+result = "SAT"
+[problems."KRS051+1"]
+filename = "problems/tptp-full/KRS/KRS051+1.p"
+result = "SAT"
+[problems."KRS052+1"]
+filename = "problems/tptp-full/KRS/KRS052+1.p"
+result = "SAT"
+[problems."KRS053+1"]
+filename = "problems/tptp-full/KRS/KRS053+1.p"
+result = "SAT"
+[problems."KRS054+1"]
+filename = "problems/tptp-full/KRS/KRS054+1.p"
+result = "SAT"
+[problems."KRS055+1"]
+filename = "problems/tptp-full/KRS/KRS055+1.p"
+result = "SAT"
+[problems."KRS056+1"]
+filename = "problems/tptp-full/KRS/KRS056+1.p"
+result = "SAT"
+[problems."KRS057+1"]
+filename = "problems/tptp-full/KRS/KRS057+1.p"
+result = "SAT"
+[problems."KRS058+1"]
+filename = "problems/tptp-full/KRS/KRS058+1.p"
+result = "SAT"
+[problems."KRS059+1"]
+filename = "problems/tptp-full/KRS/KRS059+1.p"
+result = "SAT"
+[problems."KRS060+1"]
+filename = "problems/tptp-full/KRS/KRS060+1.p"
+result = "SAT"
+[problems."KRS061+1"]
+filename = "problems/tptp-full/KRS/KRS061+1.p"
+result = "SAT"
+[problems."KRS062+1"]
+filename = "problems/tptp-full/KRS/KRS062+1.p"
+result = "SAT"
+[problems."KRS176+1"]
+filename = "problems/tptp-full/KRS/KRS176+1.p"
+result = "SAT"
+[problems."KRS177+1"]
+filename = "problems/tptp-full/KRS/KRS177+1.p"
+result = "SAT"
+[problems."KRS279+1"]
+filename = "problems/tptp-full/KRS/KRS279+1.p"
+result = "SAT"
+[problems."KRS282+1"]
+filename = "problems/tptp-full/KRS/KRS282+1.p"
+result = "SAT"
+[problems."KRS285+1"]
+filename = "problems/tptp-full/KRS/KRS285+1.p"
+result = "SAT"
+[problems."KRS288+1"]
+filename = "problems/tptp-full/KRS/KRS288+1.p"
+result = "SAT"
+[problems."KRS290+1"]
+filename = "problems/tptp-full/KRS/KRS290+1.p"
+result = "SAT"
+[problems."LCL354+1"]
+filename = "problems/tptp-full/LCL/LCL354+1.p"
+result = "SAT"
+[problems."LCL907+1"]
+filename = "problems/tptp-full/LCL/LCL907+1.p"
+result = "SAT"
+[problems."LCL908+1"]
+filename = "problems/tptp-full/LCL/LCL908+1.p"
+result = "SAT"
+[problems."LCL909+1"]
+filename = "problems/tptp-full/LCL/LCL909+1.p"
+result = "SAT"
+[problems."LCL910+1"]
+filename = "problems/tptp-full/LCL/LCL910+1.p"
+result = "SAT"
+[problems."LCL911+1"]
+filename = "problems/tptp-full/LCL/LCL911+1.p"
+result = "SAT"
+[problems."LCL912+1"]
+filename = "problems/tptp-full/LCL/LCL912+1.p"
+result = "SAT"
+[problems."LCL913+1"]
+filename = "problems/tptp-full/LCL/LCL913+1.p"
+result = "SAT"
+[problems."LCL914+1"]
+filename = "problems/tptp-full/LCL/LCL914+1.p"
+result = "SAT"
+[problems."LCL915+1"]
+filename = "problems/tptp-full/LCL/LCL915+1.p"
+result = "SAT"
+[problems."MED011+1"]
+filename = "problems/tptp-full/MED/MED011+1.p"
+result = "SAT"
+[problems."MED012+1"]
+filename = "problems/tptp-full/MED/MED012+1.p"
+result = "SAT"
+[problems."MGT066+1"]
+filename = "problems/tptp-full/MGT/MGT066+1.p"
+result = "SAT"
+[problems."MSC009+1"]
+filename = "problems/tptp-full/MSC/MSC009+1.p"
+result = "SAT"
+[problems."MSC014+1"]
+filename = "problems/tptp-full/MSC/MSC014+1.p"
+result = "SAT"
+[problems."NLP263+1"]
+filename = "problems/tptp-full/NLP/NLP263+1.p"
+result = "SAT"
+[problems."NUN019+1"]
+filename = "problems/tptp-full/NUN/NUN019+1.p"
+result = "SAT"
+[problems."NUN020+1"]
+filename = "problems/tptp-full/NUN/NUN020+1.p"
+result = "SAT"
+[problems."NUN090+1"]
+filename = "problems/tptp-full/NUN/NUN090+1.p"
+result = "SAT"
+[problems."NUN090+2"]
+filename = "problems/tptp-full/NUN/NUN090+2.p"
+result = "SAT"
+[problems."NUN091+1"]
+filename = "problems/tptp-full/NUN/NUN091+1.p"
+result = "SAT"
+[problems."PHI025+1"]
+filename = "problems/tptp-full/PHI/PHI025+1.p"
+result = "SAT"
+[problems."PLA029+2"]
+filename = "problems/tptp-full/PLA/PLA029+2.p"
+result = "SAT"
+[problems."PLA034+1"]
+filename = "problems/tptp-full/PLA/PLA034+1.p"
+result = "SAT"
+[problems."PLA038+1"]
+filename = "problems/tptp-full/PLA/PLA038+1.p"
+result = "SAT"
+[problems."PLA040+1"]
+filename = "problems/tptp-full/PLA/PLA040+1.p"
+result = "SAT"
+[problems."PLA041+1"]
+filename = "problems/tptp-full/PLA/PLA041+1.p"
+result = "SAT"
+[problems."PLA043+1"]
+filename = "problems/tptp-full/PLA/PLA043+1.p"
+result = "SAT"
+[problems."PLA045+1"]
+filename = "problems/tptp-full/PLA/PLA045+1.p"
+result = "SAT"
+[problems."PUZ065+1"]
+filename = "problems/tptp-full/PUZ/PUZ065+1.p"
+result = "SAT"
+[problems."PUZ066+1"]
+filename = "problems/tptp-full/PUZ/PUZ066+1.p"
+result = "SAT"
+[problems."PUZ067+1"]
+filename = "problems/tptp-full/PUZ/PUZ067+1.p"
+result = "SAT"
+[problems."PUZ068+1"]
+filename = "problems/tptp-full/PUZ/PUZ068+1.p"
+result = "SAT"
+[problems."PUZ068+2"]
+filename = "problems/tptp-full/PUZ/PUZ068+2.p"
+result = "SAT"
+[problems."PUZ069+1"]
+filename = "problems/tptp-full/PUZ/PUZ069+1.p"
+result = "SAT"
+[problems."PUZ069+2"]
+filename = "problems/tptp-full/PUZ/PUZ069+2.p"
+result = "SAT"
+[problems."PUZ070+1"]
+filename = "problems/tptp-full/PUZ/PUZ070+1.p"
+result = "SAT"
+[problems."PUZ071+1"]
+filename = "problems/tptp-full/PUZ/PUZ071+1.p"
+result = "SAT"
+[problems."PUZ072+1"]
+filename = "problems/tptp-full/PUZ/PUZ072+1.p"
+result = "SAT"
+[problems."PUZ079+2"]
+filename = "problems/tptp-full/PUZ/PUZ079+2.p"
+result = "SAT"
+[problems."PUZ080+2"]
+filename = "problems/tptp-full/PUZ/PUZ080+2.p"
+result = "SAT"
+[problems."PUZ138+2"]
+filename = "problems/tptp-full/PUZ/PUZ138+2.p"
+result = "SAT"
+[problems."REL051+1"]
+filename = "problems/tptp-full/REL/REL051+1.p"
+result = "SAT"
+[problems."REL052+1"]
+filename = "problems/tptp-full/REL/REL052+1.p"
+result = "SAT"
+[problems."REL053+1"]
+filename = "problems/tptp-full/REL/REL053+1.p"
+result = "SAT"
+[problems."RNG127+1"]
+filename = "problems/tptp-full/RNG/RNG127+1.p"
+result = "SAT"
+[problems."SET781+3"]
+filename = "problems/tptp-full/SET/SET781+3.p"
+result = "SAT"
+[problems."SET783+1"]
+filename = "problems/tptp-full/SET/SET783+1.p"
+result = "SAT"
+[problems."SET784+1"]
+filename = "problems/tptp-full/SET/SET784+1.p"
+result = "SAT"
+[problems."SET785+1"]
+filename = "problems/tptp-full/SET/SET785+1.p"
+result = "SAT"
+[problems."SEV435+1"]
+filename = "problems/tptp-full/SEV/SEV435+1.p"
+result = "SAT"
+[problems."SEV437+1"]
+filename = "problems/tptp-full/SEV/SEV437+1.p"
+result = "SAT"
+[problems."SEV438+1"]
+filename = "problems/tptp-full/SEV/SEV438+1.p"
+result = "SAT"
+[problems."SEV439+1"]
+filename = "problems/tptp-full/SEV/SEV439+1.p"
+result = "SAT"
+[problems."SWB011+3"]
+filename = "problems/tptp-full/SWB/SWB011+3.p"
+result = "SAT"
+[problems."SWB011+4"]
+filename = "problems/tptp-full/SWB/SWB011+4.p"
+result = "SAT"
+[problems."SWB019+3"]
+filename = "problems/tptp-full/SWB/SWB019+3.p"
+result = "SAT"
+[problems."SWB019+4"]
+filename = "problems/tptp-full/SWB/SWB019+4.p"
+result = "SAT"
+[problems."SWB030+3"]
+filename = "problems/tptp-full/SWB/SWB030+3.p"
+result = "SAT"
+[problems."SWB030+4"]
+filename = "problems/tptp-full/SWB/SWB030+4.p"
+result = "SAT"
+[problems."SWB031+3"]
+filename = "problems/tptp-full/SWB/SWB031+3.p"
+result = "SAT"
+[problems."SWB031+4"]
+filename = "problems/tptp-full/SWB/SWB031+4.p"
+result = "SAT"
+[problems."SWB033+1"]
+filename = "problems/tptp-full/SWB/SWB033+1.p"
+result = "SAT"
+[problems."SWB034+1"]
+filename = "problems/tptp-full/SWB/SWB034+1.p"
+result = "SAT"
+[problems."SWB035+1"]
+filename = "problems/tptp-full/SWB/SWB035+1.p"
+result = "SAT"
+[problems."SWB036+1"]
+filename = "problems/tptp-full/SWB/SWB036+1.p"
+result = "SAT"
+[problems."SWC423+1"]
+filename = "problems/tptp-full/SWC/SWC423+1.p"
+result = "SAT"
+[problems."SWV010+1"]
+filename = "problems/tptp-full/SWV/SWV010+1.p"
+result = "SAT"
+[problems."SWV012+1"]
+filename = "problems/tptp-full/SWV/SWV012+1.p"
+result = "SAT"
+[problems."SWV013+1"]
+filename = "problems/tptp-full/SWV/SWV013+1.p"
+result = "SAT"
+[problems."SWV015+1"]
+filename = "problems/tptp-full/SWV/SWV015+1.p"
+result = "SAT"
+[problems."SWV017+1"]
+filename = "problems/tptp-full/SWV/SWV017+1.p"
+result = "SAT"
+[problems."SWW103+1"]
+filename = "problems/tptp-full/SWW/SWW103+1.p"
+result = "SAT"
+[problems."SWW673+1"]
+filename = "problems/tptp-full/SWW/SWW673+1.p"
+result = "SAT"
+[problems."SYN000+2"]
+filename = "problems/tptp-full/SYN/SYN000+2.p"
+result = "SAT"
+[problems."SYO583+1"]
+filename = "problems/tptp-full/SYO/SYO583+1.p"
+result = "SAT"
+[problems."SYO584+1"]
+filename = "problems/tptp-full/SYO/SYO584+1.p"
+result = "SAT"
+[problems."SYO585+1"]
+filename = "problems/tptp-full/SYO/SYO585+1.p"
+result = "SAT"
+[problems."SYO586+1"]
+filename = "problems/tptp-full/SYO/SYO586+1.p"
+result = "SAT"
+[problems."SYO590+1"]
+filename = "problems/tptp-full/SYO/SYO590+1.p"
+result = "SAT"
+[problems."SYO593+1"]
+filename = "problems/tptp-full/SYO/SYO593+1.p"
+result = "SAT"
+[problems."SYO595+1"]
+filename = "problems/tptp-full/SYO/SYO595+1.p"
+result = "SAT"
+[problems."SYO596+1"]
+filename = "problems/tptp-full/SYO/SYO596+1.p"
+result = "SAT"
+[problems."SYO599+1"]
+filename = "problems/tptp-full/SYO/SYO599+1.p"
+result = "SAT"
+[problems."SYO603+1"]
+filename = "problems/tptp-full/SYO/SYO603+1.p"
+result = "SAT"
+[problems."SYO635+1"]
+filename = "problems/tptp-full/SYO/SYO635+1.p"
+result = "SAT"
+[problems."SYO636+1"]
+filename = "problems/tptp-full/SYO/SYO636+1.p"
+result = "SAT"
+[problems."SYO637+1"]
+filename = "problems/tptp-full/SYO/SYO637+1.p"
+result = "SAT"
+[problems."SYO638+1"]
+filename = "problems/tptp-full/SYO/SYO638+1.p"
+result = "SAT"
+[problems."SYO639+1"]
+filename = "problems/tptp-full/SYO/SYO639+1.p"
+result = "SAT"
+[problems."SYO640+1"]
+filename = "problems/tptp-full/SYO/SYO640+1.p"
+result = "SAT"
+[problems."SYO641+1"]
+filename = "problems/tptp-full/SYO/SYO641+1.p"
+result = "SAT"
+[problems."SYO642+1"]
+filename = "problems/tptp-full/SYO/SYO642+1.p"
+result = "SAT"
+[problems."SYO643+1"]
+filename = "problems/tptp-full/SYO/SYO643+1.p"
+result = "SAT"
+[problems."SYO644+1"]
+filename = "problems/tptp-full/SYO/SYO644+1.p"
+result = "SAT"
+[problems."SYO645+1"]
+filename = "problems/tptp-full/SYO/SYO645+1.p"
+result = "SAT"
+[problems."SYO692+1"]
+filename = "problems/tptp-full/SYO/SYO692+1.p"
+result = "SAT"
+[problems."SYO693+1"]
+filename = "problems/tptp-full/SYO/SYO693+1.p"
+result = "SAT"
+[problems."SYO694+1"]
+filename = "problems/tptp-full/SYO/SYO694+1.p"
+result = "SAT"
+[problems."SYO695+1"]
+filename = "problems/tptp-full/SYO/SYO695+1.p"
+result = "SAT"
+[problems."SYO696+1"]
+filename = "problems/tptp-full/SYO/SYO696+1.p"
+result = "SAT"
+[problems."SYO697+1"]
+filename = "problems/tptp-full/SYO/SYO697+1.p"
+result = "SAT"
+[problems."SYO698+1"]
+filename = "problems/tptp-full/SYO/SYO698+1.p"
+result = "SAT"
+[problems."SYO699+1"]
+filename = "problems/tptp-full/SYO/SYO699+1.p"
+result = "SAT"
+[problems."SYO700+1"]
+filename = "problems/tptp-full/SYO/SYO700+1.p"
+result = "SAT"
+[problems."SYO701+1"]
+filename = "problems/tptp-full/SYO/SYO701+1.p"
+result = "SAT"
+[problems."SYO702+1"]
+filename = "problems/tptp-full/SYO/SYO702+1.p"
+result = "SAT"
+[problems."SYO703+1"]
+filename = "problems/tptp-full/SYO/SYO703+1.p"
+result = "SAT"
+[problems."SYO704+1"]
+filename = "problems/tptp-full/SYO/SYO704+1.p"
+result = "SAT"
+[problems."SYO705+1"]
+filename = "problems/tptp-full/SYO/SYO705+1.p"
+result = "SAT"
+[problems."SYO706+1"]
+filename = "problems/tptp-full/SYO/SYO706+1.p"
+result = "SAT"
+[problems."SYO707+1"]
+filename = "problems/tptp-full/SYO/SYO707+1.p"
+result = "SAT"
+[problems."SYO708+1"]
+filename = "problems/tptp-full/SYO/SYO708+1.p"
+result = "SAT"
+[problems."SYO709+1"]
+filename = "problems/tptp-full/SYO/SYO709+1.p"
+result = "SAT"
+[problems."SYO710+1"]
+filename = "problems/tptp-full/SYO/SYO710+1.p"
+result = "SAT"
+[problems."SYO711+1"]
+filename = "problems/tptp-full/SYO/SYO711+1.p"
+result = "SAT"
+[problems."SYO712+1"]
+filename = "problems/tptp-full/SYO/SYO712+1.p"
+result = "SAT"
+[problems."SYO713+1"]
+filename = "problems/tptp-full/SYO/SYO713+1.p"
+result = "SAT"
+[problems."SYO714+1"]
+filename = "problems/tptp-full/SYO/SYO714+1.p"
+result = "SAT"
+[problems."SYO715+1"]
+filename = "problems/tptp-full/SYO/SYO715+1.p"
+result = "SAT"
+[problems."SYO716+1"]
+filename = "problems/tptp-full/SYO/SYO716+1.p"
+result = "SAT"
+[problems."SYO717+1"]
+filename = "problems/tptp-full/SYO/SYO717+1.p"
+result = "SAT"
+[problems."SYO718+1"]
+filename = "problems/tptp-full/SYO/SYO718+1.p"
+result = "SAT"
+[problems."SYO719+1"]
+filename = "problems/tptp-full/SYO/SYO719+1.p"
+result = "SAT"
+[problems."SYO720+1"]
+filename = "problems/tptp-full/SYO/SYO720+1.p"
+result = "SAT"
+[problems."SYO721+1"]
+filename = "problems/tptp-full/SYO/SYO721+1.p"
+result = "SAT"
+[problems."SYO722+1"]
+filename = "problems/tptp-full/SYO/SYO722+1.p"
+result = "SAT"
+[problems."SYO723+1"]
+filename = "problems/tptp-full/SYO/SYO723+1.p"
+result = "SAT"
+[problems."SYO724+1"]
+filename = "problems/tptp-full/SYO/SYO724+1.p"
+result = "SAT"
+[problems."SYO725+1"]
+filename = "problems/tptp-full/SYO/SYO725+1.p"
+result = "SAT"
+[problems."SYO726+1"]
+filename = "problems/tptp-full/SYO/SYO726+1.p"
+result = "SAT"
+[problems."SYO727+1"]
+filename = "problems/tptp-full/SYO/SYO727+1.p"
+result = "SAT"
+[problems."SYO728+1"]
+filename = "problems/tptp-full/SYO/SYO728+1.p"
+result = "SAT"
+[problems."SYO729+1"]
+filename = "problems/tptp-full/SYO/SYO729+1.p"
+result = "SAT"
+[problems."SYO730+1"]
+filename = "problems/tptp-full/SYO/SYO730+1.p"
+result = "SAT"
+[problems."SYO731+1"]
+filename = "problems/tptp-full/SYO/SYO731+1.p"
+result = "SAT"
+[problems."SYO732+1"]
+filename = "problems/tptp-full/SYO/SYO732+1.p"
+result = "SAT"
+[problems."SYO733+1"]
+filename = "problems/tptp-full/SYO/SYO733+1.p"
+result = "SAT"
+[problems."SYO734+1"]
+filename = "problems/tptp-full/SYO/SYO734+1.p"
+result = "SAT"
+[problems."SYO735+1"]
+filename = "problems/tptp-full/SYO/SYO735+1.p"
+result = "SAT"
+[problems."SYO736+1"]
+filename = "problems/tptp-full/SYO/SYO736+1.p"
+result = "SAT"
+[problems."SYO737+1"]
+filename = "problems/tptp-full/SYO/SYO737+1.p"
+result = "SAT"
+[problems."SYO738+1"]
+filename = "problems/tptp-full/SYO/SYO738+1.p"
+result = "SAT"
+[problems."SYO739+1"]
+filename = "problems/tptp-full/SYO/SYO739+1.p"
+result = "SAT"
+[problems."SYO740+1"]
+filename = "problems/tptp-full/SYO/SYO740+1.p"
+result = "SAT"
+[problems."SYO741+1"]
+filename = "problems/tptp-full/SYO/SYO741+1.p"
+result = "SAT"
+[problems."SYO742+1"]
+filename = "problems/tptp-full/SYO/SYO742+1.p"
+result = "SAT"
+[problems."SYO743+1"]
+filename = "problems/tptp-full/SYO/SYO743+1.p"
+result = "SAT"
+[problems."SYO744+1"]
+filename = "problems/tptp-full/SYO/SYO744+1.p"
+result = "SAT"
+[problems."SYO746+1"]
+filename = "problems/tptp-full/SYO/SYO746+1.p"
+result = "SAT"
+[problems."SYO747+1"]
+filename = "problems/tptp-full/SYO/SYO747+1.p"
+result = "SAT"
+[problems."SYO748+1"]
+filename = "problems/tptp-full/SYO/SYO748+1.p"
+result = "SAT"
+[problems."SYO749+1"]
+filename = "problems/tptp-full/SYO/SYO749+1.p"
+result = "SAT"
+[problems."SYO750+1"]
+filename = "problems/tptp-full/SYO/SYO750+1.p"
+result = "SAT"
+[problems."SYO751+1"]
+filename = "problems/tptp-full/SYO/SYO751+1.p"
+result = "SAT"
+[problems."SYO752+1"]
+filename = "problems/tptp-full/SYO/SYO752+1.p"
+result = "SAT"
+[problems."SYO753+1"]
+filename = "problems/tptp-full/SYO/SYO753+1.p"
+result = "SAT"
+[problems."SYO754+1"]
+filename = "problems/tptp-full/SYO/SYO754+1.p"
+result = "SAT"
+[problems."SYO755+1"]
+filename = "problems/tptp-full/SYO/SYO755+1.p"
+result = "SAT"
+[problems."SYO756+1"]
+filename = "problems/tptp-full/SYO/SYO756+1.p"
+result = "SAT"
+[problems."SYO757+1"]
+filename = "problems/tptp-full/SYO/SYO757+1.p"
+result = "SAT"
+[problems."SYO758+1"]
+filename = "problems/tptp-full/SYO/SYO758+1.p"
+result = "SAT"
+[problems."SYO759+1"]
+filename = "problems/tptp-full/SYO/SYO759+1.p"
+result = "SAT"
+[problems."SYO760+1"]
+filename = "problems/tptp-full/SYO/SYO760+1.p"
+result = "SAT"
+[problems."SYO761+1"]
+filename = "problems/tptp-full/SYO/SYO761+1.p"
+result = "SAT"
+[problems."SYO762+1"]
+filename = "problems/tptp-full/SYO/SYO762+1.p"
+result = "SAT"
+[problems."SYO763+1"]
+filename = "problems/tptp-full/SYO/SYO763+1.p"
+result = "SAT"
+[problems."SYO764+1"]
+filename = "problems/tptp-full/SYO/SYO764+1.p"
+result = "SAT"
+[problems."SYO765+1"]
+filename = "problems/tptp-full/SYO/SYO765+1.p"
+result = "SAT"
+[problems."SYO766+1"]
+filename = "problems/tptp-full/SYO/SYO766+1.p"
+result = "SAT"
+[problems."SYO767+1"]
+filename = "problems/tptp-full/SYO/SYO767+1.p"
+result = "SAT"
+[problems."SYO768+1"]
+filename = "problems/tptp-full/SYO/SYO768+1.p"
+result = "SAT"
+[problems."SYO769+1"]
+filename = "problems/tptp-full/SYO/SYO769+1.p"
+result = "SAT"
+[problems."SYO770+1"]
+filename = "problems/tptp-full/SYO/SYO770+1.p"
+result = "SAT"
+[problems."SYO771+1"]
+filename = "problems/tptp-full/SYO/SYO771+1.p"
+result = "SAT"
+[problems."SYO772+1"]
+filename = "problems/tptp-full/SYO/SYO772+1.p"
+result = "SAT"
+[problems."SYO773+1"]
+filename = "problems/tptp-full/SYO/SYO773+1.p"
+result = "SAT"
+[problems."SYO774+1"]
+filename = "problems/tptp-full/SYO/SYO774+1.p"
+result = "SAT"
+[problems."SYO775+1"]
+filename = "problems/tptp-full/SYO/SYO775+1.p"
+result = "SAT"
+[problems."SYO776+1"]
+filename = "problems/tptp-full/SYO/SYO776+1.p"
+result = "SAT"
+[problems."SYO777+1"]
+filename = "problems/tptp-full/SYO/SYO777+1.p"
+result = "SAT"
+[problems."SYO778+1"]
+filename = "problems/tptp-full/SYO/SYO778+1.p"
+result = "SAT"
+[problems."SYO779+1"]
+filename = "problems/tptp-full/SYO/SYO779+1.p"
+result = "SAT"
+[problems."SYO780+1"]
+filename = "problems/tptp-full/SYO/SYO780+1.p"
+result = "SAT"
+[problems."SYO781+1"]
+filename = "problems/tptp-full/SYO/SYO781+1.p"
+result = "SAT"
+[problems."SYO782+1"]
+filename = "problems/tptp-full/SYO/SYO782+1.p"
+result = "SAT"
+[problems."SYO783+1"]
+filename = "problems/tptp-full/SYO/SYO783+1.p"
+result = "SAT"
+[problems."SYO784+1"]
+filename = "problems/tptp-full/SYO/SYO784+1.p"
+result = "SAT"
+[problems."SYO785+1"]
+filename = "problems/tptp-full/SYO/SYO785+1.p"
+result = "SAT"
+[problems."SYO786+1"]
+filename = "problems/tptp-full/SYO/SYO786+1.p"
+result = "SAT"
+[problems."SYO787+1"]
+filename = "problems/tptp-full/SYO/SYO787+1.p"
+result = "SAT"
+[problems."SYO788+1"]
+filename = "problems/tptp-full/SYO/SYO788+1.p"
+result = "SAT"
+[problems."SYO789+1"]
+filename = "problems/tptp-full/SYO/SYO789+1.p"
+result = "SAT"
+[problems."SYO790+1"]
+filename = "problems/tptp-full/SYO/SYO790+1.p"
+result = "SAT"
+[problems."SYO791+1"]
+filename = "problems/tptp-full/SYO/SYO791+1.p"
+result = "SAT"
+[problems."SYO792+1"]
+filename = "problems/tptp-full/SYO/SYO792+1.p"
+result = "SAT"
+[problems."SYO793+1"]
+filename = "problems/tptp-full/SYO/SYO793+1.p"
+result = "SAT"
+[problems."SYO794+1"]
+filename = "problems/tptp-full/SYO/SYO794+1.p"
+result = "SAT"
+[problems."SYO795+1"]
+filename = "problems/tptp-full/SYO/SYO795+1.p"
+result = "SAT"
+[problems."SYO796+1"]
+filename = "problems/tptp-full/SYO/SYO796+1.p"
+result = "SAT"
+[problems."SYO797+1"]
+filename = "problems/tptp-full/SYO/SYO797+1.p"
+result = "SAT"
+[problems."SYO798+1"]
+filename = "problems/tptp-full/SYO/SYO798+1.p"
+result = "SAT"
+[problems."SYO799+1"]
+filename = "problems/tptp-full/SYO/SYO799+1.p"
+result = "SAT"
+[problems."SYO800+1"]
+filename = "problems/tptp-full/SYO/SYO800+1.p"
+result = "SAT"
+[problems."SYO801+1"]
+filename = "problems/tptp-full/SYO/SYO801+1.p"
+result = "SAT"
+[problems."SYO802+1"]
+filename = "problems/tptp-full/SYO/SYO802+1.p"
+result = "SAT"
+[problems."SYO803+1"]
+filename = "problems/tptp-full/SYO/SYO803+1.p"
+result = "SAT"
+[problems."SYO804+1"]
+filename = "problems/tptp-full/SYO/SYO804+1.p"
+result = "SAT"
+[problems."SYO805+1"]
+filename = "problems/tptp-full/SYO/SYO805+1.p"
+result = "SAT"
+[problems."SYO806+1"]
+filename = "problems/tptp-full/SYO/SYO806+1.p"
+result = "SAT"
+[problems."SYO807+1"]
+filename = "problems/tptp-full/SYO/SYO807+1.p"
+result = "SAT"
+[problems."SYO808+1"]
+filename = "problems/tptp-full/SYO/SYO808+1.p"
+result = "SAT"
+[problems."SYO809+1"]
+filename = "problems/tptp-full/SYO/SYO809+1.p"
+result = "SAT"
+[problems."SYO810+1"]
+filename = "problems/tptp-full/SYO/SYO810+1.p"
+result = "SAT"
+[problems."SYO811+1"]
+filename = "problems/tptp-full/SYO/SYO811+1.p"
+result = "SAT"
+[problems."SYO812+1"]
+filename = "problems/tptp-full/SYO/SYO812+1.p"
+result = "SAT"
+[problems."SYO813+1"]
+filename = "problems/tptp-full/SYO/SYO813+1.p"
+result = "SAT"
+[problems."SYO814+1"]
+filename = "problems/tptp-full/SYO/SYO814+1.p"
+result = "SAT"
+[problems."SYO815+1"]
+filename = "problems/tptp-full/SYO/SYO815+1.p"
+result = "SAT"
+[problems."SYO816+1"]
+filename = "problems/tptp-full/SYO/SYO816+1.p"
+result = "SAT"
+[problems."SYO817+1"]
+filename = "problems/tptp-full/SYO/SYO817+1.p"
+result = "SAT"
+[problems."SYO818+1"]
+filename = "problems/tptp-full/SYO/SYO818+1.p"
+result = "SAT"
+[problems."SYO819+1"]
+filename = "problems/tptp-full/SYO/SYO819+1.p"
+result = "SAT"
+[problems."SYO820+1"]
+filename = "problems/tptp-full/SYO/SYO820+1.p"
+result = "SAT"
+[problems."SYO821+1"]
+filename = "problems/tptp-full/SYO/SYO821+1.p"
+result = "SAT"
+[problems."SYO822+1"]
+filename = "problems/tptp-full/SYO/SYO822+1.p"
+result = "SAT"
+[problems."SYO823+1"]
+filename = "problems/tptp-full/SYO/SYO823+1.p"
+result = "SAT"
+[problems."SYO824+1"]
+filename = "problems/tptp-full/SYO/SYO824+1.p"
+result = "SAT"
+[problems."SYO825+1"]
+filename = "problems/tptp-full/SYO/SYO825+1.p"
+result = "SAT"
+[problems."SYO826+1"]
+filename = "problems/tptp-full/SYO/SYO826+1.p"
+result = "SAT"
+[problems."SYO827+1"]
+filename = "problems/tptp-full/SYO/SYO827+1.p"
+result = "SAT"
+[problems."SYO828+1"]
+filename = "problems/tptp-full/SYO/SYO828+1.p"
+result = "SAT"
+[problems."SYO829+1"]
+filename = "problems/tptp-full/SYO/SYO829+1.p"
+result = "SAT"
+[problems."SYO830+1"]
+filename = "problems/tptp-full/SYO/SYO830+1.p"
+result = "SAT"
+[problems."SYO831+1"]
+filename = "problems/tptp-full/SYO/SYO831+1.p"
+result = "SAT"
+[problems."SYO832+1"]
+filename = "problems/tptp-full/SYO/SYO832+1.p"
+result = "SAT"
+[problems."SYO833+1"]
+filename = "problems/tptp-full/SYO/SYO833+1.p"
+result = "SAT"
+[problems."SYO834+1"]
+filename = "problems/tptp-full/SYO/SYO834+1.p"
+result = "SAT"
+[problems."SYO835+1"]
+filename = "problems/tptp-full/SYO/SYO835+1.p"
+result = "SAT"
+[problems."SYO836+1"]
+filename = "problems/tptp-full/SYO/SYO836+1.p"
+result = "SAT"
+[problems."SYO837+1"]
+filename = "problems/tptp-full/SYO/SYO837+1.p"
+result = "SAT"
+[problems."SYO838+1"]
+filename = "problems/tptp-full/SYO/SYO838+1.p"
+result = "SAT"
+[problems."SYO839+1"]
+filename = "problems/tptp-full/SYO/SYO839+1.p"
+result = "SAT"
+[problems."SYO840+1"]
+filename = "problems/tptp-full/SYO/SYO840+1.p"
+result = "SAT"
+[problems."SYO841+1"]
+filename = "problems/tptp-full/SYO/SYO841+1.p"
+result = "SAT"

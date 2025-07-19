@@ -1,0 +1,595 @@
+[problems]
+[problems."ALG023+1"]
+filename = "problems/tptp-full/ALG/ALG023+1.p"
+result = "UNSAT"
+[problems."ALG024+1"]
+filename = "problems/tptp-full/ALG/ALG024+1.p"
+result = "UNSAT"
+[problems."ALG034+1"]
+filename = "problems/tptp-full/ALG/ALG034+1.p"
+result = "UNSAT"
+[problems."ALG035+1"]
+filename = "problems/tptp-full/ALG/ALG035+1.p"
+result = "UNSAT"
+[problems."ALG045+1"]
+filename = "problems/tptp-full/ALG/ALG045+1.p"
+result = "UNSAT"
+[problems."ALG046+1"]
+filename = "problems/tptp-full/ALG/ALG046+1.p"
+result = "UNSAT"
+[problems."ALG096+1"]
+filename = "problems/tptp-full/ALG/ALG096+1.p"
+result = "UNSAT"
+[problems."ALG097+1"]
+filename = "problems/tptp-full/ALG/ALG097+1.p"
+result = "UNSAT"
+[problems."ALG098+1"]
+filename = "problems/tptp-full/ALG/ALG098+1.p"
+result = "UNSAT"
+[problems."ALG099+1"]
+filename = "problems/tptp-full/ALG/ALG099+1.p"
+result = "UNSAT"
+[problems."ALG100+1"]
+filename = "problems/tptp-full/ALG/ALG100+1.p"
+result = "UNSAT"
+[problems."ALG101+1"]
+filename = "problems/tptp-full/ALG/ALG101+1.p"
+result = "UNSAT"
+[problems."ALG130+1"]
+filename = "problems/tptp-full/ALG/ALG130+1.p"
+result = "UNSAT"
+[problems."ALG131+1"]
+filename = "problems/tptp-full/ALG/ALG131+1.p"
+result = "UNSAT"
+[problems."ALG132+1"]
+filename = "problems/tptp-full/ALG/ALG132+1.p"
+result = "UNSAT"
+[problems."ALG133+1"]
+filename = "problems/tptp-full/ALG/ALG133+1.p"
+result = "UNSAT"
+[problems."ALG134+1"]
+filename = "problems/tptp-full/ALG/ALG134+1.p"
+result = "UNSAT"
+[problems."ALG135+1"]
+filename = "problems/tptp-full/ALG/ALG135+1.p"
+result = "UNSAT"
+[problems."ALG136+1"]
+filename = "problems/tptp-full/ALG/ALG136+1.p"
+result = "UNSAT"
+[problems."ALG137+1"]
+filename = "problems/tptp-full/ALG/ALG137+1.p"
+result = "UNSAT"
+[problems."ALG138+1"]
+filename = "problems/tptp-full/ALG/ALG138+1.p"
+result = "UNSAT"
+[problems."ALG139+1"]
+filename = "problems/tptp-full/ALG/ALG139+1.p"
+result = "UNSAT"
+[problems."ALG140+1"]
+filename = "problems/tptp-full/ALG/ALG140+1.p"
+result = "UNSAT"
+[problems."ALG141+1"]
+filename = "problems/tptp-full/ALG/ALG141+1.p"
+result = "UNSAT"
+[problems."ALG142+1"]
+filename = "problems/tptp-full/ALG/ALG142+1.p"
+result = "UNSAT"
+[problems."ALG143+1"]
+filename = "problems/tptp-full/ALG/ALG143+1.p"
+result = "UNSAT"
+[problems."ALG144+1"]
+filename = "problems/tptp-full/ALG/ALG144+1.p"
+result = "UNSAT"
+[problems."ALG145+1"]
+filename = "problems/tptp-full/ALG/ALG145+1.p"
+result = "UNSAT"
+[problems."ALG146+1"]
+filename = "problems/tptp-full/ALG/ALG146+1.p"
+result = "UNSAT"
+[problems."ALG147+1"]
+filename = "problems/tptp-full/ALG/ALG147+1.p"
+result = "UNSAT"
+[problems."ALG148+1"]
+filename = "problems/tptp-full/ALG/ALG148+1.p"
+result = "UNSAT"
+[problems."ALG149+1"]
+filename = "problems/tptp-full/ALG/ALG149+1.p"
+result = "UNSAT"
+[problems."ALG150+1"]
+filename = "problems/tptp-full/ALG/ALG150+1.p"
+result = "UNSAT"
+[problems."ALG151+1"]
+filename = "problems/tptp-full/ALG/ALG151+1.p"
+result = "UNSAT"
+[problems."ALG152+1"]
+filename = "problems/tptp-full/ALG/ALG152+1.p"
+result = "UNSAT"
+[problems."ALG153+1"]
+filename = "problems/tptp-full/ALG/ALG153+1.p"
+result = "UNSAT"
+[problems."ALG154+1"]
+filename = "problems/tptp-full/ALG/ALG154+1.p"
+result = "UNSAT"
+[problems."ALG155+1"]
+filename = "problems/tptp-full/ALG/ALG155+1.p"
+result = "UNSAT"
+[problems."ALG156+1"]
+filename = "problems/tptp-full/ALG/ALG156+1.p"
+result = "UNSAT"
+[problems."ALG157+1"]
+filename = "problems/tptp-full/ALG/ALG157+1.p"
+result = "UNSAT"
+[problems."ALG158+1"]
+filename = "problems/tptp-full/ALG/ALG158+1.p"
+result = "UNSAT"
+[problems."ALG159+1"]
+filename = "problems/tptp-full/ALG/ALG159+1.p"
+result = "UNSAT"
+[problems."ALG160+1"]
+filename = "problems/tptp-full/ALG/ALG160+1.p"
+result = "UNSAT"
+[problems."ALG161+1"]
+filename = "problems/tptp-full/ALG/ALG161+1.p"
+result = "UNSAT"
+[problems."ALG162+1"]
+filename = "problems/tptp-full/ALG/ALG162+1.p"
+result = "UNSAT"
+[problems."ALG163+1"]
+filename = "problems/tptp-full/ALG/ALG163+1.p"
+result = "UNSAT"
+[problems."ALG164+1"]
+filename = "problems/tptp-full/ALG/ALG164+1.p"
+result = "UNSAT"
+[problems."ALG190+1"]
+filename = "problems/tptp-full/ALG/ALG190+1.p"
+result = "UNSAT"
+[problems."ALG191+1"]
+filename = "problems/tptp-full/ALG/ALG191+1.p"
+result = "UNSAT"
+[problems."ALG192+1"]
+filename = "problems/tptp-full/ALG/ALG192+1.p"
+result = "UNSAT"
+[problems."ALG193+1"]
+filename = "problems/tptp-full/ALG/ALG193+1.p"
+result = "UNSAT"
+[problems."CSR110+1"]
+filename = "problems/tptp-full/CSR/CSR110+1.p"
+result = "UNSAT"
+[problems."CSR110+2"]
+filename = "problems/tptp-full/CSR/CSR110+2.p"
+result = "UNSAT"
+[problems."CSR110+3"]
+filename = "problems/tptp-full/CSR/CSR110+3.p"
+result = "UNSAT"
+[problems."CSR111+6"]
+filename = "problems/tptp-full/CSR/CSR111+6.p"
+result = "UNSAT"
+[problems."GRP757+1"]
+filename = "problems/tptp-full/GRP/GRP757+1.p"
+result = "UNSAT"
+[problems."GRP758+1"]
+filename = "problems/tptp-full/GRP/GRP758+1.p"
+result = "UNSAT"
+[problems."GRP759+1"]
+filename = "problems/tptp-full/GRP/GRP759+1.p"
+result = "UNSAT"
+[problems."HWV055+1"]
+filename = "problems/tptp-full/HWV/HWV055+1.p"
+result = "UNSAT"
+[problems."HWV056+1"]
+filename = "problems/tptp-full/HWV/HWV056+1.p"
+result = "UNSAT"
+[problems."HWV057+1"]
+filename = "problems/tptp-full/HWV/HWV057+1.p"
+result = "UNSAT"
+[problems."HWV058+1"]
+filename = "problems/tptp-full/HWV/HWV058+1.p"
+result = "UNSAT"
+[problems."HWV059+1"]
+filename = "problems/tptp-full/HWV/HWV059+1.p"
+result = "UNSAT"
+[problems."HWV060+1"]
+filename = "problems/tptp-full/HWV/HWV060+1.p"
+result = "UNSAT"
+[problems."HWV061+1"]
+filename = "problems/tptp-full/HWV/HWV061+1.p"
+result = "UNSAT"
+[problems."HWV064+1"]
+filename = "problems/tptp-full/HWV/HWV064+1.p"
+result = "UNSAT"
+[problems."HWV065+1"]
+filename = "problems/tptp-full/HWV/HWV065+1.p"
+result = "UNSAT"
+[problems."HWV068+1"]
+filename = "problems/tptp-full/HWV/HWV068+1.p"
+result = "UNSAT"
+[problems."HWV069+1"]
+filename = "problems/tptp-full/HWV/HWV069+1.p"
+result = "UNSAT"
+[problems."HWV078+1"]
+filename = "problems/tptp-full/HWV/HWV078+1.p"
+result = "UNSAT"
+[problems."HWV081+1"]
+filename = "problems/tptp-full/HWV/HWV081+1.p"
+result = "UNSAT"
+[problems."HWV083+1"]
+filename = "problems/tptp-full/HWV/HWV083+1.p"
+result = "UNSAT"
+[problems."HWV084+1"]
+filename = "problems/tptp-full/HWV/HWV084+1.p"
+result = "UNSAT"
+[problems."KRS063+1"]
+filename = "problems/tptp-full/KRS/KRS063+1.p"
+result = "UNSAT"
+[problems."KRS064+1"]
+filename = "problems/tptp-full/KRS/KRS064+1.p"
+result = "UNSAT"
+[problems."KRS065+1"]
+filename = "problems/tptp-full/KRS/KRS065+1.p"
+result = "UNSAT"
+[problems."KRS066+1"]
+filename = "problems/tptp-full/KRS/KRS066+1.p"
+result = "UNSAT"
+[problems."KRS067+1"]
+filename = "problems/tptp-full/KRS/KRS067+1.p"
+result = "UNSAT"
+[problems."KRS068+1"]
+filename = "problems/tptp-full/KRS/KRS068+1.p"
+result = "UNSAT"
+[problems."KRS069+1"]
+filename = "problems/tptp-full/KRS/KRS069+1.p"
+result = "UNSAT"
+[problems."KRS070+1"]
+filename = "problems/tptp-full/KRS/KRS070+1.p"
+result = "UNSAT"
+[problems."KRS071+1"]
+filename = "problems/tptp-full/KRS/KRS071+1.p"
+result = "UNSAT"
+[problems."KRS072+1"]
+filename = "problems/tptp-full/KRS/KRS072+1.p"
+result = "UNSAT"
+[problems."KRS073+1"]
+filename = "problems/tptp-full/KRS/KRS073+1.p"
+result = "UNSAT"
+[problems."KRS074+1"]
+filename = "problems/tptp-full/KRS/KRS074+1.p"
+result = "UNSAT"
+[problems."KRS075+1"]
+filename = "problems/tptp-full/KRS/KRS075+1.p"
+result = "UNSAT"
+[problems."KRS076+1"]
+filename = "problems/tptp-full/KRS/KRS076+1.p"
+result = "UNSAT"
+[problems."KRS077+1"]
+filename = "problems/tptp-full/KRS/KRS077+1.p"
+result = "UNSAT"
+[problems."KRS078+1"]
+filename = "problems/tptp-full/KRS/KRS078+1.p"
+result = "UNSAT"
+[problems."KRS079+1"]
+filename = "problems/tptp-full/KRS/KRS079+1.p"
+result = "UNSAT"
+[problems."KRS080+1"]
+filename = "problems/tptp-full/KRS/KRS080+1.p"
+result = "UNSAT"
+[problems."KRS081+1"]
+filename = "problems/tptp-full/KRS/KRS081+1.p"
+result = "UNSAT"
+[problems."KRS082+1"]
+filename = "problems/tptp-full/KRS/KRS082+1.p"
+result = "UNSAT"
+[problems."KRS083+1"]
+filename = "problems/tptp-full/KRS/KRS083+1.p"
+result = "UNSAT"
+[problems."KRS084+1"]
+filename = "problems/tptp-full/KRS/KRS084+1.p"
+result = "UNSAT"
+[problems."KRS085+1"]
+filename = "problems/tptp-full/KRS/KRS085+1.p"
+result = "UNSAT"
+[problems."KRS086+1"]
+filename = "problems/tptp-full/KRS/KRS086+1.p"
+result = "UNSAT"
+[problems."KRS087+1"]
+filename = "problems/tptp-full/KRS/KRS087+1.p"
+result = "UNSAT"
+[problems."KRS088+1"]
+filename = "problems/tptp-full/KRS/KRS088+1.p"
+result = "UNSAT"
+[problems."KRS089+1"]
+filename = "problems/tptp-full/KRS/KRS089+1.p"
+result = "UNSAT"
+[problems."KRS090+1"]
+filename = "problems/tptp-full/KRS/KRS090+1.p"
+result = "UNSAT"
+[problems."KRS091+1"]
+filename = "problems/tptp-full/KRS/KRS091+1.p"
+result = "UNSAT"
+[problems."KRS092+1"]
+filename = "problems/tptp-full/KRS/KRS092+1.p"
+result = "UNSAT"
+[problems."KRS093+1"]
+filename = "problems/tptp-full/KRS/KRS093+1.p"
+result = "UNSAT"
+[problems."KRS094+1"]
+filename = "problems/tptp-full/KRS/KRS094+1.p"
+result = "UNSAT"
+[problems."KRS095+1"]
+filename = "problems/tptp-full/KRS/KRS095+1.p"
+result = "UNSAT"
+[problems."KRS096+1"]
+filename = "problems/tptp-full/KRS/KRS096+1.p"
+result = "UNSAT"
+[problems."KRS097+1"]
+filename = "problems/tptp-full/KRS/KRS097+1.p"
+result = "UNSAT"
+[problems."KRS098+1"]
+filename = "problems/tptp-full/KRS/KRS098+1.p"
+result = "UNSAT"
+[problems."KRS099+1"]
+filename = "problems/tptp-full/KRS/KRS099+1.p"
+result = "UNSAT"
+[problems."KRS100+1"]
+filename = "problems/tptp-full/KRS/KRS100+1.p"
+result = "UNSAT"
+[problems."KRS101+1"]
+filename = "problems/tptp-full/KRS/KRS101+1.p"
+result = "UNSAT"
+[problems."KRS102+1"]
+filename = "problems/tptp-full/KRS/KRS102+1.p"
+result = "UNSAT"
+[problems."KRS103+1"]
+filename = "problems/tptp-full/KRS/KRS103+1.p"
+result = "UNSAT"
+[problems."KRS104+1"]
+filename = "problems/tptp-full/KRS/KRS104+1.p"
+result = "UNSAT"
+[problems."KRS105+1"]
+filename = "problems/tptp-full/KRS/KRS105+1.p"
+result = "UNSAT"
+[problems."KRS106+1"]
+filename = "problems/tptp-full/KRS/KRS106+1.p"
+result = "UNSAT"
+[problems."KRS107+1"]
+filename = "problems/tptp-full/KRS/KRS107+1.p"
+result = "UNSAT"
+[problems."KRS108+1"]
+filename = "problems/tptp-full/KRS/KRS108+1.p"
+result = "UNSAT"
+[problems."KRS109+1"]
+filename = "problems/tptp-full/KRS/KRS109+1.p"
+result = "UNSAT"
+[problems."KRS110+1"]
+filename = "problems/tptp-full/KRS/KRS110+1.p"
+result = "UNSAT"
+[problems."KRS111+1"]
+filename = "problems/tptp-full/KRS/KRS111+1.p"
+result = "UNSAT"
+[problems."KRS112+1"]
+filename = "problems/tptp-full/KRS/KRS112+1.p"
+result = "UNSAT"
+[problems."KRS113+1"]
+filename = "problems/tptp-full/KRS/KRS113+1.p"
+result = "UNSAT"
+[problems."KRS114+1"]
+filename = "problems/tptp-full/KRS/KRS114+1.p"
+result = "UNSAT"
+[problems."KRS115+1"]
+filename = "problems/tptp-full/KRS/KRS115+1.p"
+result = "UNSAT"
+[problems."KRS116+1"]
+filename = "problems/tptp-full/KRS/KRS116+1.p"
+result = "UNSAT"
+[problems."KRS117+1"]
+filename = "problems/tptp-full/KRS/KRS117+1.p"
+result = "UNSAT"
+[problems."KRS118+1"]
+filename = "problems/tptp-full/KRS/KRS118+1.p"
+result = "UNSAT"
+[problems."KRS119+1"]
+filename = "problems/tptp-full/KRS/KRS119+1.p"
+result = "UNSAT"
+[problems."KRS120+1"]
+filename = "problems/tptp-full/KRS/KRS120+1.p"
+result = "UNSAT"
+[problems."KRS121+1"]
+filename = "problems/tptp-full/KRS/KRS121+1.p"
+result = "UNSAT"
+[problems."KRS122+1"]
+filename = "problems/tptp-full/KRS/KRS122+1.p"
+result = "UNSAT"
+[problems."KRS123+1"]
+filename = "problems/tptp-full/KRS/KRS123+1.p"
+result = "UNSAT"
+[problems."KRS124+1"]
+filename = "problems/tptp-full/KRS/KRS124+1.p"
+result = "UNSAT"
+[problems."KRS125+1"]
+filename = "problems/tptp-full/KRS/KRS125+1.p"
+result = "UNSAT"
+[problems."KRS126+1"]
+filename = "problems/tptp-full/KRS/KRS126+1.p"
+result = "UNSAT"
+[problems."KRS127+1"]
+filename = "problems/tptp-full/KRS/KRS127+1.p"
+result = "UNSAT"
+[problems."KRS128+1"]
+filename = "problems/tptp-full/KRS/KRS128+1.p"
+result = "UNSAT"
+[problems."KRS278+1"]
+filename = "problems/tptp-full/KRS/KRS278+1.p"
+result = "UNSAT"
+[problems."KRS280+1"]
+filename = "problems/tptp-full/KRS/KRS280+1.p"
+result = "UNSAT"
+[problems."KRS281+1"]
+filename = "problems/tptp-full/KRS/KRS281+1.p"
+result = "UNSAT"
+[problems."KRS283+1"]
+filename = "problems/tptp-full/KRS/KRS283+1.p"
+result = "UNSAT"
+[problems."KRS284+1"]
+filename = "problems/tptp-full/KRS/KRS284+1.p"
+result = "UNSAT"
+[problems."KRS286+1"]
+filename = "problems/tptp-full/KRS/KRS286+1.p"
+result = "UNSAT"
+[problems."KRS287+1"]
+filename = "problems/tptp-full/KRS/KRS287+1.p"
+result = "UNSAT"
+[problems."KRS289+1"]
+filename = "problems/tptp-full/KRS/KRS289+1.p"
+result = "UNSAT"
+[problems."KRS291+1"]
+filename = "problems/tptp-full/KRS/KRS291+1.p"
+result = "UNSAT"
+[problems."MSC024+1"]
+filename = "problems/tptp-full/MSC/MSC024+1.p"
+result = "UNSAT"
+[problems."NUM375+1.010"]
+filename = "problems/tptp-full/NUM/NUM375+1.010.p"
+result = "UNSAT"
+[problems."NUM375+1.015"]
+filename = "problems/tptp-full/NUM/NUM375+1.015.p"
+result = "UNSAT"
+[problems."NUM375+1.020"]
+filename = "problems/tptp-full/NUM/NUM375+1.020.p"
+result = "UNSAT"
+[problems."NUM375+1.025"]
+filename = "problems/tptp-full/NUM/NUM375+1.025.p"
+result = "UNSAT"
+[problems."NUM375+1.030"]
+filename = "problems/tptp-full/NUM/NUM375+1.030.p"
+result = "UNSAT"
+[problems."NUM376+1.010"]
+filename = "problems/tptp-full/NUM/NUM376+1.010.p"
+result = "UNSAT"
+[problems."NUM376+1.015"]
+filename = "problems/tptp-full/NUM/NUM376+1.015.p"
+result = "UNSAT"
+[problems."NUM376+1.020"]
+filename = "problems/tptp-full/NUM/NUM376+1.020.p"
+result = "UNSAT"
+[problems."NUM376+1.025"]
+filename = "problems/tptp-full/NUM/NUM376+1.025.p"
+result = "UNSAT"
+[problems."NUM376+1.030"]
+filename = "problems/tptp-full/NUM/NUM376+1.030.p"
+result = "UNSAT"
+[problems."NUM377+1.010"]
+filename = "problems/tptp-full/NUM/NUM377+1.010.p"
+result = "UNSAT"
+[problems."NUM377+1.015"]
+filename = "problems/tptp-full/NUM/NUM377+1.015.p"
+result = "UNSAT"
+[problems."NUM377+1.020"]
+filename = "problems/tptp-full/NUM/NUM377+1.020.p"
+result = "UNSAT"
+[problems."NUM377+1.025"]
+filename = "problems/tptp-full/NUM/NUM377+1.025.p"
+result = "UNSAT"
+[problems."NUM377+1.030"]
+filename = "problems/tptp-full/NUM/NUM377+1.030.p"
+result = "UNSAT"
+[problems."NUM378+1.010.010"]
+filename = "problems/tptp-full/NUM/NUM378+1.010.010.p"
+result = "UNSAT"
+[problems."NUM378+1.010.015"]
+filename = "problems/tptp-full/NUM/NUM378+1.010.015.p"
+result = "UNSAT"
+[problems."NUM378+1.015.010"]
+filename = "problems/tptp-full/NUM/NUM378+1.015.010.p"
+result = "UNSAT"
+[problems."NUM378+1.015.015"]
+filename = "problems/tptp-full/NUM/NUM378+1.015.015.p"
+result = "UNSAT"
+[problems."NUM378+1.015.020"]
+filename = "problems/tptp-full/NUM/NUM378+1.015.020.p"
+result = "UNSAT"
+[problems."NUM378+1.020.015"]
+filename = "problems/tptp-full/NUM/NUM378+1.020.015.p"
+result = "UNSAT"
+[problems."NUM378+1.020.020"]
+filename = "problems/tptp-full/NUM/NUM378+1.020.020.p"
+result = "UNSAT"
+[problems."NUN092+1"]
+filename = "problems/tptp-full/NUN/NUN092+1.p"
+result = "UNSAT"
+[problems."NUN092+2"]
+filename = "problems/tptp-full/NUN/NUN092+2.p"
+result = "UNSAT"
+[problems."PLA035+1"]
+filename = "problems/tptp-full/PLA/PLA035+1.p"
+result = "UNSAT"
+[problems."PLA037+1"]
+filename = "problems/tptp-full/PLA/PLA037+1.p"
+result = "UNSAT"
+[problems."PLA039+1"]
+filename = "problems/tptp-full/PLA/PLA039+1.p"
+result = "UNSAT"
+[problems."PLA042+1"]
+filename = "problems/tptp-full/PLA/PLA042+1.p"
+result = "UNSAT"
+[problems."PLA044+1"]
+filename = "problems/tptp-full/PLA/PLA044+1.p"
+result = "UNSAT"
+[problems."SWB011+1"]
+filename = "problems/tptp-full/SWB/SWB011+1.p"
+result = "UNSAT"
+[problems."SWB011+2"]
+filename = "problems/tptp-full/SWB/SWB011+2.p"
+result = "UNSAT"
+[problems."SWB019+1"]
+filename = "problems/tptp-full/SWB/SWB019+1.p"
+result = "UNSAT"
+[problems."SWB019+2"]
+filename = "problems/tptp-full/SWB/SWB019+2.p"
+result = "UNSAT"
+[problems."SWB030+1"]
+filename = "problems/tptp-full/SWB/SWB030+1.p"
+result = "UNSAT"
+[problems."SWB030+2"]
+filename = "problems/tptp-full/SWB/SWB030+2.p"
+result = "UNSAT"
+[problems."SWB031+1"]
+filename = "problems/tptp-full/SWB/SWB031+1.p"
+result = "UNSAT"
+[problems."SWB031+2"]
+filename = "problems/tptp-full/SWB/SWB031+2.p"
+result = "UNSAT"
+[problems."SYO587+1"]
+filename = "problems/tptp-full/SYO/SYO587+1.p"
+result = "UNSAT"
+[problems."SYO588+1"]
+filename = "problems/tptp-full/SYO/SYO588+1.p"
+result = "UNSAT"
+[problems."SYO589+1"]
+filename = "problems/tptp-full/SYO/SYO589+1.p"
+result = "UNSAT"
+[problems."SYO591+1"]
+filename = "problems/tptp-full/SYO/SYO591+1.p"
+result = "UNSAT"
+[problems."SYO592+1"]
+filename = "problems/tptp-full/SYO/SYO592+1.p"
+result = "UNSAT"
+[problems."SYO594+1"]
+filename = "problems/tptp-full/SYO/SYO594+1.p"
+result = "UNSAT"
+[problems."SYO597+1"]
+filename = "problems/tptp-full/SYO/SYO597+1.p"
+result = "UNSAT"
+[problems."SYO598+1"]
+filename = "problems/tptp-full/SYO/SYO598+1.p"
+result = "UNSAT"
+[problems."SYO600+1"]
+filename = "problems/tptp-full/SYO/SYO600+1.p"
+result = "UNSAT"
+[problems."SYO601+1"]
+filename = "problems/tptp-full/SYO/SYO601+1.p"
+result = "UNSAT"
+[problems."SYO602+1"]
+filename = "problems/tptp-full/SYO/SYO602+1.p"
+result = "UNSAT"
+[problems."SYO745+1"]
+filename = "problems/tptp-full/SYO/SYO745+1.p"
+result = "UNSAT"
