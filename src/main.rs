@@ -4,7 +4,6 @@ use env_logger::Env;
 use qlib::pretty_print::pretty_print;
 use qlib::proofs::GraphvizMode;
 use qlib::superposition::{ResourceLimitConfig, search_proof};
-use qlib::term_bank::TermBank;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
