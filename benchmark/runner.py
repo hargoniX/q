@@ -116,7 +116,12 @@ def test(problem: Problem, duration: int) -> Problem:
     env = os.environ.copy()
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
-    cmd = ["target/release/qprover", problem.filename, str(duration), str(MEM_LIMIT // 1_000_000)]
+    cmd = [
+        "target/release/qprover",
+        problem.filename,
+        str(duration),
+        str(MEM_LIMIT // 1_000_000),
+    ]
     start = datetime.now()
     output = run(
         cmd,
@@ -257,7 +262,8 @@ def main():
     if args.category is not None:
         out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}"
     else:
-        out_file = f"benchmark/{variant.value}_{args.duration}"
+        filename_wo_ext = os.path.splitext(os.path.basename(args.file))[0]
+        out_file = f"benchmark/{filename_wo_ext}_{args.duration}"
     summary_file = f"{out_file}.summary"
     print(80 * "-")
     summary_str = f"""There are:
