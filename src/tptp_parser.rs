@@ -460,13 +460,15 @@ impl SkolemTerm {
         }
     }
 
-    pub fn to_clauses(self, term_bank: &mut TermBank) -> Vec<Clause> {
+    pub fn to_clauses(self) -> (Vec<Clause>, TermBank) {
+        let mut term_bank = TermBank::new();
         let mut state = TermBankConversionState {
-            term_bank,
+            term_bank: &mut term_bank,
             var_map: FxHashMap::default(),
             func_map: FxHashMap::default(),
         };
-        state.to_clauses_aux(self)
+        state.get_func_id(Name::Builtin("true".to_string()), 0);
+        (state.to_clauses_aux(self), term_bank)
     }
 }
 

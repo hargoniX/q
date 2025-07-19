@@ -60,8 +60,7 @@ fn main() {
     let problem_cnf = qlib::tptp_parser::transform_problem(tptp_problem);
     log::info!("Problem Statement: {problem_cnf}");
 
-    let mut term_bank = TermBank::new();
-    let clauses = problem_cnf.to_clauses(&mut term_bank);
+    let (clauses, mut term_bank) = problem_cnf.to_clauses();
     term_bank.assert_names_unique();
     for clause in &clauses {
         log::info!("Clause: {}", pretty_print(clause, &term_bank));
