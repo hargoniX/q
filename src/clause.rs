@@ -13,9 +13,9 @@ use std::{
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
-    pretty_print::BankPrettyPrint,
+    pretty_print::{BankPrettyPrint, pretty_print},
     subst::{Substitutable, Substitution},
-    term_bank::{Term, TermBank},
+    term_bank::{Sort, Term, TermBank},
 };
 
 /// Whether a literal is `=` or `!=`
@@ -297,6 +297,40 @@ impl Clause {
             }
         }
         None
+    }
+
+    pub fn assert_well_typed(&self, term_bank: &TermBank) {
+        for lit in self.literals.iter() {
+            if term_bank.infer_sort(lit.get_lhs()) != term_bank.infer_sort(lit.get_rhs()) {
+                panic!(
+                    "In clause: {}, literal: {} has non matching sort",
+                    pretty_print(self, term_bank),
+                    pretty_print(lit, term_bank)
+                );
+            }
+
+            lit.get_lhs().subterm_iter().filter(|(_, pos)| !pos.is_root()).for_each(|(term, _)| {
+                if term_bank.infer_sort(&term) != Sort::Individual {
+                    panic!(
+                        "In clause: {}, literal: {}, the lhs subterm: {} is not of sort individual",
+                        pretty_print(self, term_bank),
+                        pretty_print(lit, term_bank),
+                        pretty_print(&term, term_bank)
+                    );
+                }
+            });
+
+            lit.get_rhs().subterm_iter().filter(|(_, pos)| !pos.is_root()).for_each(|(term, _)| {
+                if term_bank.infer_sort(&term) != Sort::Individual {
+                    panic!(
+                        "In clause: {}, literal: {}, the rhs subterm: {} is not of sort individual",
+                        pretty_print(self, term_bank),
+                        pretty_print(lit, term_bank),
+                        pretty_print(&term, term_bank)
+                    );
+                }
+            })
+        }
     }
 }
 
