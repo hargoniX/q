@@ -38,27 +38,30 @@ impl Polarity {
 }
 
 /// A literal represents either an equality or a disequality between two [Term].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Hash)]
 pub struct Literal {
     lhs: Term,
     rhs: Term,
-    kind: Polarity,
+    pol: Polarity,
 }
 
+impl PartialEq for Literal {
+    fn eq(&self, other: &Self) -> bool {
+        self.pol == other.pol
+            && ((self.lhs == other.lhs && self.rhs == other.rhs)
+                || (self.lhs == other.rhs && self.rhs == other.lhs))
+    }
+}
+
+impl Eq for Literal {}
+
 impl Literal {
-    /// Create a new literal with `lhs = rhs` or `lhs != rhs` depending on `kind`, note that the
-    /// literal will internally choose some canonical sorting of `lhs` and `rhs` such that
-    /// `get_lhs()` can actually return what was submitted as `lhs` here.
     pub fn new(lhs: Term, rhs: Term, kind: Polarity) -> Self {
-        // As terms are globally shared this should ensure that literals generated with the same
-        // terms (regardless of symmetry) end up being represented as the same datastructure
-        // underneath.
-        let (lhs, rhs) = if (lhs.as_ptr() as usize) < (rhs.as_ptr() as usize) {
-            (lhs, rhs)
-        } else {
-            (rhs, lhs)
-        };
-        Self { lhs, rhs, kind }
+        Self {
+            lhs,
+            rhs,
+            pol: kind,
+        }
     }
 
     /// Create a new literal with `lhs = rhs`.
@@ -83,24 +86,24 @@ impl Literal {
 
     /// Get the polarity of the literal.
     pub fn get_pol(&self) -> Polarity {
-        self.kind
+        self.pol
     }
 
     /// Check up to symmetry whether `other` is the negation of `self`.
     pub fn is_negation_of(&self, other: &Self) -> bool {
-        self.get_pol() == other.get_pol().negate()
-            && self.get_lhs() == other.get_lhs()
-            && self.get_rhs() == other.get_rhs()
+        self.pol == other.pol.negate()
+            && ((self.lhs == other.lhs && self.rhs == other.rhs)
+                || (self.lhs == other.rhs && self.rhs == other.lhs))
     }
 
     /// Check whether the literal is a disequality.
     pub fn is_ne(&self) -> bool {
-        self.kind == Polarity::Ne
+        self.pol == Polarity::Ne
     }
 
     /// Check whether the literal is an equality.
     pub fn is_eq(&self) -> bool {
-        self.kind == Polarity::Eq
+        self.pol == Polarity::Eq
     }
 
     /// Flip the polarity of the literal.
@@ -108,7 +111,7 @@ impl Literal {
         Self {
             lhs: self.lhs,
             rhs: self.rhs,
-            kind: self.kind.negate(),
+            pol: self.pol.negate(),
         }
     }
 
@@ -137,7 +140,7 @@ impl Substitutable for Literal {
         Self {
             lhs: new_lhs,
             rhs: new_rhs,
-            kind: self.kind,
+            pol: self.pol,
         }
     }
 }
