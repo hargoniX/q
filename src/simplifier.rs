@@ -137,7 +137,7 @@ impl ForwardRewriter<'_> {
                         let rw_rule_lhs = rw_rule_pos.literal_side.get_side(rw_rule_literal);
                         let rw_rule_rhs = rw_rule_pos.literal_side.swap().get_side(rw_rule_literal);
                         // Shared side condition one: u|p = sigma(s)
-                        if let Some(matching) = rw_rule_lhs.matching(&tgt_subterm) {
+                        if let Some(matching) = rw_rule_lhs.matching(&tgt_subterm, self.term_bank) {
                             let subst_lhs =
                                 rw_rule_lhs.clone().subst_with(&matching, self.term_bank);
                             let subst_rhs =
@@ -321,7 +321,7 @@ impl<'a, 'b> BackwardRewriter<'a, 'b> {
                     continue;
                 }
 
-                if let Some(matching) = rw_rule_lhs.matching(tgt_subterm) {
+                if let Some(matching) = rw_rule_lhs.matching(tgt_subterm, self.state.term_bank) {
                     let subst_lhs = rw_rule_lhs
                         .clone()
                         .subst_with(&matching, self.state.term_bank);

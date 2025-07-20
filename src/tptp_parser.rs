@@ -19,9 +19,10 @@ use tptp::top::{AnnotatedFormula, FormulaSelection, TPTPInput};
 
 use crate::clause::{self, Clause, Polarity};
 use crate::term_bank::{
-    self, FunctionIdentifier, FunctionInformation, TermBank, VariableIdentifier,
+    self, FunctionIdentifier, FunctionInformation, RawTerm, Sort, TermBank, VariableIdentifier,
     VariableInformation,
 };
+use crate::term_manager::HashConsed;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Name {
@@ -467,7 +468,7 @@ impl SkolemTerm {
             var_map: FxHashMap::default(),
             func_map: FxHashMap::default(),
         };
-        state.get_func_id(Name::Builtin("true".to_string()), 0);
+        state.get_func_id(Name::Builtin("true".to_string()), 0, Sort::Bool);
         (state.to_clauses_aux(self), term_bank)
     }
 }
@@ -610,46 +611,81 @@ impl TermBankConversionState<'_> {
 
     // TODO: if the problem contains two identically named functions with different arities
     // the hashmap doesn't work correctly, but there is an assertion which does track this.
-    fn get_func_id(&mut self, name: Name, arity: usize) -> FunctionIdentifier {
+    fn get_func_id(&mut self, name: Name, arity: usize, sort: Sort) -> FunctionIdentifier {
         if let Some(func) = self.func_map.get(&name) {
             *func
         } else {
             let func = self.term_bank.add_function(FunctionInformation {
                 name: name.to_string(),
                 arity,
+                sort,
             });
             self.func_map.insert(name, func);
             func
         }
     }
 
-    fn add_term_to_termbank(&mut self, t: Term) -> term_bank::Term {
+    fn add_term_to_termbank(&mut self, t: Term, sort: Sort) -> term_bank::Term {
         match t {
             Term::Variable(n) => {
                 let var_id = self.get_var_id(n);
                 self.term_bank.mk_variable(var_id)
             }
             Term::Function(n, ts) => {
-                let func_id = self.get_func_id(n, ts.len());
+                let func_id = self.get_func_id(n, ts.len(), sort);
                 let args = ts
                     .into_iter()
-                    .map(|t| self.add_term_to_termbank(t))
+                    .map(|t| self.add_term_to_termbank(t, Sort::Individual))
                     .collect();
                 self.term_bank.mk_app(func_id, args)
             }
         }
     }
 
+    fn add_literal_to_termbank_aux(
+        &mut self,
+        t1: Term,
+        t2: Term,
+    ) -> (HashConsed<RawTerm>, HashConsed<RawTerm>) {
+        let t1_sort = if let Term::Function(Name::Builtin(_), _) = t2 {
+            if let Term::Variable(_) = t1 {
+                panic!(
+                    "Problem contains a literal which lets a variable correspond with a builtin: '{t1}' {t2}"
+                );
+            } else {
+                Sort::Bool
+            }
+        } else if let Term::Function(Name::Builtin(_), _) = t1 {
+            Sort::Bool
+        } else {
+            Sort::Individual
+        };
+        let t2_sort = if let Term::Function(Name::Builtin(_), _) = t1 {
+            if let Term::Variable(_) = t2 {
+                panic!(
+                    "Problem contains a literal which lets a variable correspond with a builtin: '{t1}' {t2}"
+                );
+            } else {
+                Sort::Bool
+            }
+        } else if let Term::Function(Name::Builtin(_), _) = t2 {
+            Sort::Bool
+        } else {
+            Sort::Individual
+        };
+        let hash_cons_t1 = self.add_term_to_termbank(t1, t1_sort);
+        let hash_cons_t2 = self.add_term_to_termbank(t2, t2_sort);
+        (hash_cons_t1, hash_cons_t2)
+    }
+
     fn add_literal_to_termbank(&mut self, l: Literal) -> clause::Literal {
         match l {
             Literal::Eq(t1, t2) => {
-                let hash_cons_t1 = self.add_term_to_termbank(t1);
-                let hash_cons_t2 = self.add_term_to_termbank(t2);
+                let (hash_cons_t1, hash_cons_t2) = self.add_literal_to_termbank_aux(t1, t2);
                 clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Eq)
             }
             Literal::NotEq(t1, t2) => {
-                let hash_cons_t1 = self.add_term_to_termbank(t1);
-                let hash_cons_t2 = self.add_term_to_termbank(t2);
+                let (hash_cons_t1, hash_cons_t2) = self.add_literal_to_termbank_aux(t1, t2);
                 clause::Literal::new(hash_cons_t1, hash_cons_t2, Polarity::Ne)
             }
         }

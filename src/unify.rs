@@ -8,7 +8,7 @@ use log::debug;
 use crate::{
     pretty_print::pretty_print,
     subst::{Substitutable, Substitution},
-    term_bank::{Term, TermBank},
+    term_bank::{Sort, Term, TermBank},
 };
 
 struct UnificationProblem {
@@ -37,12 +37,14 @@ impl UnificationProblem {
         match self.equations.pop() {
             Some((lhs, rhs)) => {
                 if lhs == rhs {
+                    // syntactically equal terms are guaranteed to have matching sorts
                     // t = t, E => E
                     UnificationState::Next
                 } else {
                     match (lhs.function_id(), rhs.function_id()) {
                         (Some(f), Some(g)) => {
                             if f == g {
+                                // equal functions are guaranteed to have matching sorts
                                 // f(s_1, ..., s_n) = f(t_1, ..., t_n), E =>
                                 // s_1 = t_1, ..., s_n = t_n, E
                                 lhs.function_args()
@@ -57,27 +59,32 @@ impl UnificationProblem {
                             }
                         }
                         (None, _) => {
-                            let var_id = lhs.variable_id().unwrap();
-                            if var_id.occurs_in(&rhs) {
-                                // x = t, E => bot if x != t and x in var(t)
+                            if term_bank.infer_sort(&rhs) != Sort::Individual {
+                                // We cannot unify propositions with variables!
                                 UnificationState::Failure
                             } else {
-                                // x = t, E => x = t, E {x |-> t} if x in var(E) and x not in var(t)
-                                let mut new_subst = Substitution::new();
-                                new_subst.insert(var_id, rhs.clone());
-                                self.equations = self
-                                    .equations
-                                    .iter()
-                                    .map(|(lhs, rhs)| {
-                                        (
-                                            lhs.clone().subst_with(&new_subst, term_bank),
-                                            rhs.clone().subst_with(&new_subst, term_bank),
-                                        )
-                                    })
-                                    .collect();
-                                // TODO: consider general compose method
-                                self.substitution.compose_binding(var_id, rhs, term_bank);
-                                UnificationState::Next
+                                let var_id = lhs.variable_id().unwrap();
+                                if lhs.variable_id().unwrap().occurs_in(&rhs) {
+                                    // x = t, E => bot if x != t and x in var(t)
+                                    UnificationState::Failure
+                                } else {
+                                    // x = t, E => x = t, E {x |-> t} if x in var(E) and x not in var(t)
+                                    let mut new_subst = Substitution::new();
+                                    new_subst.insert(var_id, rhs.clone());
+                                    self.equations = self
+                                        .equations
+                                        .iter()
+                                        .map(|(lhs, rhs)| {
+                                            (
+                                                lhs.clone().subst_with(&new_subst, term_bank),
+                                                rhs.clone().subst_with(&new_subst, term_bank),
+                                            )
+                                        })
+                                        .collect();
+                                    // TODO: consider general compose method
+                                    self.substitution.compose_binding(var_id, rhs, term_bank);
+                                    UnificationState::Next
+                                }
                             }
                         }
                         (Some(_), None) => {
@@ -132,7 +139,7 @@ impl Term {
 mod test {
     use crate::{
         subst::Substitutable,
-        term_bank::{FunctionInformation, TermBank, VariableInformation},
+        term_bank::{FunctionInformation, Sort, TermBank, VariableInformation},
     };
 
     #[test]
@@ -141,14 +148,17 @@ mod test {
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 1,
+            sort: Sort::Individual,
         });
         let g = term_bank.add_function(FunctionInformation {
             name: "g".to_string(),
             arity: 2,
+            sort: Sort::Individual,
         });
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
+            sort: Sort::Individual,
         });
         let x = term_bank.mk_fresh_variable(VariableInformation {
             name: "x".to_string(),
@@ -174,14 +184,17 @@ mod test {
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 2,
+            sort: Sort::Individual,
         });
         let g = term_bank.add_function(FunctionInformation {
             name: "g".to_string(),
             arity: 3,
+            sort: Sort::Individual,
         });
         let a = term_bank.add_function(FunctionInformation {
             name: "a".to_string(),
             arity: 0,
+            sort: Sort::Individual,
         });
         let a = term_bank.mk_const(a);
         let x = term_bank.mk_fresh_variable(VariableInformation {

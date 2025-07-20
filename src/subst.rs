@@ -115,7 +115,7 @@ impl Substitutable for Term {
 mod test {
     use crate::{
         subst::Substitutable,
-        term_bank::{FunctionInformation, TermBank, VariableInformation},
+        term_bank::{FunctionInformation, Sort, TermBank, VariableInformation},
     };
 
     use super::Substitution;
@@ -126,18 +126,22 @@ mod test {
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 2,
+            sort: Sort::Individual,
         });
         let g = term_bank.add_function(FunctionInformation {
             name: "g".to_string(),
             arity: 1,
+            sort: Sort::Individual,
         });
         let a = term_bank.add_function(FunctionInformation {
             name: "a".to_string(),
             arity: 0,
+            sort: Sort::Individual,
         });
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
+            sort: Sort::Individual,
         });
         let x_ident = term_bank.add_variable(VariableInformation {
             name: "x".to_string(),
@@ -170,6 +174,7 @@ mod test {
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 2,
+            sort: Sort::Individual,
         });
         let x_ident = term_bank.add_variable(VariableInformation {
             name: "x".to_string(),

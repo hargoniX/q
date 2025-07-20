@@ -1773,7 +1773,7 @@ result = "UNSAT"
 filename = "problems/tptp-full/CSR/CSR061+3.p"
 result = "UNSAT"
 [problems."CSR061+4"]
-filename = "problems/tptp-full/CSRCSR061+4.p"
+filename = "problems/tptp-full/CSR/CSR061+4.p"
 result = "UNSAT"
 [problems."CSR061+5"]
 filename = "problems/tptp-full/CSR/CSR061+5.p"
@@ -7743,7 +7743,7 @@ result = "UNSAT"
 filename = "problems/tptp-full/LCL/LCL466+1.p"
 result = "UNSAT"
 [problems."LCL467+1"]
-filename = "problems/tptp-full/LCLLCL467+1.p"
+filename = "problems/tptp-full/LCL/LCL467+1.p"
 result = "UNSAT"
 [problems."LCL468+1"]
 filename = "problems/tptp-full/LCL/LCL468+1.p"

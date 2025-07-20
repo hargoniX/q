@@ -63,6 +63,7 @@ fn main() {
     term_bank.assert_names_unique();
     for clause in &clauses {
         log::info!("Clause: {}", pretty_print(clause, &term_bank));
+        clause.assert_well_typed(&term_bank);
     }
     let gcfg = args
         .graphviz
