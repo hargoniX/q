@@ -340,27 +340,27 @@ mod test {
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let c = term_bank.add_function(FunctionInformation {
             name: "c".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let g = term_bank.add_function(FunctionInformation {
             name: "g".to_string(),
             arity: 2,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 1,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let h = term_bank.add_function(FunctionInformation {
             name: "h".to_string(),
             arity: 1,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
 
         let x = term_bank.mk_fresh_variable(VariableInformation {
@@ -441,22 +441,22 @@ mod test {
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let c = term_bank.add_function(FunctionInformation {
             name: "c".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 1,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let h = term_bank.add_function(FunctionInformation {
             name: "h".to_string(),
             arity: 2,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let x = term_bank.mk_fresh_variable(VariableInformation {
             name: "x".to_string(),

@@ -10,6 +10,7 @@ use bitvec::{bitvec, vec::BitVec};
 use crate::{
     clause::{Clause, Literal},
     subst::Substitution,
+    term_bank::TermBank,
 };
 
 impl Clause {
@@ -18,6 +19,7 @@ impl Clause {
         target: &[Literal],
         unused: BitVec,
         subst: Substitution,
+        term_bank: &TermBank,
     ) -> bool {
         if subsuming.is_empty() {
             return true;
@@ -34,11 +36,11 @@ impl Clause {
             let t_rhs = t_lit.get_rhs();
             for (s_lhs, s_rhs) in subsuming[0].symm_term_iter() {
                 let subst = subst.clone();
-                if let Some(subst) = s_lhs.matching_partial(t_lhs, Some(subst)) {
-                    if let Some(subst) = s_rhs.matching_partial(t_rhs, Some(subst)) {
+                if let Some(subst) = s_lhs.matching_partial(t_lhs, Some(subst), term_bank) {
+                    if let Some(subst) = s_rhs.matching_partial(t_rhs, Some(subst), term_bank) {
                         let mut unused = unused.clone();
                         unused.set(t_idx, false);
-                        if Clause::subsumes_aux(&subsuming[1..], target, unused, subst) {
+                        if Clause::subsumes_aux(&subsuming[1..], target, unused, subst, term_bank) {
                             return true;
                         }
                     }
@@ -48,7 +50,7 @@ impl Clause {
         false
     }
 
-    pub fn subsumes(&self, other: &Self) -> bool {
+    pub fn subsumes(&self, other: &Self, term_bank: &TermBank) -> bool {
         if self.len() > other.len() {
             return false;
         }
@@ -69,6 +71,7 @@ impl Clause {
             &other.literals,
             bitvec![1; other.len()],
             Substitution::new(),
+            term_bank,
         )
     }
 }

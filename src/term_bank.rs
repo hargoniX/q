@@ -22,7 +22,7 @@ pub enum Sort {
     /// Booleans for propositions
     Bool,
     /// Everything else
-    Individual
+    Individual,
 }
 
 /// Describes a first order function.
@@ -34,7 +34,7 @@ pub struct FunctionInformation {
     /// The arity of the function, in particular constants are encoded as 0-arity functions.
     pub arity: usize,
     /// The sort of this function symbol.
-    pub sort: Sort
+    pub sort: Sort,
 }
 
 /// Describes a first order variable.

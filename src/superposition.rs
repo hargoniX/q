@@ -653,7 +653,7 @@ impl SuperpositionState<'_> {
     fn redundant(&self, g: &Clause) -> bool {
         for active_clause_id in self.subsumption_index.forward_candidates(g, self.term_bank) {
             let active_clause = self.active.get_by_id(active_clause_id).unwrap();
-            if active_clause.subsumes(g) {
+            if active_clause.subsumes(g, self.term_bank) {
                 info!(
                     "Forward Subsumption: {} subsumes {}",
                     pretty_print(active_clause, self.term_bank),
@@ -693,7 +693,7 @@ impl SuperpositionState<'_> {
                 .backward_candidates(&g, self.term_bank)
             {
                 let active_clause = self.active.get_by_id(active_clause_id).unwrap();
-                if g.subsumes(active_clause) {
+                if g.subsumes(active_clause, self.term_bank) {
                     info!(
                         "Backward Subsumption: {} subsumes {}",
                         pretty_print(&g, self.term_bank),
@@ -791,17 +791,17 @@ mod test {
         let top = term_bank.add_function(FunctionInformation {
             name: "top".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let bot = term_bank.add_function(FunctionInformation {
             name: "bot".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 1,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let x = term_bank.mk_fresh_variable(VariableInformation {
             name: "x".to_string(),
@@ -829,17 +829,17 @@ mod test {
         let a = term_bank.add_function(FunctionInformation {
             name: "a".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let c = term_bank.add_function(FunctionInformation {
             name: "c".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
 
         let a = term_bank.mk_const(a);

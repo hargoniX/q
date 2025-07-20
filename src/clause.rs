@@ -442,12 +442,12 @@ mod test {
         let c1_id = term_bank.add_function(FunctionInformation {
             name: "c1".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
         let c2_id = term_bank.add_function(FunctionInformation {
             name: "c2".to_string(),
             arity: 0,
-            sort: Sort::Individual
+            sort: Sort::Individual,
         });
 
         let c1 = term_bank.mk_const(c1_id);
