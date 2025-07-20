@@ -19,7 +19,7 @@ use crate::{
     },
     pretty_print::pretty_print,
     proofs::{GraphvizMode, ProofLog, ProofRule},
-    selection::{Selection, SelectionStrategy, select_literals},
+    selection::SelectionStrategy,
     simplifier::{backward_simplify, cheap_simplify, forward_simplify},
     subst::{Substitutable, Substitution},
     term_bank::{Term, TermBank},
@@ -328,25 +328,15 @@ impl SuperpositionState<'_> {
         self.passive.push(clause);
     }
 
-    fn equality_resolution(
-        &mut self,
-        clause: &Clause,
-        acc: &mut Vec<Clause>,
-        selection: Option<Selection>,
-    ) {
+    fn equality_resolution(&mut self, clause: &Clause, acc: &mut Vec<Clause>) {
         info!(
             "ERes working clause: {}",
             pretty_print(clause, self.term_bank)
         );
-        let (iter, has_selection): (Box<dyn Iterator<Item = (LiteralId, &Literal)>>, bool) =
-            if let Some(sel_literals) = selection {
-                (Box::new(sel_literals.into_iter()), true)
-            } else {
-                (Box::new(clause.iter()), false)
-            };
-        for (literal_id, literal) in iter {
+        let has_selection = clause.has_selection(self.selection_strategy, self.term_bank);
+        for (literal_id, literal) in clause.eligible_iter(self.selection_strategy, self.term_bank) {
             // Condition: the literal must be an inequality
-            if !has_selection && literal.is_eq() {
+            if literal.is_eq() {
                 continue;
             }
 
@@ -478,7 +468,6 @@ impl SuperpositionState<'_> {
         lit1_id: LiteralId,
         lit2_id: LiteralId,
         lit2_pol: Polarity,
-        selection2: Option<Selection>,
         lit1_lhs: &Term,
         lit1_rhs: &Term,
         lit2_lhs: &Term,
@@ -508,9 +497,10 @@ impl SuperpositionState<'_> {
             // Non-empty selection: has to be maximal either in the intersection with C- or C+
             // TODO: Implement the currently irrelevant Maximality check is irrelevant
             // for selections with only one element
-            if let Some(selection) = selection2 {
-                let sel_literal = selection
-                    .first()
+            if clause2.has_selection(self.selection_strategy, self.term_bank) {
+                let sel_literal = clause2
+                    .eligible_iter(self.selection_strategy, self.term_bank)
+                    .next()
                     .unwrap()
                     .1
                     .clone()
@@ -582,8 +572,7 @@ impl SuperpositionState<'_> {
 
         let clause1 = given_clause;
         // Part 1: given_clause is the one being used for rewriting.
-        let selection1 = select_literals(clause1, &self.selection_strategy, self.term_bank, true);
-        if selection1.is_none() {
+        if !clause1.has_selection(self.selection_strategy, self.term_bank) {
             for (lit1_id, lit1) in clause1.iter() {
                 // Condition: The one being used for rewriting must be an equality
                 if lit1.is_ne() {
@@ -610,12 +599,6 @@ impl SuperpositionState<'_> {
                             let literal_pos = &clause_pos.literal_pos;
                             let subterm_pos = &literal_pos.term_pos;
                             let clause2 = self.active.get_by_id(candidate_pos.clause_id).unwrap();
-                            let selection2 = select_literals(
-                                clause2,
-                                &self.selection_strategy,
-                                self.term_bank,
-                                true,
-                            );
                             let lit2_id = clause_pos.literal_id;
                             let lit2 = clause2.get_literal(lit2_id);
                             let lit2_lhs = literal_pos.literal_side.get_side(lit2);
@@ -628,7 +611,6 @@ impl SuperpositionState<'_> {
                                 lit1_id,
                                 lit2_id,
                                 lit2_pol,
-                                selection2,
                                 &lit1_lhs,
                                 &lit1_rhs,
                                 lit2_lhs,
@@ -645,7 +627,6 @@ impl SuperpositionState<'_> {
 
         // Part 2: the given clause is the one being rewritten
         let clause2 = given_clause;
-        let selection2 = select_literals(clause2, &self.selection_strategy, self.term_bank, true);
         for (lit2_id, lit2) in clause2.iter() {
             let lit2_pol = lit2.get_pol();
             // Try to orient the equation using stability under substitution
@@ -662,13 +643,7 @@ impl SuperpositionState<'_> {
                     {
                         let clause_id = candidate_pos.clause_id;
                         let clause1 = self.active.get_by_id(clause_id).unwrap();
-                        let selection1 = select_literals(
-                            clause1,
-                            &self.selection_strategy,
-                            self.term_bank,
-                            true,
-                        );
-                        if selection1.is_some() {
+                        if clause1.has_selection(self.selection_strategy, self.term_bank) {
                             continue;
                         }
                         let lit1_id = candidate_pos.literal_id;
@@ -686,7 +661,6 @@ impl SuperpositionState<'_> {
                                 lit1_id,
                                 lit2_id,
                                 lit2_pol,
-                                selection2.clone(),
                                 lit1_lhs,
                                 lit1_rhs,
                                 &lit2_lhs,
@@ -704,10 +678,8 @@ impl SuperpositionState<'_> {
 
     fn generate(&mut self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
-        let selection = select_literals(&clause, &self.selection_strategy, self.term_bank, true);
-        let has_selection = selection.is_some();
-        self.equality_resolution(&clause, &mut acc, selection);
-        if !has_selection {
+        self.equality_resolution(&clause, &mut acc);
+        if !clause.has_selection(self.selection_strategy, self.term_bank) {
             self.equality_factoring(&clause, &mut acc);
         }
         self.superposition(&clause, &mut acc);

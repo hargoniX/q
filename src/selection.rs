@@ -1,11 +1,15 @@
+use bitvec::bitvec;
 use std::cmp::Ordering;
+
+use bitvec::vec::BitVec;
 
 use crate::{
     clause::{Clause, Literal, LiteralId, Polarity},
     kbo::KboOrd,
     term_bank::{Sort, TermBank},
 };
-pub type Selection<'a> = Vec<(LiteralId, &'a Literal)>;
+
+const FILTER_PROPS: bool = true;
 
 #[derive(Debug, Clone, Copy, clap::ValueEnum)]
 pub enum SelectionStrategy {
@@ -29,31 +33,24 @@ fn is_propositional(lit: &Literal, term_bank: &TermBank) -> bool {
     false
 }
 
-fn select_first_neg_lit<'a>(
-    clause: &'a Clause,
-    term_bank: &TermBank,
-    filter_props: bool,
-) -> Option<Selection<'a>> {
+fn select_first_neg_lit(clause: &Clause, term_bank: &TermBank) -> BitVec {
+    let mut result = bitvec![0; clause.len()];
     for (lit_id, lit) in clause.iter() {
-        if lit.get_pol() == Polarity::Ne && (!filter_props || is_propositional(lit, term_bank)) {
-            return Some(vec![(lit_id, clause.get_literal(lit_id))]);
+        if lit.get_pol() == Polarity::Ne && (!FILTER_PROPS || is_propositional(lit, term_bank)) {
+            result.set(lit_id.0, true);
         }
     }
-    None
+    result
 }
 
-fn select_first_max_neg_lit_and_all_pos_lits<'a>(
-    clause: &'a Clause,
-    term_bank: &TermBank,
-    filter_props: bool,
-) -> Option<Selection<'a>> {
-    let mut results = Vec::new();
+fn select_first_max_neg_lit_and_all_pos_lits(clause: &Clause, term_bank: &TermBank) -> BitVec {
+    let mut result = bitvec![0; clause.len()];
     let mut max_neg_lit: Option<(LiteralId, &Literal)> = None;
     for (lit_id, lit) in clause.iter() {
-        if !filter_props || is_propositional(lit, term_bank) {
+        if !FILTER_PROPS || is_propositional(lit, term_bank) {
             if lit.get_pol() == Polarity::Eq {
-                if !filter_props {
-                    results.push((lit_id, lit));
+                if !FILTER_PROPS {
+                    result.set(lit_id.0, true);
                 }
             } else if let Some((_, max_lit)) = max_neg_lit {
                 if lit.kbo(max_lit, term_bank) == Some(Ordering::Greater) {
@@ -64,27 +61,24 @@ fn select_first_max_neg_lit_and_all_pos_lits<'a>(
             }
         }
     }
-    if let Some(neg_lit) = max_neg_lit {
-        results.push(neg_lit);
-        Some(results)
+    if let Some((neg_lit_id, _)) = max_neg_lit {
+        result.set(neg_lit_id.0, true);
+        result
     } else {
-        None
+        bitvec![0; clause.len()]
     }
 }
 
-pub fn select_literals<'a>(
-    clause: &'a Clause,
+pub fn select_literals(
+    clause: &Clause,
     strategy: &SelectionStrategy,
     term_bank: &TermBank,
-    filter_props: bool,
-) -> Option<Selection<'a>> {
+) -> BitVec {
     match strategy {
-        SelectionStrategy::NoSelection => None,
-        SelectionStrategy::SelectFirstNegLit => {
-            select_first_neg_lit(clause, term_bank, filter_props)
-        }
+        SelectionStrategy::NoSelection => bitvec![0; clause.len()],
+        SelectionStrategy::SelectFirstNegLit => select_first_neg_lit(clause, term_bank),
         SelectionStrategy::SelectFirstMaximalNegLitAndAllPosLits => {
-            select_first_max_neg_lit_and_all_pos_lits(clause, term_bank, filter_props)
+            select_first_max_neg_lit_and_all_pos_lits(clause, term_bank)
         }
     }
 }

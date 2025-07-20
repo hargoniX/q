@@ -7,11 +7,13 @@
 
 use std::{cell::OnceCell, cmp::Ordering, hash::Hash, rc::Rc, sync::atomic::AtomicUsize};
 
+use bitvec::vec::BitVec;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     kbo::KboOrd,
     pretty_print::{BankPrettyPrint, pretty_print},
+    selection::{SelectionStrategy, select_literals},
     subst::{Substitutable, Substitution},
     term_bank::{Sort, Term, TermBank},
 };
@@ -292,6 +294,7 @@ pub struct Clause {
     id: ClauseId,
     info: ClauseInfo,
     pub(crate) literals: Vec<Literal>,
+    selected: Rc<OnceCell<BitVec>>,
 }
 
 impl Clause {
@@ -301,6 +304,7 @@ impl Clause {
             id: next_clause_id(),
             info: ClauseInfo { is_initial: false },
             literals: vec,
+            selected: Rc::new(OnceCell::new()),
         }
     }
 
@@ -310,6 +314,7 @@ impl Clause {
             id: next_clause_id(),
             info: ClauseInfo { is_initial: true },
             literals: vec,
+            selected: Rc::new(OnceCell::new()),
         }
     }
 
@@ -429,6 +434,39 @@ impl Clause {
             })
         }
     }
+
+    fn get_selected<'a>(&'a self, strategy: SelectionStrategy, term_bank: &TermBank) -> &'a BitVec {
+        self.selected
+            .get_or_init(|| select_literals(self, &strategy, term_bank))
+    }
+
+    // XXX: strategy only gets respected the first time, we could add an assertion that it never
+    // changes
+    pub fn eligible_iter<'a>(
+        &'a self,
+        strategy: SelectionStrategy,
+        term_bank: &TermBank,
+    ) -> impl Iterator<Item = (LiteralId, &'a Literal)> {
+        let vec = self.get_selected(strategy, term_bank);
+        self.iter()
+            .filter(|(id, _)| vec.not_any() || *vec.get(id.0).unwrap())
+    }
+
+    pub fn has_selection(&self, strategy: SelectionStrategy, term_bank: &TermBank) -> bool {
+        self.get_selected(strategy, term_bank).any()
+    }
+
+    pub fn is_selected(
+        &self,
+        lit_id: LiteralId,
+        strategy: SelectionStrategy,
+        term_bank: &TermBank,
+    ) -> bool {
+        *self
+            .get_selected(strategy, term_bank)
+            .get(lit_id.0)
+            .unwrap()
+    }
 }
 
 impl PartialEq for Clause {
@@ -472,6 +510,7 @@ impl Substitutable for Clause {
             id: next_clause_id(),
             info: self.info,
             literals: new_lits,
+            selected: Rc::new(OnceCell::new()),
         }
     }
 }
