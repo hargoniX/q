@@ -38,7 +38,7 @@ impl Polarity {
 }
 
 /// A literal represents either an equality or a disequality between two [Term].
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone)]
 pub struct Literal {
     lhs: Term,
     rhs: Term,
@@ -54,6 +54,20 @@ impl PartialEq for Literal {
 }
 
 impl Eq for Literal {}
+
+impl Hash for Literal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // To ensure same hash code for equal literals normalize using pointer values.
+        let (lhs, rhs) = if (self.lhs.as_ptr() as usize) < (self.rhs.as_ptr() as usize) {
+            (&self.lhs, &self.rhs)
+        } else {
+            (&self.rhs, &self.lhs)
+        };
+        lhs.hash(state);
+        rhs.hash(state);
+        self.pol.hash(state);
+    }
+}
 
 impl Literal {
     pub fn new(lhs: Term, rhs: Term, kind: Polarity) -> Self {
