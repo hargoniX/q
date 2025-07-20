@@ -307,55 +307,50 @@ impl KboOrd for Term {
     }
 }
 
-fn literal_to_multiset(lit: &Literal) -> FxHashMap<&Term, usize> {
-    match lit.get_pol() {
-        // l = r becomes {l, r}
-        Polarity::Eq => [(lit.get_lhs(), 1), (lit.get_rhs(), 1)]
-            .into_iter()
-            .collect(),
-        // l != r becomes {l, l, r, r}
-        Polarity::Ne => [(lit.get_lhs(), 2), (lit.get_rhs(), 2)]
-            .into_iter()
-            .collect(),
-    }
-}
-
-// precondition lhs != rhs
-fn multiset_gt(
-    lhs: &FxHashMap<&Term, usize>,
-    rhs: &FxHashMap<&Term, usize>,
-    term_bank: &TermBank,
-) -> bool {
-    // ∀ m ∈ M, rhs(m) > lhs(m)
-    let iter = rhs
-        .iter()
-        .filter(|(elem, count_r)| **count_r > *lhs.get(*elem).unwrap_or(&0));
-    for (m, _) in iter {
-        // ∃ m_alt ∈ M, lhs(m_alt) > rhs(m_alt) ∧ m_alt > m
-        let larger = lhs.iter().find(|(m_alt, count_l)| {
-            **count_l > *rhs.get(*m_alt).unwrap_or(&0)
-                && m_alt.kbo(m, term_bank) == Some(Ordering::Greater)
-        });
-        if larger.is_none() {
-            return false;
-        }
-    }
-    true
-}
-
 impl KboOrd for Literal {
+    // Taken from dupers interpretation of the multiset formalism
     fn kbo(&self, other: &Self, term_bank: &TermBank) -> Option<Ordering> {
-        if self == other {
-            Some(Ordering::Equal)
-        } else {
-            let lhs_set = literal_to_multiset(self);
-            let rhs_set = literal_to_multiset(other);
-            if multiset_gt(&lhs_set, &rhs_set, term_bank) {
-                Some(Ordering::Greater)
-            } else if multiset_gt(&rhs_set, &lhs_set, term_bank) {
-                Some(Ordering::Less)
-            } else {
-                None
+        let cll = self.get_lhs().kbo(other.get_lhs(), term_bank)?;
+        let clr = self.get_lhs().kbo(other.get_rhs(), term_bank)?;
+        let crl = self.get_rhs().kbo(other.get_lhs(), term_bank)?;
+        let crr = self.get_rhs().kbo(other.get_rhs(), term_bank)?;
+
+        match (cll, clr, crl, crr) {
+            (Ordering::Greater, Ordering::Greater, _, _) => Some(Ordering::Greater),
+            (_, _, Ordering::Greater, Ordering::Greater) => Some(Ordering::Greater),
+            (Ordering::Less, _, Ordering::Less, _) => Some(Ordering::Less),
+            (_, Ordering::Less, _, Ordering::Less) => Some(Ordering::Less),
+
+            (Ordering::Greater, _, _, Ordering::Greater) => Some(Ordering::Greater),
+            (Ordering::Less, _, _, Ordering::Less) => Some(Ordering::Less),
+            (_, Ordering::Greater, Ordering::Greater, _) => Some(Ordering::Greater),
+            (_, Ordering::Less, Ordering::Less, _) => Some(Ordering::Less),
+            (_, _, _, _) => {
+                let csign = match (self.get_pol(), other.get_pol()) {
+                    (Polarity::Eq, Polarity::Eq) => Ordering::Equal,
+                    (Polarity::Ne, Polarity::Eq) => Ordering::Greater,
+                    (Polarity::Eq, Polarity::Ne) => Ordering::Less,
+                    (Polarity::Ne, Polarity::Ne) => Ordering::Equal,
+                };
+
+                match (cll, clr, crl, crr, csign) {
+                    (Ordering::Equal, _, _, c, Ordering::Equal) => Some(c),
+                    (_, Ordering::Equal, c, _, Ordering::Equal) => Some(c),
+                    (_, c, Ordering::Equal, _, Ordering::Equal) => Some(c),
+                    (c, _, _, Ordering::Equal, Ordering::Equal) => Some(c),
+
+                    (Ordering::Equal, _, _, Ordering::Equal, _) => Some(Ordering::Equal),
+                    (_, Ordering::Equal, Ordering::Equal, _, _) => Some(Ordering::Equal),
+
+                    (Ordering::Equal, _, _, _, c) => Some(c),
+                    (_, Ordering::Equal, _, _, c) => Some(c),
+                    (_, _, Ordering::Equal, _, c) => Some(c),
+                    (_, _, _, Ordering::Equal, c) => Some(c),
+
+                    (_, _, _, _, _) => {
+                        panic!("unexpected comparisons : {cll:?} {clr:?} {crl:?} {crr:?} {csign:?}")
+                    }
+                }
             }
         }
     }
