@@ -468,7 +468,7 @@ impl SkolemTerm {
             var_map: FxHashMap::default(),
             func_map: FxHashMap::default(),
         };
-        state.get_func_id(Name::Builtin("true".to_string()), 0, Sort::Individual);
+        state.get_func_id(Name::Builtin("true".to_string()), 0, Sort::Bool);
         (state.to_clauses_aux(self), term_bank)
     }
 }
@@ -648,11 +648,27 @@ impl TermBankConversionState<'_> {
         t2: Term,
     ) -> (HashConsed<RawTerm>, HashConsed<RawTerm>) {
         let t1_sort = if let Term::Function(Name::Builtin(_), _) = t2 {
+            if let Term::Variable(_) = t1 {
+                panic!(
+                    "Problem contains a literal which lets a variable correspond with a builtin: '{t1}' {t2}"
+                );
+            } else {
+                Sort::Bool
+            }
+        } else if let Term::Function(Name::Builtin(_), _) = t1 {
             Sort::Bool
         } else {
             Sort::Individual
         };
         let t2_sort = if let Term::Function(Name::Builtin(_), _) = t1 {
+            if let Term::Variable(_) = t2 {
+                panic!(
+                    "Problem contains a literal which lets a variable correspond with a builtin: '{t1}' {t2}"
+                );
+            } else {
+                Sort::Bool
+            }
+        } else if let Term::Function(Name::Builtin(_), _) = t2 {
             Sort::Bool
         } else {
             Sort::Individual
