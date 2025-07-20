@@ -67,7 +67,7 @@ impl Term {
 
 #[cfg(test)]
 mod test {
-    use crate::term_bank::{FunctionInformation, TermBank, VariableInformation};
+    use crate::term_bank::{FunctionInformation, Sort, TermBank, VariableInformation};
 
     #[test]
     fn basic_matching_test() {
@@ -75,14 +75,17 @@ mod test {
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 1,
+            sort: Sort::Individual
         });
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let c = term_bank.add_function(FunctionInformation {
             name: "c".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let x = term_bank.mk_fresh_variable(VariableInformation {
             name: "x".to_string(),

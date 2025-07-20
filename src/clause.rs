@@ -407,7 +407,7 @@ mod test {
     use crate::{
         clause::Clause,
         subst::{Substitutable, Substitution},
-        term_bank::{FunctionInformation, TermBank, VariableInformation},
+        term_bank::{FunctionInformation, Sort, TermBank, VariableInformation},
     };
 
     use super::Literal;
@@ -442,10 +442,12 @@ mod test {
         let c1_id = term_bank.add_function(FunctionInformation {
             name: "c1".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let c2_id = term_bank.add_function(FunctionInformation {
             name: "c2".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
 
         let c1 = term_bank.mk_const(c1_id);

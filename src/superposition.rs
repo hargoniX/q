@@ -780,7 +780,7 @@ mod test {
     use crate::{
         clause::{Clause, Literal, Polarity},
         superposition::SuperpositionResult,
-        term_bank::{FunctionInformation, TermBank, VariableInformation},
+        term_bank::{FunctionInformation, Sort, TermBank, VariableInformation},
     };
 
     use super::search_proof;
@@ -791,14 +791,17 @@ mod test {
         let top = term_bank.add_function(FunctionInformation {
             name: "top".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let bot = term_bank.add_function(FunctionInformation {
             name: "bot".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let f = term_bank.add_function(FunctionInformation {
             name: "f".to_string(),
             arity: 1,
+            sort: Sort::Individual
         });
         let x = term_bank.mk_fresh_variable(VariableInformation {
             name: "x".to_string(),
@@ -826,14 +829,17 @@ mod test {
         let a = term_bank.add_function(FunctionInformation {
             name: "a".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let b = term_bank.add_function(FunctionInformation {
             name: "b".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
         let c = term_bank.add_function(FunctionInformation {
             name: "c".to_string(),
             arity: 0,
+            sort: Sort::Individual
         });
 
         let a = term_bank.mk_const(a);

@@ -16,6 +16,15 @@ use std::{
 
 use crate::term_manager::{HashConsed, Table};
 
+/// The sorts that our logic operates on.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Sort {
+    /// Booleans for propositions
+    Bool,
+    /// Everything else
+    Individual
+}
+
 /// Describes a first order function.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionInformation {
@@ -24,6 +33,8 @@ pub struct FunctionInformation {
     pub name: String,
     /// The arity of the function, in particular constants are encoded as 0-arity functions.
     pub arity: usize,
+    /// The sort of this function symbol.
+    pub sort: Sort
 }
 
 /// Describes a first order variable.
