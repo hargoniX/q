@@ -1,0 +1,223 @@
+[problems]
+[problems.syn000]
+filename = "problems/SYN000+1.p"
+result = "UNSAT" # Status: Theorem
+[problems.syn075]
+filename = "problems/SYN075+1.p"
+result = "UNSAT" # Status: Theorem
+[problems.krs018]
+filename = "problems/KRS018+1.p"
+result = "SAT" # Status: Satisfiable
+[problems.krs063]
+filename = "problems/KRS063+1.p"
+result = "UNSAT" # Status: Unsatisfiable
+[problems.mgt019]
+filename = "problems/MGT019+2.p"
+result = "SAT" # Status: CounterSatisfiable
+[problems.pb1]
+filename = "problems/pelletier_cnf/pb1.p"
+result = "UNSAT"
+[problems.pb2]
+filename = "problems/pelletier_cnf/pb2.p"
+result = "UNSAT"
+[problems.pb3]
+filename = "problems/pelletier_cnf/pb3.p"
+result = "UNSAT"
+[problems.pb4]
+filename = "problems/pelletier_cnf/pb4.p"
+result = "UNSAT"
+[problems.pb5]
+filename = "problems/pelletier_cnf/pb5.p"
+result = "UNSAT"
+[problems.pb6]
+filename = "problems/pelletier_cnf/pb6.p"
+result = "UNSAT"
+[problems.pb7]
+filename = "problems/pelletier_cnf/pb7.p"
+result = "UNSAT"
+[problems.pb8]
+filename = "problems/pelletier_cnf/pb8.p"
+result = "UNSAT"
+[problems.pb9]
+filename = "problems/pelletier_cnf/pb9.p"
+result = "UNSAT"
+[problems.pb10]
+filename = "problems/pelletier_cnf/pb10.p"
+result = "UNSAT"
+[problems.pb11]
+filename = "problems/pelletier_cnf/pb11.p"
+result = "UNSAT"
+[problems.pb12]
+filename = "problems/pelletier_cnf/pb12.p"
+result = "UNSAT"
+[problems.pb13]
+filename = "problems/pelletier_cnf/pb13.p"
+result = "UNSAT"
+[problems.pb14]
+filename = "problems/pelletier_cnf/pb14.p"
+result = "UNSAT"
+[problems.pb15]
+filename = "problems/pelletier_cnf/pb15.p"
+result = "UNSAT"
+[problems.pb16]
+filename = "problems/pelletier_cnf/pb16.p"
+result = "UNSAT"
+[problems.pb17]
+filename = "problems/pelletier_cnf/pb17.p"
+result = "UNSAT"
+[problems.pb18]
+filename = "problems/pelletier_cnf/pb18.p"
+result = "UNSAT"
+[problems.pb19]
+filename = "problems/pelletier_cnf/pb19.p"
+result = "UNSAT"
+[problems.pb20]
+filename = "problems/pelletier_cnf/pb20.p"
+result = "UNSAT"
+[problems.pb21]
+filename = "problems/pelletier_cnf/pb21.p"
+result = "UNSAT"
+[problems.pb22]
+filename = "problems/pelletier_cnf/pb22.p"
+result = "UNSAT"
+[problems.pb23]
+filename = "problems/pelletier_cnf/pb23.p"
+result = "UNSAT"
+[problems.pb24]
+filename = "problems/pelletier_cnf/pb24.p"
+result = "UNSAT"
+[problems.pb25]
+filename = "problems/pelletier_cnf/pb25.p"
+result = "UNSAT"
+[problems.pb26]
+filename = "problems/pelletier_cnf/pb26.p"
+result = "UNSAT"
+[problems.pb27]
+filename = "problems/pelletier_cnf/pb27.p"
+result = "UNSAT"
+[problems.pb28]
+filename = "problems/pelletier_cnf/pb28.p"
+result = "SAT"
+[problems.pb29]
+filename = "problems/pelletier_cnf/pb29.p"
+result = "UNSAT"
+[problems.pb30]
+filename = "problems/pelletier_cnf/pb30.p"
+result = "UNSAT"
+[problems.pb31]
+filename = "problems/pelletier_cnf/pb31.p"
+result = "UNSAT"
+[problems.pb32]
+filename = "problems/pelletier_cnf/pb32.p"
+result = "UNSAT"
+[problems.pb33]
+filename = "problems/pelletier_cnf/pb33.p"
+result = "UNSAT"
+[problems.pb34]
+filename = "problems/pelletier_cnf/pb34.p"
+result = "UNSAT"
+[problems.pb35]
+filename = "problems/pelletier_cnf/pb35.p"
+result = "UNSAT"
+[problems.pb36]
+filename = "problems/pelletier_cnf/pb36.p"
+result = "UNSAT"
+[problems.pb37]
+filename = "problems/pelletier_cnf/pb37.p"
+result = "UNSAT"
+[problems.pb38]
+filename = "problems/pelletier_cnf/pb38.p"
+result = "UNSAT"
+[problems.pb39]
+filename = "problems/pelletier_cnf/pb39.p"
+result = "UNSAT"
+[problems.pb40]
+filename = "problems/pelletier_cnf/pb40.p"
+result = "UNSAT"
+[problems.pb41]
+filename = "problems/pelletier_cnf/pb41.p"
+result = "UNSAT"
+[problems.pb42]
+filename = "problems/pelletier_cnf/pb42.p"
+result = "UNSAT"
+[problems.pb43]
+filename = "problems/pelletier_cnf/pb43.p"
+result = "UNSAT"
+[problems.pb44]
+filename = "problems/pelletier_cnf/pb44.p"
+result = "UNSAT"
+[problems.pb45]
+filename = "problems/pelletier_cnf/pb45.p"
+result = "UNSAT"
+[problems.pb46]
+filename = "problems/pelletier_cnf/pb46.p"
+result = "UNSAT"
+[problems.pb47]
+filename = "problems/pelletier_cnf/pb47.p"
+result = "UNSAT"
+[problems.pb48]
+filename = "problems/pelletier_cnf/pb48.p"
+result = "UNSAT"
+[problems.pb49]
+filename = "problems/pelletier_cnf/pb49.p"
+result = "UNSAT"
+[problems.pb50]
+filename = "problems/pelletier_cnf/pb50.p"
+result = "UNSAT"
+[problems.pb51]
+filename = "problems/pelletier_cnf/pb51.p"
+result = "UNSAT"
+[problems.pb52]
+filename = "problems/pelletier_cnf/pb52.p"
+result = "UNSAT"
+[problems.pb53]
+filename = "problems/pelletier_cnf/pb53.p"
+result = "UNSAT"
+[problems.pb54]
+filename = "problems/pelletier_cnf/pb54.p"
+result = "SAT"
+[problems.pb55]
+filename = "problems/pelletier_cnf/pb55.p"
+result = "UNSAT"
+[problems.pb56]
+filename = "problems/pelletier_cnf/pb56.p"
+result = "UNSAT"
+[problems.pb57]
+filename = "problems/pelletier_cnf/pb57.p"
+result = "UNSAT"
+[problems.pb58]
+filename = "problems/pelletier_cnf/pb58.p"
+result = "UNSAT"
+[problems.pb59]
+filename = "problems/pelletier_cnf/pb59.p"
+result = "UNSAT"
+[problems.pb60]
+filename = "problems/pelletier_cnf/pb60.p"
+result = "UNSAT"
+[problems.pb61]
+filename = "problems/pelletier_cnf/pb61.p"
+result = "UNSAT"
+[problems.pb62]
+filename = "problems/pelletier_cnf/pb62.p"
+result = "SAT"
+[problems.pb63]
+filename = "problems/pelletier_cnf/pb63.p"
+result = "UNSAT"
+[problems.pb64]
+filename = "problems/pelletier_cnf/pb64.p"
+result = "UNSAT"
+[problems.pb65]
+filename = "problems/pelletier_cnf/pb65.p"
+result = "UNSAT"
+[problems.pb66]
+filename = "problems/pelletier_cnf/pb66.p"
+result = "UNSAT"
+[problems.pb67]
+filename = "problems/pelletier_cnf/pb67.p"
+result = "UNSAT"
+[problems.pb68]
+filename = "problems/pelletier_cnf/pb68.p"
+result = "UNSAT"
+[problems.equivalence]
+filename = "problems/pelletier_cnf/equivalence.p"
+result = "UNSAT"

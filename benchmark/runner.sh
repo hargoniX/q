@@ -7,6 +7,8 @@ REPO_ROOT=`git rev-parse --show-toplevel`
 pushd $REPO_ROOT > /dev/null
 if [ "${variant}" == "pelletier" ]; then
   python benchmark/runner.py -d $duration -m pelletier -f benchmark/pelletier.toml -s $SELECTION_STRATEGY
+elif [ "${variant}" == "pelletier-cnf" ]; then
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/pelletier_cnf.toml -s $SELECTION_STRATEGY
 elif [ "${variant}" == "casc29" ]; then
   python benchmark/runner.py -d $duration -m casc29 -c fof -s $SELECTION_STRATEGY
   python benchmark/runner.py -d $duration -m casc29 -c fnt -s $SELECTION_STRATEGY
@@ -31,6 +33,7 @@ else
   echo "Given variant '${variant}' has no controlflow!"
   echo "Existing Variants:"
   echo "- Pelletier Problems: 'pelletier'"
+  echo "- Pelletier Problems preprocessed as CNF via eprover: 'pelletier-cnf'"
   echo "- CASC24 FOF/FNT: 'casc24'"
   echo "- CASC29 FOF/FNT: 'casc29'"
   echo "- CASC29 UEQ: 'casc29-ueq'"
