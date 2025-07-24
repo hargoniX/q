@@ -257,18 +257,9 @@ impl<'a, 'b> BackwardRewriter<'a, 'b> {
     }
 
     fn find_candidates(&mut self) {
-        for (rw_rule_lhs, rw_rule_rhs) in self.equation.symm_term_iter() {
-            let ord = rw_rule_lhs.kbo(&rw_rule_rhs, self.state.term_bank);
-            if ord == Some(Ordering::Less) {
-                // if we have a literal lhs = rhs and know lhs < rhs we know we will never rewrite
-                // in this orientation already
-                continue;
-            } else if ord == Some(Ordering::Equal) {
-                // if we know they are ordering equal we know we will never rewrite in any
-                // orientation.
-                break;
-            }
-
+        for (rw_rule_lhs, rw_rule_rhs) in
+            self.equation.oriented_symm_term_iter(self.state.term_bank)
+        {
             for tgt_pos in self
                 .state
                 .subterm_index

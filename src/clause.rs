@@ -5,14 +5,12 @@
 //! - [Clause] for representing disjunctions of literals
 //! - [ClauseSet] for representing sets of clauses
 
-use std::{
-    hash::Hash,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use std::{cell::OnceCell, cmp::Ordering, hash::Hash, rc::Rc, sync::atomic::AtomicUsize};
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
+    kbo::KboOrd,
     pretty_print::{BankPrettyPrint, pretty_print},
     subst::{Substitutable, Substitution},
     term_bank::{Sort, Term, TermBank},
@@ -37,12 +35,24 @@ impl Polarity {
     }
 }
 
+/// The orientation of a literal (if available)
+#[derive(Debug, Clone, Copy)]
+pub enum Orientation {
+    /// The literal is oriented lhs -> rhs
+    Natural,
+    /// The literal is oriented rhs -> lhs
+    Flipped,
+    /// The literal can never be oriented
+    Impossible,
+}
+
 /// A literal represents either an equality or a disequality between two [Term].
 #[derive(Debug, Clone)]
 pub struct Literal {
     lhs: Term,
     rhs: Term,
     pol: Polarity,
+    orientation: Rc<OnceCell<Option<Orientation>>>,
 }
 
 impl PartialEq for Literal {
@@ -75,6 +85,7 @@ impl Literal {
             lhs,
             rhs,
             pol: kind,
+            orientation: Rc::new(OnceCell::new()),
         }
     }
 
@@ -126,12 +137,22 @@ impl Literal {
             lhs: self.lhs,
             rhs: self.rhs,
             pol: self.pol.negate(),
+            orientation: self.orientation,
         }
     }
 
     /// Iterator over both symmetries of a literal.
     pub fn symm_term_iter(&self) -> SymmLitIterator<'_> {
         SymmLitIterator { lit: self, idx: 0 }
+    }
+
+    /// Iterator over the symmetries of a literal permitted by its orientation.
+    pub fn oriented_symm_term_iter(&self, term_bank: &TermBank) -> OrientedSymmLitIterator<'_> {
+        OrientedSymmLitIterator {
+            lit: self,
+            idx: 0,
+            orientation: self.get_orientation(term_bank),
+        }
     }
 
     pub fn is_ground(&self) -> bool {
@@ -141,6 +162,19 @@ impl Literal {
     /// `O(1)` computation for how many function symbols (including constants) occur in the term.
     pub fn function_symbol_count(&self) -> u32 {
         self.get_lhs().function_symbol_count() + self.get_rhs().function_symbol_count()
+    }
+
+    /// Obtain the orientation of the literal (if possible), note that this function will
+    /// cache the orientation value after first computation.
+    pub fn get_orientation(&self, term_bank: &TermBank) -> Option<Orientation> {
+        *self
+            .orientation
+            .get_or_init(|| match self.lhs.kbo(&self.rhs, term_bank) {
+                Some(Ordering::Equal) => Some(Orientation::Impossible),
+                Some(Ordering::Greater) => Some(Orientation::Natural),
+                Some(Ordering::Less) => Some(Orientation::Flipped),
+                None => None,
+            })
     }
 }
 
@@ -155,6 +189,7 @@ impl Substitutable for Literal {
             lhs: new_lhs,
             rhs: new_rhs,
             pol: self.pol,
+            orientation: Rc::new(OnceCell::new()),
         }
     }
 }
@@ -184,6 +219,51 @@ impl Iterator for SymmLitIterator<'_> {
     }
 }
 
+/// Iterator over the symmetries of a literal permitted by its orientation.
+pub struct OrientedSymmLitIterator<'a> {
+    lit: &'a Literal,
+    idx: u8,
+    orientation: Option<Orientation>,
+}
+
+impl Iterator for OrientedSymmLitIterator<'_> {
+    type Item = (Term, Term);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.orientation {
+            Some(Orientation::Impossible) => None,
+            Some(Orientation::Natural) => match self.idx {
+                0 => {
+                    self.idx += 1;
+                    Some((self.lit.get_lhs().clone(), self.lit.get_rhs().clone()))
+                }
+                1 => None,
+                _ => unreachable!(),
+            },
+            Some(Orientation::Flipped) => match self.idx {
+                0 => {
+                    self.idx += 1;
+                    Some((self.lit.get_rhs().clone(), self.lit.get_lhs().clone()))
+                }
+                1 => None,
+                _ => unreachable!(),
+            },
+            None => match self.idx {
+                0 => {
+                    self.idx += 1;
+                    Some((self.lit.get_lhs().clone(), self.lit.get_rhs().clone()))
+                }
+                1 => {
+                    self.idx += 1;
+                    Some((self.lit.get_rhs().clone(), self.lit.get_lhs().clone()))
+                }
+                2 => None,
+                _ => unreachable!(),
+            },
+        }
+    }
+}
+
 /// A unique identifier for a literal within a clause.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LiteralId(pub(crate) usize);
@@ -197,7 +277,7 @@ static CLAUSE_ID_COUNT: AtomicUsize = AtomicUsize::new(0);
 pub struct ClauseId(pub(crate) usize);
 
 fn next_clause_id() -> ClauseId {
-    ClauseId(CLAUSE_ID_COUNT.fetch_add(1, Ordering::SeqCst))
+    ClauseId(CLAUSE_ID_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
 }
 
 #[derive(Debug, Clone)]
