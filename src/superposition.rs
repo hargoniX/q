@@ -8,7 +8,7 @@ use std::{
 use log::info;
 
 use crate::{
-    clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId, Polarity},
+    clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId, Orientation, Polarity},
     clause_queue::ClauseQueue,
     discr_tree::DiscriminationTree,
     feature_vector::FeatureVectorIndex,
@@ -174,15 +174,12 @@ impl SuperpositionState<'_> {
 
             // If the literal is already orientable at this point there is no need to insert
             // both symmetries.
-            match lhs.kbo(rhs, self.term_bank) {
-                // Can never fulfill the criteria
-                Some(Ordering::Equal) => {}
-                // lhs < rhs -> we always want to use the rhs lhs orientation
-                Some(Ordering::Less) => {
+            match literal.get_orientation(self.term_bank) {
+                Some(Orientation::Impossible) => {}
+                Some(Orientation::Flipped) => {
                     self.insert_subterms(rhs, clause_id, literal_id, LiteralSide::Right);
                 }
-                // lhs > rhs -> we always want to use the lhs rhs orientation
-                Some(Ordering::Greater) => {
+                Some(Orientation::Natural) => {
                     self.insert_subterms(lhs, clause_id, literal_id, LiteralSide::Left);
                 }
                 // not orientable -> both orderings could be valid
@@ -202,18 +199,15 @@ impl SuperpositionState<'_> {
             let rhs = lit.get_rhs();
             // If the literal is already orientable at this point there is no need to insert
             // both symmetries.
-            match lhs.kbo(rhs, self.term_bank) {
-                // Can never fulfill the criteria
-                Some(Ordering::Equal) => {}
-                // lhs < rhs -> we always want to rewrite from rhs to lhs
-                Some(Ordering::Less) => {
+            match lit.get_orientation(self.term_bank) {
+                Some(Orientation::Impossible) => {}
+                Some(Orientation::Flipped) => {
                     self.eq_literal_index.insert(
                         rhs,
                         ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Right),
                     );
                 }
-                // rhs < lhs -> we always want to rewrite from lhs to rhs
-                Some(Ordering::Greater) => {
+                Some(Orientation::Natural) => {
                     self.eq_literal_index.insert(
                         lhs,
                         ClauseSetLiteralPosition::new(clause.get_id(), lit_id, LiteralSide::Left),
@@ -239,18 +233,15 @@ impl SuperpositionState<'_> {
             // both symmetries.
             let lhs = lit.get_lhs();
             let rhs = lit.get_rhs();
-            match lhs.kbo(rhs, self.term_bank) {
-                // Can never fulfill the criteria
-                Some(Ordering::Equal) => {}
-                // lhs < rhs -> we always want to rewrite from rhs to lhs
-                Some(Ordering::Less) => {
+            match lit.get_orientation(self.term_bank) {
+                Some(Orientation::Impossible) => {}
+                Some(Orientation::Flipped) => {
                     self.rewriting_index.insert(
                         rhs,
                         UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Right),
                     );
                 }
-                // rhs < lhs -> we always want to rewrite from lhs to rhs
-                Some(Ordering::Greater) => {
+                Some(Orientation::Natural) => {
                     self.rewriting_index.insert(
                         lhs,
                         UnitClauseSetPosition::new(clause.get_id(), LiteralSide::Left),
@@ -517,13 +508,8 @@ impl SuperpositionState<'_> {
             if lit1.is_ne() {
                 continue;
             }
-            for (lit1_lhs, lit1_rhs) in lit1.symm_term_iter() {
-                // Try to orient the equation using stability under substitution
-                let l1_ord = lit1_lhs.kbo(&lit1_rhs, self.term_bank);
-                if l1_ord == Some(Ordering::Less) {
-                    continue;
-                }
-
+            // Try to orient the equation using stability under substitution
+            for (lit1_lhs, lit1_rhs) in lit1.oriented_symm_term_iter(self.term_bank) {
                 // Iterate over all possible unifying subpositions in the active set
                 for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
                     let lit2_lhs_p = candidate_pos.term_at(&self.active);
@@ -567,13 +553,8 @@ impl SuperpositionState<'_> {
         let clause2 = given_clause;
         for (lit2_id, lit2) in clause2.iter() {
             let lit2_pol = lit2.get_pol();
-            for (lit2_lhs, lit2_rhs) in lit2.symm_term_iter() {
-                // Try to orient the equation using stability under substitution
-                let l2_ord = lit2_lhs.kbo(&lit2_rhs, self.term_bank);
-                if l2_ord == Some(Ordering::Less) {
-                    continue;
-                }
-
+            // Try to orient the equation using stability under substitution
+            for (lit2_lhs, lit2_rhs) in lit2.oriented_symm_term_iter(self.term_bank) {
                 // Iterate over all subterms to look for unifying partners in the active set
                 for (subterm, subterm_pos) in lit2_lhs.subterm_iter() {
                     // The term at the subposition must not be a variable
