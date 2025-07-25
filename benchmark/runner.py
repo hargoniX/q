@@ -135,6 +135,8 @@ def test(
         str(duration),
         "--mem-limit",
         str(MEM_LIMIT // 1_000_000),
+        "--avatar",
+        "off",
     ]
     start = datetime.now()
     output = run(
