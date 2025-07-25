@@ -878,19 +878,20 @@ impl From<fof::DefinedTerm<'_>> for Term {
 //%----Defined terms have TPTP specific interpretations"
 //%----<distinct_object>s are different from (but may be equal to) other tokens,
 //%----e.g., "cat" is different from 'cat' and cat. Distinct objects are always interpreted as
-//%----themselves, so if they are different they are unequal, e.g., "Apple" != "Microsoft" is %----implicit.
-// FIXME: unclear if we even want to support those and if this is the right interpretation
+//%----themselves, so if they are different they are unequal, e.g., "Apple" != "Microsoft" is implicit.
 impl From<tptp::common::DefinedTerm<'_>> for Term {
-    fn from(t: tptp::common::DefinedTerm) -> Self {
-        match t {
-            tptp::common::DefinedTerm::Number(n) => {
-                Self::Function(Name::Parsed(n.to_string()), Vec::new())
-            }
-            // These are double-quoted tokens.
-            tptp::common::DefinedTerm::Distinct(n) => {
-                Self::Function(Name::Parsed(n.to_string()), Vec::new())
-            }
-        }
+    fn from(_: tptp::common::DefinedTerm) -> Self {
+        unimplemented!("There is no support for distinct objects")
+        // TODO: this is most definitely not enough to support it
+        //match t {
+        //    tptp::common::DefinedTerm::Number(n) => {
+        //        Self::Function(Name::Parsed(n.to_string()), Vec::new())
+        //    }
+        //    // These are double-quoted tokens.
+        //    tptp::common::DefinedTerm::Distinct(n) => {
+        //        Self::Function(Name::Parsed(n.to_string()), Vec::new())
+        //    }
+        //}
     }
 }
 
