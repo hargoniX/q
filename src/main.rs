@@ -15,7 +15,7 @@ struct Cli {
     /// Path to a tptp problem file
     file: PathBuf,
     /// Literal Selection Algorithm
-    selection_strategy: SelectionStrategy,
+    selection_strategy: Option<SelectionStrategy>,
     /// Duration limit in seconds
     duration: Option<u64>,
     /// Memory limit in MB,
@@ -75,7 +75,8 @@ fn main() {
         clauses,
         &mut term_bank,
         &resource_limit,
-        args.selection_strategy,
+        args.selection_strategy
+            .unwrap_or(SelectionStrategy::FirstNeg),
         gcfg,
     );
     log::warn!("Result superposition: '{result:?}'");

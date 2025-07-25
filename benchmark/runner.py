@@ -34,9 +34,9 @@ class Result(Enum):
 
 
 class SelectionStrategy(Enum):
-    NOSELECTION = "no-selection"
-    SELECTFIRSTNEGLIT = "select-first-neg-lit"
-    SELECTFIRSTMAXIMALNEGLIT = "select-first-maximal-neg-lit-and-all-pos-lits"
+    NOSELECTION = "no-sel"
+    SELECTFIRSTNEGLIT = "first-neg"
+    SELECTFIRSTMAXIMALNEGLIT = "zipper-sel"
 
 
 @dataclass

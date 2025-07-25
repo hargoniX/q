@@ -146,6 +146,41 @@ fn maximality_check(
     )
 }
 
+// Eligiblity for Resolution: maximality check for selected literal
+// Returns true if the literal is maximal in the intersection of the selection
+// with either the positive or negative literalset of the clause with the mgu applied
+fn maximal_in_selection(
+    clause: &Clause,
+    check_lit_id: LiteralId,
+    subst: &Substitution,
+    selection_strategy: SelectionStrategy,
+    term_bank: &TermBank,
+) -> bool {
+    let check_lit = clause
+        .get_literal(check_lit_id)
+        .clone()
+        .subst_with(subst, term_bank);
+    let mut is_pos_max = true;
+    let mut is_neg_max = true;
+    // Iterate through sel(C) and keep track if there is a positive or negative
+    // literal which is greater than check_lit
+    for (_, other_lit) in clause
+        .eligible_iter(selection_strategy, term_bank)
+        .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id)
+    {
+        let other_lit = other_lit.clone().subst_with(subst, term_bank);
+        if let Some(Ordering::Greater) = check_lit.kbo(&other_lit, term_bank) {
+            // Abort: we are not maximal for the intersection of that polarity
+            // TODO: maybe implement through streams with some early cutoff
+            match other_lit.get_pol() {
+                Polarity::Eq => is_pos_max = false,
+                Polarity::Ne => is_neg_max = false,
+            }
+        }
+    }
+    is_pos_max || is_neg_max
+}
+
 impl SuperpositionState<'_> {
     fn insert_subterms(
         &mut self,
@@ -333,7 +368,6 @@ impl SuperpositionState<'_> {
             "ERes working clause: {}",
             pretty_print(clause, self.term_bank)
         );
-        let has_selection = clause.has_selection(self.selection_strategy, self.term_bank);
         for (literal_id, literal) in clause.eligible_iter(self.selection_strategy, self.term_bank) {
             // Condition: the literal must be an inequality
             if literal.is_eq() {
@@ -342,27 +376,35 @@ impl SuperpositionState<'_> {
 
             // Condition 1: the lhs and rhs of the literal must unify
             if let Some(subst) = literal.get_lhs().unify(literal.get_rhs(), self.term_bank) {
-                if has_selection {
-                    // Maximality check is irrelevant for selections with only one element
-                    // TODO: change this for different selection modes
-                    let filtered_literals = clause
-                        .iter()
-                        .filter(|(id, _)| *id != literal_id)
-                        .map(|(_, l)| l.clone())
-                        .collect();
-                    let new_clause =
-                        Clause::new(filtered_literals).subst_with(&subst, self.term_bank);
-                    info!(
-                        "ERes derived clause: {}",
-                        pretty_print(&new_clause, self.term_bank)
-                    );
-                    self.proof_log.log_clause(
-                        &new_clause,
-                        ProofRule::EqualityResolution,
-                        &[clause.get_id()],
+                if clause.has_selection(self.selection_strategy, self.term_bank) {
+                    // Condition 2: non-empty selection: has to be maximal in the
+                    // mgu applied intersection of the selection with either C- or C+
+                    if maximal_in_selection(
+                        clause,
+                        literal_id,
+                        &subst,
+                        self.selection_strategy,
                         self.term_bank,
-                    );
-                    acc.push(new_clause);
+                    ) {
+                        let filtered_literals = clause
+                            .iter()
+                            .filter(|(id, _)| *id != literal_id)
+                            .map(|(_, l)| l.clone())
+                            .collect();
+                        let new_clause =
+                            Clause::new(filtered_literals).subst_with(&subst, self.term_bank);
+                        info!(
+                            "ERes derived clause: {}",
+                            pretty_print(&new_clause, self.term_bank)
+                        );
+                        self.proof_log.log_clause(
+                            &new_clause,
+                            ProofRule::EqualityResolution,
+                            &[clause.get_id()],
+                            self.term_bank,
+                        );
+                        acc.push(new_clause);
+                    }
                 } else {
                     // Condition 2: The literal must be maximal in the clause with the mgu applied
                     if let Some(new_literals) =
@@ -494,23 +536,16 @@ impl SuperpositionState<'_> {
         }
 
         if let Some(mut new_literals1) = maximality_check(clause1, lit1_id, subst, self.term_bank) {
-            // Non-empty selection: has to be maximal either in the intersection with C- or C+
-            // TODO: Implement the currently irrelevant Maximality check is irrelevant
-            // for selections with only one element
             if clause2.has_selection(self.selection_strategy, self.term_bank) {
-                let sel_literal = clause2
-                    .eligible_iter(self.selection_strategy, self.term_bank)
-                    .next()
-                    .unwrap()
-                    .1
-                    .clone()
-                    .subst_with(subst, self.term_bank);
-                let check_lit = clause2
-                    .get_literal(lit2_id)
-                    .clone()
-                    .subst_with(subst, self.term_bank);
-                // TODO: this has to be != Less with maximality
-                if check_lit.kbo(&sel_literal, self.term_bank) == Some(Ordering::Equal) {
+                // Non-empty selection: has to be maximal in the mgu applied intersection of the
+                // selection with either C- or C+
+                if maximal_in_selection(
+                    clause2,
+                    lit2_id,
+                    subst,
+                    self.selection_strategy,
+                    self.term_bank,
+                ) {
                     let mut new_literals2 = clause2
                         .iter()
                         .filter(|(id, _)| *id != lit2_id)
@@ -887,7 +922,7 @@ mod test {
                 vec![clause],
                 &mut term_bank,
                 &Default::default(),
-                SelectionStrategy::SelectFirstMaximalNegLitAndAllPosLits,
+                SelectionStrategy::ZipperSel,
                 None,
             ),
             SuperpositionResult::ProofFound
@@ -926,7 +961,7 @@ mod test {
                 vec![clause1, clause2, clause3],
                 &mut term_bank,
                 &Default::default(),
-                SelectionStrategy::SelectFirstMaximalNegLitAndAllPosLits,
+                SelectionStrategy::ZipperSel,
                 None,
             ),
             SuperpositionResult::ProofFound

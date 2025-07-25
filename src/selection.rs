@@ -9,17 +9,17 @@ use crate::{
     term_bank::{Sort, TermBank},
 };
 
-const FILTER_PROPS: bool = true;
+const FILTER_PROPS: bool = false;
 
 #[derive(Debug, Clone, Copy, clap::ValueEnum)]
 pub enum SelectionStrategy {
     /// Never select a literal
-    NoSelection,
+    NoSel,
     /// Select the first negative literal
-    SelectFirstNegLit,
+    FirstNeg,
     /// Based on Zipperposition's max_goal selection function with strict set to false:
     /// Select the first maximal negative literal and all positive literals
-    SelectFirstMaximalNegLitAndAllPosLits,
+    ZipperSel,
 }
 
 fn is_propositional(lit: &Literal, term_bank: &TermBank) -> bool {
@@ -75,9 +75,9 @@ pub fn select_literals(
     term_bank: &TermBank,
 ) -> BitVec {
     match strategy {
-        SelectionStrategy::NoSelection => bitvec![0; clause.len()],
-        SelectionStrategy::SelectFirstNegLit => select_first_neg_lit(clause, term_bank),
-        SelectionStrategy::SelectFirstMaximalNegLitAndAllPosLits => {
+        SelectionStrategy::NoSel => bitvec![0; clause.len()],
+        SelectionStrategy::FirstNeg => select_first_neg_lit(clause, term_bank),
+        SelectionStrategy::ZipperSel => {
             select_first_max_neg_lit_and_all_pos_lits(clause, term_bank)
         }
     }
