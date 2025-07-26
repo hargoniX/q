@@ -10,7 +10,7 @@ from multiprocessing import Pool
 from datetime import datetime
 
 EXCLUDE_LIST = []
-NUM_THREADS = 16
+NUM_THREADS = 128
 # This is a limit per thread!
 MEM_LIMIT = 10**9
 
@@ -125,7 +125,7 @@ def test(
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
     cmd = [
-        "target/release/qprover",
+        "../qprover",
         problem.filename,
         selection_strategy.value,
         str(duration),
@@ -238,7 +238,7 @@ def main():
         universal_newlines=True,
     ).stdout.rstrip()
     os.chdir(root_dir)
-    build()
+    # build()
     variant = args.mode
     if variant is Variant.PELLETIER:
         assert args.file is not None, "No config file given for pelletier variant!"
