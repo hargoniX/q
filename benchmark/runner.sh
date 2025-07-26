@@ -6,7 +6,9 @@ REPO_ROOT=`git rev-parse --show-toplevel`
 
 pushd $REPO_ROOT > /dev/null
 if [ "${variant}" == "pelletier" ]; then
-  python benchmark/runner.py -d $duration -m pelletier -f benchmark/pelletier.toml -s $SELECTION_STRATEGY
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/pelletier.toml -s zipper-sel
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/pelletier.toml -s first-neg
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/pelletier.toml -s no-sel
 elif [ "${variant}" == "casc29" ]; then
   python benchmark/runner.py -d $duration -m casc29 -c fof -s $SELECTION_STRATEGY
   python benchmark/runner.py -d $duration -m casc29 -c fnt -s $SELECTION_STRATEGY
@@ -20,7 +22,9 @@ elif [ "${variant}" == "countersat" ]; then
 elif [ "${variant}" == "sat" ]; then
   python benchmark/runner.py -d $duration -m pelletier -f benchmark/satisfiable.toml -s $SELECTION_STRATEGY
 elif [ "${variant}" == "theorems" ]; then
-  python benchmark/runner.py -d $duration -m pelletier -f benchmark/theorems.toml -s $SELECTION_STRATEGY
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/theorems.toml -s zipper-sel
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/theorems.toml -s first-neg
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/theorems.toml -s no-sel
 elif [ "${variant}" == "unsat" ]; then
   python benchmark/runner.py -d $duration -m pelletier -f benchmark/unsat.toml -s $SELECTION_STRATEGY
 else
