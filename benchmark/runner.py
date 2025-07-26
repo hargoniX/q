@@ -10,7 +10,7 @@ from multiprocessing import Pool
 from datetime import datetime
 
 EXCLUDE_LIST = []
-NUM_THREADS = 96
+NUM_THREADS = 128
 # This is a limit per thread!
 MEM_LIMIT = 10**9
 
