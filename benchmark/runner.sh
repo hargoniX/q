@@ -21,8 +21,6 @@ elif [ "${variant}" == "sat" ]; then
   python benchmark/runner.py -d $duration -m pelletier -f benchmark/satisfiable.toml -s $SELECTION_STRATEGY
 elif [ "${variant}" == "theorems" ]; then
   python benchmark/runner.py -d $duration -m pelletier -f benchmark/theorems.toml -s $SELECTION_STRATEGY
-elif [ "${variant}" == "theorems-easy" ]; then
-  python benchmark/runner.py -d $duration -m pelletier -f benchmark/theorems-easy.toml -s $SELECTION_STRATEGY
 elif [ "${variant}" == "unsat" ]; then
   python benchmark/runner.py -d $duration -m pelletier -f benchmark/unsat.toml -s $SELECTION_STRATEGY
 else

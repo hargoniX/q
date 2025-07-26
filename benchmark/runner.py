@@ -277,13 +277,11 @@ def main():
         timeout_problems.extend(results.timeout_problems)
         unknown_problems.extend(results.unknown_problems)
 
-    # TODO: when we have landed on sap4 and benchmarking everything all the time becomes trivial,
-    # we should include the selection strategy within the filenames
     if args.category is not None:
-        out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}"
+        out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}_{args.selection_strategy.value}"
     else:
         filename_wo_ext = os.path.splitext(os.path.basename(args.file))[0]
-        out_file = f"benchmark/{filename_wo_ext}_{args.duration}"
+        out_file = f"benchmark/{filename_wo_ext}_{args.duration}_{args.selection_strategy.value}"
     summary_file = f"{out_file}.summary"
     print(80 * "-")
     summary_str = f"""There are:

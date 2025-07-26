@@ -1,0 +1,12 @@
+mv contradictory_1.csv            contradictory_1_no-sel.csv
+mv contradictory_1.summary        contradictory_1_no-sel.summary
+mv counter_satisfiable_1.csv      counter_satisfiable_1_no-sel.csv
+mv counter_satisfiable_1.summary  counter_satisfiable_1_no-sel.summary
+mv satisfiable_1.csv              satisfiable_1_no-sel.csv
+mv satisfiable_1.summary          satisfiable_1_no-sel.summary
+mv theorems_1.csv                 theorems_1_no-sel.csv
+mv theorems_1.summary             theorems_1_no-sel.summary
+mv theorems-easy_1.csv            theorems-easy_1_no-sel.csv
+mv theorems-easy_1.summary        theorems-easy_1_no-sel.summary
+mv unsat_1.csv                    unsat_1_no-sel.csv
+mv unsat_1.summary                unsat_1_no-sel.summary
