@@ -146,8 +146,9 @@ fn maximality_check(
     )
 }
 
-// Eligiblity for Resolution: maximality check for selected literal
-// Returns true if the literal is maximal in the intersection of the selection
+// Eligiblity for Resolution Check given a non-empty selection:
+// Returns the substituted and filtered literals,
+// if the given literal is maximal in the intersection of the selection
 // with either the positive or negative literalset of the clause with the mgu applied
 fn eligible_resolution_with_selection(
     clause: &Clause,
@@ -155,32 +156,45 @@ fn eligible_resolution_with_selection(
     subst: &Substitution,
     selection_strategy: SelectionStrategy,
     term_bank: &TermBank,
-) -> bool {
+) -> Option<Vec<Literal>> {
+    let mut new_literals = Vec::with_capacity(clause.len());
     let check_lit = clause
         .get_literal(check_lit_id)
         .clone()
         .subst_with(subst, term_bank);
     let mut is_pos_max = true;
     let mut is_neg_max = true;
-    // Iterate through sel(C) and keep track if there is a positive or negative
-    // literal which is greater than check_lit
-    for (_, other_lit) in clause
+    // Iterate through the full clause and build the filtered, subst new literals
+    // on the fly, while keeping track if there is a positive or negative literal
+    // which is greater than check_lit for all of the literals in sel(C)
+    let mut sel_literals = clause
         .eligible_iter(selection_strategy, term_bank)
+        .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id);
+    let mut sel_literal = sel_literals.next();
+    for (other_lit_id, other_lit) in clause
+        .iter()
         .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id)
     {
         let other_lit = other_lit.clone().subst_with(subst, term_bank);
-        if let Some(Ordering::Greater) = check_lit.kbo(&other_lit, term_bank) {
-            // Abort: we are not maximal for the intersection of that polarity
-            match other_lit.get_pol() {
-                Polarity::Eq => is_pos_max = false,
-                Polarity::Ne => is_neg_max = false,
-            }
-            if !is_pos_max && !is_neg_max {
-                return false;
+        if let Some((sel_id, _)) = sel_literal {
+            if other_lit_id == sel_id {
+                if let Some(Ordering::Greater) = check_lit.kbo(&other_lit, term_bank) {
+                    // Abort: we are not maximal for the intersection of that polarity
+                    match other_lit.get_pol() {
+                        Polarity::Eq => is_pos_max = false,
+                        Polarity::Ne => is_neg_max = false,
+                    }
+                    if !is_pos_max && !is_neg_max {
+                        return None;
+                    }
+                }
+                sel_literal = sel_literals.next();
             }
         }
+        new_literals.push(other_lit);
     }
-    true
+    assert!(sel_literal.is_none());
+    Some(new_literals)
 }
 
 impl SuperpositionState<'_> {
@@ -381,20 +395,14 @@ impl SuperpositionState<'_> {
                 if clause.has_selection(self.selection_strategy, self.term_bank) {
                     // Condition 2: non-empty selection: has to be maximal in the
                     // mgu applied intersection of the selection with either C- or C+
-                    if eligible_resolution_with_selection(
+                    if let Some(new_literals) = eligible_resolution_with_selection(
                         clause,
                         literal_id,
                         &subst,
                         self.selection_strategy,
                         self.term_bank,
                     ) {
-                        let filtered_literals = clause
-                            .iter()
-                            .filter(|(id, _)| *id != literal_id)
-                            .map(|(_, l)| l.clone())
-                            .map(|l| l.subst_with(&subst, self.term_bank))
-                            .collect();
-                        let new_clause = Clause::new(filtered_literals);
+                        let new_clause = Clause::new(new_literals);
                         info!(
                             "ERes derived clause: {}",
                             pretty_print(&new_clause, self.term_bank)
@@ -548,19 +556,13 @@ impl SuperpositionState<'_> {
             if clause2.has_selection(self.selection_strategy, self.term_bank) {
                 // Non-empty selection: has to be maximal in the mgu applied intersection of the
                 // selection with either C- or C+
-                if eligible_resolution_with_selection(
+                if let Some(mut new_literals2) = eligible_resolution_with_selection(
                     clause2,
                     lit2_id,
                     subst,
                     self.selection_strategy,
                     self.term_bank,
                 ) {
-                    let mut new_literals2 = clause2
-                        .iter()
-                        .filter(|(id, _)| *id != lit2_id)
-                        .map(|(_, l)| l.clone())
-                        .map(|l| l.subst_with(subst, self.term_bank))
-                        .collect();
                     new_literals1.append(&mut new_literals2);
                     let new_rhs = l2_rhs_subst;
                     let new_lhs = subterm_pos
