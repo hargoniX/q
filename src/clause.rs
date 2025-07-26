@@ -452,6 +452,18 @@ impl Clause {
             .filter(|(id, _)| vec.not_any() || *vec.get(id.0).unwrap())
     }
 
+    // XXX: strategy only gets respected the first time, we could add an assertion that it never
+    // changes
+    pub fn non_eligible_iter<'a>(
+        &'a self,
+        strategy: SelectionStrategy,
+        term_bank: &TermBank,
+    ) -> impl Iterator<Item = (LiteralId, &'a Literal)> {
+        let vec = self.get_selected(strategy, term_bank);
+        self.iter()
+            .filter(|(id, _)| vec.not_any() || !*vec.get(id.0).unwrap())
+    }
+
     pub fn has_selection(&self, strategy: SelectionStrategy, term_bank: &TermBank) -> bool {
         self.get_selected(strategy, term_bank).any()
     }

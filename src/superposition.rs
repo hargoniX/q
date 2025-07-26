@@ -146,39 +146,54 @@ fn maximality_check(
     )
 }
 
-// Eligiblity for Resolution: maximality check for selected literal
-// Returns true if the literal is maximal in the intersection of the selection
+// Eligiblity for Resolution Check given a non-empty selection:
+// Returns the substituted and filtered literals,
+// if the given literal is maximal in the intersection of the selection
 // with either the positive or negative literalset of the clause with the mgu applied
-fn maximal_in_selection(
+fn eligible_resolution_with_selection(
     clause: &Clause,
     check_lit_id: LiteralId,
     subst: &Substitution,
     selection_strategy: SelectionStrategy,
     term_bank: &TermBank,
-) -> bool {
+) -> Option<Vec<Literal>> {
+    let mut new_literals = Vec::with_capacity(clause.len());
     let check_lit = clause
         .get_literal(check_lit_id)
         .clone()
         .subst_with(subst, term_bank);
     let mut is_pos_max = true;
     let mut is_neg_max = true;
-    // Iterate through sel(C) and keep track if there is a positive or negative
-    // literal which is greater than check_lit
+    // Iterate through the selection and keep track if there is a positive
+    // or negative literal which is greater than check_lit
     for (_, other_lit) in clause
         .eligible_iter(selection_strategy, term_bank)
         .filter(|(other_lit_id, _)| check_lit_id != *other_lit_id)
     {
         let other_lit = other_lit.clone().subst_with(subst, term_bank);
-        if let Some(Ordering::Greater) = check_lit.kbo(&other_lit, term_bank) {
-            // Abort: we are not maximal for the intersection of that polarity
-            // TODO: maybe implement through streams with some early cutoff
-            match other_lit.get_pol() {
-                Polarity::Eq => is_pos_max = false,
-                Polarity::Ne => is_neg_max = false,
+        // Only compute the KBO if the polarity can make the maximality check fail
+        if (is_pos_max && other_lit.get_pol() == Polarity::Eq)
+            || (is_neg_max && other_lit.get_pol() == Polarity::Ne)
+        {
+            if let Some(Ordering::Greater) = check_lit.kbo(&other_lit, term_bank) {
+                // Abort: we are not maximal for the intersection of that polarity
+                match other_lit.get_pol() {
+                    Polarity::Eq => is_pos_max = false,
+                    Polarity::Ne => is_neg_max = false,
+                }
+                if !is_pos_max && !is_neg_max {
+                    return None;
+                }
             }
         }
+        new_literals.push(other_lit);
     }
-    is_pos_max || is_neg_max
+    // On success add the remaining literals, which were not part of the selection
+    for (_, other_lit) in clause.non_eligible_iter(selection_strategy, term_bank) {
+        let other_lit = other_lit.clone().subst_with(subst, term_bank);
+        new_literals.push(other_lit);
+    }
+    Some(new_literals)
 }
 
 impl SuperpositionState<'_> {
@@ -379,20 +394,14 @@ impl SuperpositionState<'_> {
                 if clause.has_selection(self.selection_strategy, self.term_bank) {
                     // Condition 2: non-empty selection: has to be maximal in the
                     // mgu applied intersection of the selection with either C- or C+
-                    if maximal_in_selection(
+                    if let Some(new_literals) = eligible_resolution_with_selection(
                         clause,
                         literal_id,
                         &subst,
                         self.selection_strategy,
                         self.term_bank,
                     ) {
-                        let filtered_literals = clause
-                            .iter()
-                            .filter(|(id, _)| *id != literal_id)
-                            .map(|(_, l)| l.clone())
-                            .collect();
-                        let new_clause =
-                            Clause::new(filtered_literals).subst_with(&subst, self.term_bank);
+                        let new_clause = Clause::new(new_literals);
                         info!(
                             "ERes derived clause: {}",
                             pretty_print(&new_clause, self.term_bank)
@@ -429,6 +438,13 @@ impl SuperpositionState<'_> {
     }
 
     fn equality_factoring(&mut self, clause: &Clause, acc: &mut Vec<Clause>) {
+        if clause.has_selection(self.selection_strategy, self.term_bank) {
+            info!(
+                "EFact working clause skipped due to selection: {}",
+                pretty_print(clause, self.term_bank)
+            );
+            return;
+        }
         info!(
             "EFact working clause: {}",
             pretty_print(clause, self.term_bank)
@@ -539,19 +555,13 @@ impl SuperpositionState<'_> {
             if clause2.has_selection(self.selection_strategy, self.term_bank) {
                 // Non-empty selection: has to be maximal in the mgu applied intersection of the
                 // selection with either C- or C+
-                if maximal_in_selection(
+                if let Some(mut new_literals2) = eligible_resolution_with_selection(
                     clause2,
                     lit2_id,
                     subst,
                     self.selection_strategy,
                     self.term_bank,
                 ) {
-                    let mut new_literals2 = clause2
-                        .iter()
-                        .filter(|(id, _)| *id != lit2_id)
-                        .map(|(_, l)| l.clone())
-                        .map(|l| l.subst_with(subst, self.term_bank))
-                        .collect();
                     new_literals1.append(&mut new_literals2);
                     let new_rhs = l2_rhs_subst;
                     let new_lhs = subterm_pos
@@ -613,13 +623,8 @@ impl SuperpositionState<'_> {
                 if lit1.is_ne() {
                     continue;
                 }
+                // Try to orient the equation using stability under substitution
                 for (lit1_lhs, lit1_rhs) in lit1.oriented_symm_term_iter(self.term_bank) {
-                    // Try to orient the equation using stability under substitution
-                    let l1_ord = lit1_lhs.kbo(&lit1_rhs, self.term_bank);
-                    if l1_ord == Some(Ordering::Less) {
-                        continue;
-                    }
-
                     // Iterate over all possible unifying subpositions in the active set
                     for candidate_pos in self.subterm_index.get_unification_candidates(&lit1_lhs) {
                         let lit2_lhs_p = candidate_pos.term_at(&self.active);
@@ -714,9 +719,7 @@ impl SuperpositionState<'_> {
     fn generate(&mut self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
         self.equality_resolution(&clause, &mut acc);
-        if !clause.has_selection(self.selection_strategy, self.term_bank) {
-            self.equality_factoring(&clause, &mut acc);
-        }
+        self.equality_factoring(&clause, &mut acc);
         self.superposition(&clause, &mut acc);
         acc
     }
