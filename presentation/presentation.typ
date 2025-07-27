@@ -213,7 +213,7 @@ Uses the rules and side conditions from @braniac:
 - configurable literal selection:
   - none
   - first negative literal
-  - all positive literals and first negative maximal literal (zipperposition default)
+  - all positive literals and first negative maximal literal (@zipperposition default)
 
 == Simplifications and Tautology Check
 For simplification rules:
@@ -232,7 +232,7 @@ For tautology checking:
 Heuristic based on @subsume:
 - order literals to work likely harder ones earlier
 - afterwards bruteforce using an efficient backtracking
-  scheme like in zipperposition
+  scheme like in @zipperposition
 - uses a feature vector index for forward/backward substitution
 
 = Performance
