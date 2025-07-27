@@ -33,6 +33,12 @@ class Result(Enum):
     UNKNOWN = "Unknown()"
 
 
+class SelectionStrategy(Enum):
+    NOSELECTION = "no-sel"
+    SELECTFIRSTNEGLIT = "first-neg"
+    SELECTFIRSTMAXIMALNEGLIT = "zipper-sel"
+
+
 @dataclass
 class Problem:
     filename: str
@@ -112,13 +118,16 @@ def get_problems_casc(variant: Variant, category: CASCCategory) -> List[Problem]
     return problems
 
 
-def test(problem: Problem, duration: int) -> Problem:
+def test(
+    problem: Problem, duration: int, selection_strategy: SelectionStrategy
+) -> Problem:
     env = os.environ.copy()
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
     cmd = [
         "target/release/qprover",
         problem.filename,
+        selection_strategy.value,
         str(duration),
         str(MEM_LIMIT // 1_000_000),
     ]
@@ -161,10 +170,11 @@ def go(
     problems: List[Problem],
     duration: int,
     results: ResultLists,
+    selection_strategy: SelectionStrategy,
 ) -> ResultLists:
     for problem in problems:
         print(f"Running {problem.filename}")
-        problem = test(problem, duration)
+        problem = test(problem, duration, selection_strategy)
         if problem.result is problem.expected_result:
             results.matching_problems.append(problem)
             print(
@@ -213,6 +223,13 @@ def main():
         choices=list(CASCCategory),
         help="Lowercase!",
     )
+    parser.add_argument(
+        "-s",
+        "--selection-strategy",
+        type=SelectionStrategy,
+        choices=list(SelectionStrategy),
+        help="Lowercase!",
+    )
     args = parser.parse_args()
     root_dir = run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -244,6 +261,7 @@ def main():
                     problems[i::NUM_THREADS],
                     args.duration,
                     ResultLists([], [], [], []),
+                    args.selection_strategy,
                 ],
             )
         )
@@ -260,10 +278,10 @@ def main():
         unknown_problems.extend(results.unknown_problems)
 
     if args.category is not None:
-        out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}"
+        out_file = f"benchmark/{variant.value}_{args.category.value}_{args.duration}_{args.selection_strategy.value}"
     else:
         filename_wo_ext = os.path.splitext(os.path.basename(args.file))[0]
-        out_file = f"benchmark/{filename_wo_ext}_{args.duration}"
+        out_file = f"benchmark/{filename_wo_ext}_{args.duration}_{args.selection_strategy.value}"
     summary_file = f"{out_file}.summary"
     print(80 * "-")
     summary_str = f"""There are:

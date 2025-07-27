@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from enum import Enum
 from dataclasses import dataclass
 
-from runner import CASCCategory, Variant
+from runner import CASCCategory, SelectionStrategy, Variant
 
 
 class Mode(Enum):
@@ -33,46 +33,55 @@ class Experiment:
 
 def plot_cumulative(variant: Variant, duration: int, filename: Optional[str]):
     fig, ax = plt.subplots()
-    if variant is Variant.PELLETIER:
-        basename = os.path.splitext(os.path.basename(filename))[0]
-        experiments = [
-            Experiment(
-                variant=variant, duration=duration, category=None, basename=basename
-            )
-        ]
-    else:
-        experiments = [
-            Experiment(
-                variant=variant, duration=duration, category=category, basename=None
-            )
-            for category in [CASCCategory.FOF, CASCCategory.FNT]
-        ]
-
-    for experiment in experiments:
-        df = pandas.read_csv(f"{experiment.to_filename()}.csv")
-        times = []
-        for _, row in df.iterrows():
-            if row["expected_result"] == row["result"]:
-                times.append(row["duration"])
-        if experiment.variant is Variant.PELLETIER:
-            label = experiment.basename
+    for sel_strategy in SelectionStrategy:
+        if variant is Variant.PELLETIER:
+            basename = os.path.splitext(os.path.basename(filename))[0]
+            experiments = [
+                Experiment(
+                    variant=variant, duration=duration, category=None, basename=basename
+                )
+            ]
         else:
-            label = f"{experiment.category}"
-        times.sort()
-        ax.plot(
-            times,
-            [i for i in range(1, len(times) + 1)],
-            marker="o",
-            fillstyle="none",
-            label=label,
-        )
+            experiments = [
+                Experiment(
+                    variant=variant, duration=duration, category=category, basename=None
+                )
+                for category in [CASCCategory.FOF, CASCCategory.FNT]
+            ]
+
+        for experiment in experiments:
+            df = pandas.read_csv(f"{experiment.to_filename()}_{sel_strategy.value}.csv")
+            times = []
+            for _, row in df.iterrows():
+                if row["expected_result"] == row["result"]:
+                    times.append(row["duration"])
+            if experiment.variant is Variant.PELLETIER:
+                label = f"{sel_strategy.value}"
+            else:
+                label = f"{experiment.category.value}: {sel_strategy.value}"
+            if sel_strategy is SelectionStrategy.NOSELECTION:
+                marker = "o"
+            elif sel_strategy is SelectionStrategy.SELECTFIRSTNEGLIT:
+                marker = "x"
+            elif sel_strategy is SelectionStrategy.SELECTFIRSTMAXIMALNEGLIT:
+                marker = "^"
+            else:
+                assert False
+            times.sort()
+            ax.plot(
+                times,
+                [i for i in range(1, len(times) + 1)],
+                marker=marker,
+                fillstyle="none",
+                label=label,
+            )
 
     ax.grid(True, linestyle="--")
     ax.set_xlabel("Duration [s]")
     ax.set_ylabel("Solved Problems")
     ax.set_xlim(xmin=0, xmax=duration)
-    # ax.set_xscale("log")
-    ax.legend(loc="lower right")
+    # ax.set_yscale("log")
+    ax.legend(loc="center right")
     plt.tight_layout()
 
     first_experiment = experiments[0]
