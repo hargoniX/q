@@ -127,7 +127,6 @@ def test(
     cmd = [
         "../eprover",
         problem.filename,
-        "--auto",
         f"--cpu-limit={str(duration)}",
         f"--memory-limit={str(MEM_LIMIT // 1_000_000)}",
     ]
