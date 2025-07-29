@@ -12,6 +12,7 @@ from runner import CASCCategory, SelectionStrategy, Variant
 
 class Mode(Enum):
     TIME = "time"  # plot the total runtime and cumulative problems solved
+    COMP = "comp"  # compare first-neg qprover with e and zipper
 
 
 @dataclass
@@ -31,26 +32,43 @@ class Experiment:
             return f"{self.basename}_{self.duration}"
 
 
-def plot_cumulative(variant: Variant, duration: int, filename: Optional[str]):
+def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
     fig, ax = plt.subplots()
-    for sel_strategy in SelectionStrategy:
+    if mode is Mode.TIME:
+        strategies = SelectionStrategy
+    else:
+        strategies = [SelectionStrategy.SELECTFIRSTNEGLIT]
+
+    for sel_strategy in strategies:
         if variant is Variant.PELLETIER:
             basename = os.path.splitext(os.path.basename(filename))[0]
             experiments = [
                 Experiment(
-                    variant=variant, duration=duration, category=None, basename=basename
+                    variant=variant,
+                    duration=duration,
+                    category=None,
+                    basename=basename,
                 )
             ]
         else:
             experiments = [
                 Experiment(
-                    variant=variant, duration=duration, category=category, basename=None
+                    variant=variant,
+                    duration=duration,
+                    category=category,
+                    basename=None,
                 )
                 for category in [CASCCategory.FOF, CASCCategory.FNT]
             ]
 
         for experiment in experiments:
             df = pandas.read_csv(f"{experiment.to_filename()}_{sel_strategy.value}.csv")
+            if experiment.category is CASCCategory.FOF:
+                fof_problem_size = len(df)
+            elif experiment.category is CASCCategory.FNT:
+                fnt_problem_size = len(df)
+            else:
+                problem_size = len(df)
             times = []
             for _, row in df.iterrows():
                 if row["expected_result"] == row["result"]:
@@ -58,7 +76,7 @@ def plot_cumulative(variant: Variant, duration: int, filename: Optional[str]):
             if experiment.variant is Variant.PELLETIER:
                 label = f"{sel_strategy.value}"
             else:
-                label = f"{experiment.category.value}: {sel_strategy.value}"
+                label = f"{experiment.category.value.upper()}: {sel_strategy.value}"
             if sel_strategy is SelectionStrategy.NOSELECTION:
                 marker = "o"
             elif sel_strategy is SelectionStrategy.SELECTFIRSTNEGLIT:
@@ -76,26 +94,74 @@ def plot_cumulative(variant: Variant, duration: int, filename: Optional[str]):
                 label=label,
             )
 
+    if mode is Mode.COMP:
+        for idx, prefix in enumerate(
+            [
+                "e",
+                "e_auto",
+                "zipper_no_simpl",
+                "zipper_avatar",
+            ]
+        ):
+            for experiment in experiments:
+                df = pandas.read_csv(f"{prefix}_{experiment.to_filename()}.csv")
+                if experiment.category is CASCCategory.FOF:
+                    fof_problem_size = len(df)
+                elif experiment.category is CASCCategory.FNT:
+                    fnt_problem_size = len(df)
+                else:
+                    problem_size = len(df)
+                times = []
+                for _, row in df.iterrows():
+                    if row["expected_result"] == row["result"]:
+                        times.append(row["duration"])
+                if experiment.variant is Variant.PELLETIER:
+                    label = prefix
+                else:
+                    label = f"{experiment.category.value.upper()}: {prefix}"
+                if idx == 0:
+                    marker = "v"
+                elif idx == 1:
+                    marker = "^"
+                elif idx == 2:
+                    marker = "o"
+                elif idx == 3:
+                    marker = "."
+                else:
+                    assert False
+                times.sort()
+                ax.plot(
+                    times,
+                    [i for i in range(1, len(times) + 1)],
+                    marker=marker,
+                    fillstyle="none",
+                    label=label,
+                )
+
     ax.grid(True, linestyle="--")
     ax.set_xlabel("Duration [s]")
     ax.set_ylabel("Solved Problems")
     ax.set_xlim(xmin=0, xmax=duration)
     # ax.set_yscale("log")
-    ax.legend(loc="center right")
+    if variant is Variant.PELLETIER:
+        ax.legend(loc="lower right")
+    else:
+        ax.legend(loc="center right")
     plt.tight_layout()
 
     first_experiment = experiments[0]
     basename = first_experiment.basename
+    mode_name = "cumulative" if mode is Mode.TIME else "comp"
     if basename is not None:
-        name = f"cumulative_{basename}.png"
+        name = f"../presentation/{mode_name}_{basename}.png"
         if basename == "pelletier":
-            title_var = basename
+            title_var = "Pelletier Problems"
         else:
-            title_var = f"TPTP Full: {basename}"
+            title_var = f"TPTP '{basename}' ({problem_size} problems)"
     else:
-        name = f"cumulative_{first_experiment.variant.value}.png"
-        title_var = first_experiment.variant.value
-    ax.set_title(f"Cumulative problems solved at {title_var}")
+        name = f"../presentation/{mode_name}_{first_experiment.variant.value}.png"
+        title_var = f"{first_experiment.variant.value.upper()} ({fof_problem_size} FOF, {fnt_problem_size} FNT)"
+    ax.set_title(f"{title_var} w/ 1GB mem limit")
     fig.savefig(name, bbox_inches="tight")
     plt.close()
 
@@ -131,8 +197,8 @@ def main():
     )
     args = parser.parse_args()
     variant = Variant(args.variant)
-    if args.mode is Mode.TIME:
-        plot_cumulative(variant, int(args.duration), args.file)
+    mode = Mode(args.mode)
+    plot(mode, variant, int(args.duration), args.file)
 
 
 if __name__ == "__main__":

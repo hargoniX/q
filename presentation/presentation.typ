@@ -305,7 +305,7 @@ Initially used the pelletier problems, which are easy but are very broad.
 #grid(
   columns: 2,
   [#figure(
-    image("cumulative_theorems.png", width: 100%),
+    image("comp_theorems.png", width: 100%),
   ) <comparison_theorems>],
   [#figure(
     image("cumulative_counter_satisfiable.png", width: 100%),
