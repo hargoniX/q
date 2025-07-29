@@ -125,10 +125,15 @@ def test(
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
     cmd = [
-        "../eprover",
+        "../zipperposition.exe",
         problem.filename,
-        f"--cpu-limit={str(duration)}",
-        f"--memory-limit={str(MEM_LIMIT // 1_000_000)}",
+        "--timeout",
+        str(duration),
+        "--mem-limit",
+        str(MEM_LIMIT // 1_000_000),
+        "--dont-simplify",
+        "--avatar",
+        "off",
     ]
     start = datetime.now()
     output = run(
@@ -142,7 +147,7 @@ def test(
     end = datetime.now()
     if f"Satisfiable" in output:
         result = Result.SAT
-    elif f"Proof found" in output:
+    elif f"Refutation" in output:
         result = Result.UNSAT
     elif f"ResourceOut" in output:
         result = Result.TIMEOUT
