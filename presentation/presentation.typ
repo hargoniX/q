@@ -71,9 +71,12 @@ type Term = HashConsed<RawTerm>;
 ][
 Similar to @terms:
 - fully shared with a term bank for meta data
+  - $->$ small memory footprint
+  - $->$ $O(1)$ equality with pointer equality
 - RC for memory management
 - pre-computed values:
-  - hash for $O(1)$ hashing $->$ $O(1)$ term caches
+  - hash for $O(1)$ hashing
+    - $->$ $O(1)$ term caches
   - symbol/variable counts for weights
   - bloom filter for substitution
 ]
@@ -177,7 +180,7 @@ pub struct ClauseQueue {
 ][
 Based on @queue, uses `10SC11/FIFO-PI`:
 - select ratio of 10:1 between:
-  - symbol weight queue with weight 1 for functions and terms
+  - symbol weight queue with weight 1 for functions and variables
   - FIFO queue
 - both with bias for initial clauses
 ]
@@ -203,6 +206,7 @@ Knuth Bendix Order:
 Unification:
 - the naive algorithm from the lecture
 - key component for enforcing well sortedness
+- optimization: for ground terms just check equality (both $O(1)$)
 
 == Generating Inferences
 Uses the rules and side conditions from @braniac:
