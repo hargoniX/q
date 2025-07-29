@@ -17,6 +17,7 @@
     logo: image("lmu-sigillium.svg", height: 25%),
   ),
 )
+#show link: set text(fill: blue.darken(20%))
 
 #title-slide()
 
@@ -236,7 +237,81 @@ Heuristic based on @subsume:
 - uses a feature vector index for forward/backward substitution
 
 = Performance
-todo
+== TPTP - Thousands of Problems for Theorem Proving
+Standardized way to formulate problems for ATP @tptplib:
+- first-order, higher-order
+- typed, untyped
+- subtheories: equational, arithmetic, ..
+
+// TODO: cite https://tptp.org/cgi-bin/TPTP2T
+We are solely interested in FOF problems without theories:
+// TODO: cite tptp crate
+//
+- #link("https://docs.rs/tptp/latest/tptp/")[`tptp`]: Rust Crate, which can parse the relevant subset of TPTP
+
+== Creating the problem statement
+How to turn the derivation into the desired CNF saturation problem statement?
+  - NNF: Initial saturation problem statement through simple transformation
+  - PNF: Renaming all the quantifiers, then pulling them up (scoped substitution)
+  - SNF: Replace existential with a skolem function symbol with all the binders it was in scope for
+  - CNF: Naive Distribution (todo: tests with E as CNF transformer)
+
+== Benchmarks
+Ran TPTP Problems on privately owned hardware:
+- CPU AMD Ryzen 7 9700X 8-Core Processor
+- CPU Limit of 1-10 seconds depending on the benchmark
+- Memory Limit of 1GB
+- 16 Instances in parallel
+
+CASC runs the problems sequentially on one CPU socket with a lot higher memory limit,
+but it is not feasible for us while testing with private hardware.
+
+// TODO: cite or delete
+Initially used the pelletier problems, which are easy but are very broad.
+
+== CASC
+#grid(
+  columns: 2,
+  [#figure(
+    image("cumulative_casc24.png", width: 100%),
+  ) <q_casc24>],
+  [#figure(
+    image("cumulative_casc29.png", width: 100%),
+  ) <q_casc29>]
+)
+
+== TPTPv9.0.0
+#grid(
+  columns: 2,
+  [#figure(
+    image("cumulative_theorems.png", width: 100%),
+  ) <q_theorems>],
+  [#figure(
+    image("cumulative_counter_satisfiable.png", width: 100%),
+  ) <q_counter_sat>]
+)
+
+== Comparison with E and Zipperposition
+#grid(
+  columns: 2,
+  [#figure(
+    image("cumulative_casc24.png", width: 100%),
+  ) <comparison_casc24>],
+  [#figure(
+    image("cumulative_casc29.png", width: 100%),
+  ) <comparison_casc29>]
+)
+
+#grid(
+  columns: 2,
+  [#figure(
+    image("cumulative_theorems.png", width: 100%),
+  ) <comparison_theorems>],
+  [#figure(
+    image("cumulative_counter_satisfiable.png", width: 100%),
+  ) <comparison_counter_sat>]
+)
+
 
 = Bibliography
 #bibliography("literature.bib", title: none)

@@ -26,3 +26,8 @@ It requires a pre-downloaded `Problems.tgz` from e.g. <https://tptp.org/CASC/29/
 Note: there are currently two setup scripts `setup_casc29.sh` and `setup_casc24.sh`.
 The casc24 `Problem.tgz` seemingly doesn't include all the required axiom files of its problems,
 so we instead symlink to the casc29 ones.
+
+## TPTP
+To benchmark against the full TPTP problem set, there exists the setup script `setup_all.sh`.
+Since the problems require a lot of storage, it is not sensible to check them into git.
+It requires a pre-downloaded `TPTP-v9.0.0.tgz` from e.g. <https://tptp.org/TPTP/>.
