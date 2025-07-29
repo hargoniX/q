@@ -125,11 +125,10 @@ def test(
     env["RUST_LOG"] = "WARN"
     # Using cargo with multiple threads is a bottleneck
     cmd = [
-        "target/release/qprover",
+        "../eprover",
         problem.filename,
-        selection_strategy.value,
-        str(duration),
-        str(MEM_LIMIT // 1_000_000),
+        f"--cpu-limit={str(duration)}",
+        f"--memory-limit={str(MEM_LIMIT // 1_000_000)}",
     ]
     start = datetime.now()
     output = run(
@@ -139,13 +138,13 @@ def test(
         stderr=PIPE,
         universal_newlines=True,
         preexec_fn=set_limits(duration + 5 if duration else 1),
-    ).stderr
+    ).stdout
     end = datetime.now()
-    if f"Result superposition: 'StatementFalse'" in output:
+    if f"Satisfiable" in output:
         result = Result.SAT
-    elif f"Result superposition: 'ProofFound'" in output:
+    elif f"Proof found" in output:
         result = Result.UNSAT
-    elif f"Result superposition: 'Unknown(Timeout)'" in output:
+    elif f"ResourceOut" in output:
         result = Result.TIMEOUT
     else:
         print(f"Result is Unknown: stdout'{output}'")
@@ -238,7 +237,7 @@ def main():
         universal_newlines=True,
     ).stdout.rstrip()
     os.chdir(root_dir)
-    build()
+    # build()
     variant = args.mode
     if variant is Variant.PELLETIER:
         assert args.file is not None, "No config file given for pelletier variant!"
