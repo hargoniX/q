@@ -131,9 +131,6 @@ def test(
         str(duration),
         "--mem-limit",
         str(MEM_LIMIT // 1_000_000),
-        "--dont-simplify",
-        "--avatar",
-        "off",
     ]
     start = datetime.now()
     output = run(
