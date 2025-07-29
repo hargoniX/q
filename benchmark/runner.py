@@ -305,8 +305,13 @@ def main():
         result_set.sort(key=lambda x: x.filename)
         for problem in result_set:
             basename = os.path.basename(problem.filename)
+            execution_time = (
+                f"{problem.execution_time:.2f}"
+                if args.duration == 1
+                else f"{problem.execution_time:.1f}"
+            )
             f.write(
-                f"{basename},{problem.expected_result.value},{problem.result.value},{problem.execution_time:.1f}\n"
+                f"{basename},{problem.expected_result.value},{problem.result.value},{execution_time}\n"
             )
 
 

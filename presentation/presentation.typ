@@ -273,10 +273,10 @@ Initially used the pelletier problems, which are easy but are very broad.
 #grid(
   columns: 2,
   [#figure(
-    image("cumulative_casc24.png", width: 100%),
+    image("cumulative_casc24.svg", width: 100%),
   ) <q_casc24>],
   [#figure(
-    image("cumulative_casc29.png", width: 100%),
+    image("cumulative_casc29.svg", width: 100%),
   ) <q_casc29>]
 )
 
@@ -284,10 +284,10 @@ Initially used the pelletier problems, which are easy but are very broad.
 #grid(
   columns: 2,
   [#figure(
-    image("cumulative_theorems.png", width: 100%),
+    image("cumulative_theorems.svg", width: 100%),
   ) <q_theorems>],
   [#figure(
-    image("cumulative_counter_satisfiable.png", width: 100%),
+    image("cumulative_counter_satisfiable.svg", width: 100%),
   ) <q_counter_sat>]
 )
 
@@ -295,23 +295,22 @@ Initially used the pelletier problems, which are easy but are very broad.
 #grid(
   columns: 2,
   [#figure(
-    image("cumulative_casc24.png", width: 100%),
+    image("comp_casc24.svg", width: 100%),
   ) <comparison_casc24>],
   [#figure(
-    image("cumulative_casc29.png", width: 100%),
+    image("comp_casc29.svg", width: 100%),
   ) <comparison_casc29>]
 )
 
 #grid(
   columns: 2,
   [#figure(
-    image("comp_theorems.png", width: 100%),
+    image("comp_theorems.svg", width: 100%),
   ) <comparison_theorems>],
   [#figure(
-    image("cumulative_counter_satisfiable.png", width: 100%),
+    image("comp_counter_satisfiable.svg", width: 100%),
   ) <comparison_counter_sat>]
 )
-
 
 = Bibliography
 #bibliography("literature.bib", title: none)

@@ -74,7 +74,10 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                 if row["expected_result"] == row["result"]:
                     times.append(row["duration"])
             if experiment.variant is Variant.PELLETIER:
-                label = f"{sel_strategy.value}"
+                if mode is Mode.COMP:
+                    label = f"q_{sel_strategy.value}"
+                else:
+                    label = f"{sel_strategy.value}"
             else:
                 label = f"{experiment.category.value.upper()}: {sel_strategy.value}"
             if sel_strategy is SelectionStrategy.NOSELECTION:
@@ -97,10 +100,10 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
     if mode is Mode.COMP:
         for idx, prefix in enumerate(
             [
-                "e",
+                "e_default",
                 "e_auto",
-                "zipper_no_simpl",
-                "zipper_avatar",
+                "zipper_no-simpl",
+                "zipper_default",
             ]
         ):
             for experiment in experiments:
@@ -126,7 +129,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                 elif idx == 2:
                     marker = "o"
                 elif idx == 3:
-                    marker = "."
+                    marker = "s"
                 else:
                     assert False
                 times.sort()
@@ -146,20 +149,21 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
     if variant is Variant.PELLETIER:
         ax.legend(loc="lower right")
     else:
-        ax.legend(loc="center right")
+        # ax.legend(loc="center")
+        ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
     plt.tight_layout()
 
     first_experiment = experiments[0]
     basename = first_experiment.basename
     mode_name = "cumulative" if mode is Mode.TIME else "comp"
     if basename is not None:
-        name = f"../presentation/{mode_name}_{basename}.png"
+        name = f"../presentation/{mode_name}_{basename}.svg"
         if basename == "pelletier":
             title_var = "Pelletier Problems"
         else:
             title_var = f"TPTP '{basename}' ({problem_size} problems)"
     else:
-        name = f"../presentation/{mode_name}_{first_experiment.variant.value}.png"
+        name = f"../presentation/{mode_name}_{first_experiment.variant.value}.svg"
         title_var = f"{first_experiment.variant.value.upper()} ({fof_problem_size} FOF, {fnt_problem_size} FNT)"
     ax.set_title(f"{title_var} w/ 1GB mem limit")
     fig.savefig(name, bbox_inches="tight")
