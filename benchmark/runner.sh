@@ -10,6 +10,8 @@ if [ "${variant}" == "pelletier" ]; then
 elif [ "${variant}" == "casc29" ]; then
   python benchmark/runner.py -d $duration -m casc29 -c fof -s $SELECTION_STRATEGY
   python benchmark/runner.py -d $duration -m casc29 -c fnt -s $SELECTION_STRATEGY
+elif [ "${variant}" == "casc29-ueq" ]; then
+  python benchmark/runner.py -d $duration -m pelletier -f benchmark/casc29_ueq.toml -s $SELECTION_STRATEGY
 elif [ "${variant}" == "casc24" ]; then
   python benchmark/runner.py -d $duration -m casc24 -c fof -s $SELECTION_STRATEGY
   python benchmark/runner.py -d $duration -m casc24 -c fnt -s $SELECTION_STRATEGY
@@ -31,7 +33,7 @@ else
   echo "- Pelletier Problems: 'pelletier'"
   echo "- CASC24 FOF/FNT: 'casc24'"
   echo "- CASC29 FOF/FNT: 'casc29'"
+  echo "- CASC29 UEQ: 'casc29-ueq'"
   echo "- Full TPTP FOF: 'contra', 'countersat', 'sat', 'theorems', 'unsat'"
-  echo "- Easy TPTP FOF Theorems subset: 'theorems-easy'"
 fi
 popd > /dev/null
