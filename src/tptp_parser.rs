@@ -8,11 +8,13 @@
 //! about First-order logic.
 
 use rustc_hash::FxHashMap;
+use rustc_hash::FxHashSet;
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use tptp::TPTPIterator;
+use tptp::cnf;
 use tptp::common::NonassocConnective;
 use tptp::fof;
 use tptp::top::{AnnotatedFormula, FormulaSelection, TPTPInput};
@@ -63,6 +65,19 @@ impl Term {
                 Term::Function(name.clone(), ts.iter().map(|t| t.substitute(s)).collect())
             }
         }
+    }
+
+    fn vars_aux(&self, acc: &mut FxHashSet<Name>) {
+        match self {
+            Term::Variable(name) => {
+                acc.insert(name.clone());
+            }
+            Term::Function(_, ts) => {
+                for t in ts {
+                    t.vars_aux(acc);
+                }
+            }
+        };
     }
 }
 
@@ -190,6 +205,46 @@ enum Binder {
 }
 
 impl FOLTerm {
+    fn vars_aux(&self, acc: &mut FxHashSet<Name>) {
+        match self {
+            FOLTerm::Literal(Literal::Eq(t1, t2)) => {
+                t1.vars_aux(acc);
+                t2.vars_aux(acc);
+            }
+            FOLTerm::Literal(Literal::NotEq(t1, t2)) => {
+                t1.vars_aux(acc);
+                t2.vars_aux(acc);
+            }
+            FOLTerm::And(t1, t2) => {
+                t1.vars_aux(acc);
+                t2.vars_aux(acc);
+            }
+            FOLTerm::Or(t1, t2) => {
+                t1.vars_aux(acc);
+                t2.vars_aux(acc);
+            }
+            FOLTerm::Exist(names, t) => {
+                for name in names {
+                    acc.insert(name.clone());
+                }
+                t.vars_aux(acc);
+            }
+            FOLTerm::Forall(names, t) => {
+                for name in names {
+                    acc.insert(name.clone());
+                }
+                t.vars_aux(acc);
+            }
+        }
+    }
+
+    // Accumulate all the variables within the term
+    fn vars(&self) -> FxHashSet<Name> {
+        let mut acc = FxHashSet::default();
+        self.vars_aux(&mut acc);
+        acc
+    }
+
     // Distribute a negation over the whole term
     fn negate(self) -> FOLTerm {
         match self {
@@ -523,13 +578,6 @@ pub fn parse_file(file: PathBuf) -> TPTPProblem {
                         // <https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html#formula_role>
                         // > "assumption"s can be used like axioms, but must be discharged before a derivation is complete.
                         let role = annotated_fof.role.0.0;
-                        // > "negated_conjecture"s are formed from negation of a "conjecture"
-                        // > (usually in a FOF to CNF conversion).
-                        // This should always be empty for our use-case but let's keep it just in case for now.
-                        assert!(
-                            role != "negated_conjecture",
-                            "The 'negated_conjecture'-role doesn't seem to be intended for this provers use-case."
-                        );
                         let formula = *annotated_fof.formula;
                         log::info!("Parse FOF: {formula}");
                         let fol_term = FOLTerm::from(formula.0);
@@ -540,8 +588,36 @@ pub fn parse_file(file: PathBuf) -> TPTPProblem {
                             axioms.push(fol_term);
                         }
                     }
+                    AnnotatedFormula::Cnf(cnf) => {
+                        // We disregard any names of the formula or special annotations
+                        let annotated_cnf = (*cnf).0;
+                        // This will be a very naive way to interpret TPTP,
+                        // where every role but conjectures will be handled like an axiom
+                        // <https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html#formula_role>
+                        // Due to the current eprover preprocessing into CNFs,
+                        // there will be lots of 'negated_conjecture':
+                        // these can be handled like axioms for our use-case.
+                        // > "negated_conjecture"s are formed from negation of a "conjecture"
+                        // > (usually in a FOF to CNF conversion).
+                        let role = annotated_cnf.role.0.0;
+                        let formula = *annotated_cnf.formula;
+                        log::info!("Parse CNF: {formula}");
+                        let fol_term = FOLTerm::from(formula);
+                        log::info!("Parsed FOLTerm: {fol_term}");
+                        let vars = fol_term.vars();
+                        let quant_fol_term = if vars.is_empty() {
+                            fol_term
+                        } else {
+                            FOLTerm::Forall(vars.into_iter().collect(), Box::new(fol_term))
+                        };
+                        log::info!("FOLTerm with explicit Quantifiers: {quant_fol_term}");
+                        if role == "conjecture" {
+                            conjectures.push(quant_fol_term);
+                        } else {
+                            axioms.push(quant_fol_term);
+                        }
+                    }
                     AnnotatedFormula::Tfx(_) => panic!("Parsing doesn't handle Tfx!"),
-                    AnnotatedFormula::Cnf(_) => panic!("Parsing doesn't handle Cnf!"),
                 }
             }
         }
@@ -980,6 +1056,36 @@ impl From<fof::PlainAtomicFormula<'_>> for FOLTerm {
                 ),
                 Term::Function(Name::Builtin(String::from("true")), Vec::new()),
             )),
+        }
+    }
+}
+
+impl From<cnf::Formula<'_>> for FOLTerm {
+    fn from(f: cnf::Formula) -> Self {
+        match f {
+            cnf::Formula::Disjunction(d) | cnf::Formula::Parenthesised(d) => Self::from(d),
+        }
+    }
+}
+
+impl From<cnf::Disjunction<'_>> for FOLTerm {
+    fn from(f: cnf::Disjunction) -> Self {
+        let lits = f.0;
+        let mut acc = FOLTerm::from(lits[0].clone());
+        for f in lits[1..].iter() {
+            let t = FOLTerm::from(f.clone());
+            acc = FOLTerm::Or(Box::new(acc), Box::new(t));
+        }
+        acc
+    }
+}
+
+impl From<cnf::Literal<'_>> for FOLTerm {
+    fn from(lit: cnf::Literal) -> Self {
+        match lit {
+            cnf::Literal::Atomic(a) => Self::from(a),
+            cnf::Literal::NegatedAtomic(a) => Self::from(a).negate(),
+            cnf::Literal::Infix(i) => Self::from(i),
         }
     }
 }

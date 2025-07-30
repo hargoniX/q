@@ -1,0 +1,901 @@
+[problems]
+[problems."ALG245-1"]
+filename = "problems/tptp-full/ALG245-1ALG245-1.p"
+result = "UNSAT"
+[problems."ALG246-1"]
+filename = "problems/tptp-full/ALG/ALG246-1.p"
+result = "UNSAT"
+[problems."ANA034-10"]
+filename = "problems/tptp-full/ANA/ANA034-10.p"
+result = "UNSAT"
+[problems."ANA133-1"]
+filename = "problems/tptp-full/ANA/ANA133-1.p"
+result = "UNSAT"
+[problems."BOO014-10"]
+filename = "problems/tptp-full/BOO/BOO014-10.p"
+result = "UNSAT"
+[problems."BOO015-10"]
+filename = "problems/tptp-full/BOO/BOO015-10.p"
+result = "UNSAT"
+[problems."BOO017-10"]
+filename = "problems/tptp-full/BOO/BOO017-10.p"
+result = "UNSAT"
+[problems."BOO023-1"]
+filename = "problems/tptp-full/BOO/BOO023-1.p"
+result = "UNSAT"
+[problems."BOO031-1"]
+filename = "problems/tptp-full/BOO/BOO031-1.p"
+result = "UNSAT"
+[problems."BOO034-1"]
+filename = "problems/tptp-full/BOO/BOO034-1.p"
+result = "UNSAT"
+[problems."BOO076-1"]
+filename = "problems/tptp-full/BOO/BOO076-1.p"
+result = "UNSAT"
+[problems."COL002-10"]
+filename = "problems/tptp-full/COL/COL002-10.p"
+result = "UNSAT"
+[problems."COL002-5"]
+filename = "problems/tptp-full/COL/COL002-5.p"
+result = "UNSAT"
+[problems."COL003-10"]
+filename = "problems/tptp-full/COL/COL003-10.p"
+result = "UNSAT"
+[problems."COL003-17"]
+filename = "problems/tptp-full/COL/COL003-17.p"
+result = "UNSAT"
+[problems."COL003-19"]
+filename = "problems/tptp-full/COL/COL003-19.p"
+result = "UNSAT"
+[problems."COL006-1"]
+filename = "problems/tptp-full/COL/COL006-1.p"
+result = "UNSAT"
+[problems."COL006-5"]
+filename = "problems/tptp-full/COL/COL006-5.p"
+result = "UNSAT"
+[problems."COL006-7"]
+filename = "problems/tptp-full/COL/COL006-7.p"
+result = "UNSAT"
+[problems."COL009-1"]
+filename = "problems/tptp-full/COL/COL009-1.p"
+result = "UNSAT"
+[problems."COL011-1"]
+filename = "problems/tptp-full/COL/COL011-1.p"
+result = "UNSAT"
+[problems."COL023-1"]
+filename = "problems/tptp-full/COL/COL023-1.p"
+result = "UNSAT"
+[problems."COL026-1"]
+filename = "problems/tptp-full/COL/COL026-1.p"
+result = "UNSAT"
+[problems."COL035-1"]
+filename = "problems/tptp-full/COL/COL035-1.p"
+result = "UNSAT"
+[problems."COL036-1"]
+filename = "problems/tptp-full/COL/COL036-1.p"
+result = "UNSAT"
+[problems."COL038-1"]
+filename = "problems/tptp-full/COL/COL038-1.p"
+result = "UNSAT"
+[problems."COL042-1"]
+filename = "problems/tptp-full/COL/COL042-1.p"
+result = "UNSAT"
+[problems."COL042-10"]
+filename = "problems/tptp-full/COL/COL042-10.p"
+result = "UNSAT"
+[problems."COL042-6"]
+filename = "problems/tptp-full/COL/COL042-6.p"
+result = "UNSAT"
+[problems."COL042-8"]
+filename = "problems/tptp-full/COL/COL042-8.p"
+result = "UNSAT"
+[problems."COL043-3"]
+filename = "problems/tptp-full/COL/COL043-3.p"
+result = "UNSAT"
+[problems."COL044-10"]
+filename = "problems/tptp-full/COL/COL044-10.p"
+result = "UNSAT"
+[problems."COL044-7"]
+filename = "problems/tptp-full/COL/COL044-7.p"
+result = "UNSAT"
+[problems."COL044-8"]
+filename = "problems/tptp-full/COL/COL044-8.p"
+result = "UNSAT"
+[problems."COL046-1"]
+filename = "problems/tptp-full/COL/COL046-1.p"
+result = "UNSAT"
+[problems."COL057-1"]
+filename = "problems/tptp-full/COL/COL057-1.p"
+result = "UNSAT"
+[problems."COL060-1"]
+filename = "problems/tptp-full/COL/COL060-1.p"
+result = "UNSAT"
+[problems."COL061-1"]
+filename = "problems/tptp-full/COL/COL061-1.p"
+result = "UNSAT"
+[problems."COL062-1"]
+filename = "problems/tptp-full/COL/COL062-1.p"
+result = "UNSAT"
+[problems."COL065-1"]
+filename = "problems/tptp-full/COL/COL065-1.p"
+result = "UNSAT"
+[problems."COL066-1"]
+filename = "problems/tptp-full/COL/COL066-1.p"
+result = "UNSAT"
+[problems."CSR027-10"]
+filename = "problems/tptp-full/CSR/CSR027-10.p"
+result = "UNSAT"
+[problems."CSR036-10"]
+filename = "problems/tptp-full/CSR/CSR036-10.p"
+result = "UNSAT"
+[problems."CSR038-10"]
+filename = "problems/tptp-full/CSR/CSR038-10.p"
+result = "UNSAT"
+[problems."CSR039-10"]
+filename = "problems/tptp-full/CSR/CSR039-10.p"
+result = "UNSAT"
+[problems."CSR040-10"]
+filename = "problems/tptp-full/CSR/CSR040-10.p"
+result = "UNSAT"
+[problems."CSR051-10"]
+filename = "problems/tptp-full/CSR/CSR051-10.p"
+result = "UNSAT"
+[problems."CSR055-10"]
+filename = "problems/tptp-full/CSR/CSR055-10.p"
+result = "UNSAT"
+[problems."CSR057-10"]
+filename = "problems/tptp-full/CSR/CSR057-10.p"
+result = "UNSAT"
+[problems."CSR059-10"]
+filename = "problems/tptp-full/CSR/CSR059-10.p"
+result = "UNSAT"
+[problems."CSR072-10"]
+filename = "problems/tptp-full/CSR/CSR072-10.p"
+result = "UNSAT"
+[problems."CSR073-10"]
+filename = "problems/tptp-full/CSR/CSR073-10.p"
+result = "UNSAT"
+[problems."GRP002-10"]
+filename = "problems/tptp-full/GRP/GRP002-10.p"
+result = "UNSAT"
+[problems."GRP164-2"]
+filename = "problems/tptp-full/GRP/GRP164-2.p"
+result = "UNSAT"
+[problems."GRP167-1"]
+filename = "problems/tptp-full/GRP/GRP167-1.p"
+result = "UNSAT"
+[problems."GRP167-2"]
+filename = "problems/tptp-full/GRP/GRP167-2.p"
+result = "UNSAT"
+[problems."GRP167-3"]
+filename = "problems/tptp-full/GRP/GRP167-3.p"
+result = "UNSAT"
+[problems."GRP167-4"]
+filename = "problems/tptp-full/GRP/GRP167-4.p"
+result = "UNSAT"
+[problems."GRP177-1"]
+filename = "problems/tptp-full/GRP/GRP177-1.p"
+result = "UNSAT"
+[problems."GRP177-2"]
+filename = "problems/tptp-full/GRP/GRP177-2.p"
+result = "UNSAT"
+[problems."GRP178-1"]
+filename = "problems/tptp-full/GRP/GRP178-1.p"
+result = "UNSAT"
+[problems."GRP179-1"]
+filename = "problems/tptp-full/GRP/GRP179-1.p"
+result = "UNSAT"
+[problems."GRP179-2"]
+filename = "problems/tptp-full/GRP/GRP179-2.p"
+result = "UNSAT"
+[problems."GRP179-3"]
+filename = "problems/tptp-full/GRP/GRP179-3.p"
+result = "UNSAT"
+[problems."GRP180-1"]
+filename = "problems/tptp-full/GRP/GRP180-1.p"
+result = "UNSAT"
+[problems."GRP181-2"]
+filename = "problems/tptp-full/GRP/GRP181-2.p"
+result = "UNSAT"
+[problems."GRP181-3"]
+filename = "problems/tptp-full/GRP/GRP181-3.p"
+result = "UNSAT"
+[problems."GRP181-4"]
+filename = "problems/tptp-full/GRP/GRP181-4.p"
+result = "UNSAT"
+[problems."GRP183-2"]
+filename = "problems/tptp-full/GRP/GRP183-2.p"
+result = "UNSAT"
+[problems."GRP183-4"]
+filename = "problems/tptp-full/GRP/GRP183-4.p"
+result = "UNSAT"
+[problems."GRP184-2"]
+filename = "problems/tptp-full/GRP/GRP184-2.p"
+result = "UNSAT"
+[problems."GRP184-3"]
+filename = "problems/tptp-full/GRP/GRP184-3.p"
+result = "UNSAT"
+[problems."GRP185-1"]
+filename = "problems/tptp-full/GRP/GRP185-1.p"
+result = "UNSAT"
+[problems."GRP185-4"]
+filename = "problems/tptp-full/GRP/GRP185-4.p"
+result = "UNSAT"
+[problems."GRP186-1"]
+filename = "problems/tptp-full/GRP/GRP186-1.p"
+result = "UNSAT"
+[problems."GRP187-1"]
+filename = "problems/tptp-full/GRP/GRP187-1.p"
+result = "UNSAT"
+[problems."GRP201-1"]
+filename = "problems/tptp-full/GRP/GRP201-1.p"
+result = "UNSAT"
+[problems."GRP202-1"]
+filename = "problems/tptp-full/GRP/GRP202-1.p"
+result = "UNSAT"
+[problems."GRP203-1"]
+filename = "problems/tptp-full/GRP/GRP203-1.p"
+result = "UNSAT"
+[problems."GRP403-1"]
+filename = "problems/tptp-full/GRP/GRP403-1.p"
+result = "UNSAT"
+[problems."GRP405-1"]
+filename = "problems/tptp-full/GRP/GRP405-1.p"
+result = "UNSAT"
+[problems."GRP409-1"]
+filename = "problems/tptp-full/GRP/GRP409-1.p"
+result = "UNSAT"
+[problems."GRP411-1"]
+filename = "problems/tptp-full/GRP/GRP411-1.p"
+result = "UNSAT"
+[problems."GRP421-1"]
+filename = "problems/tptp-full/GRP/GRP421-1.p"
+result = "UNSAT"
+[problems."GRP422-1"]
+filename = "problems/tptp-full/GRP/GRP422-1.p"
+result = "UNSAT"
+[problems."GRP423-1"]
+filename = "problems/tptp-full/GRP/GRP423-1.p"
+result = "UNSAT"
+[problems."GRP427-1"]
+filename = "problems/tptp-full/GRP/GRP427-1.p"
+result = "UNSAT"
+[problems."GRP471-1"]
+filename = "problems/tptp-full/GRP/GRP471-1.p"
+result = "UNSAT"
+[problems."GRP472-1"]
+filename = "problems/tptp-full/GRP/GRP472-1.p"
+result = "UNSAT"
+[problems."GRP474-1"]
+filename = "problems/tptp-full/GRP/GRP474-1.p"
+result = "UNSAT"
+[problems."GRP476-1"]
+filename = "problems/tptp-full/GRP/GRP476-1.p"
+result = "UNSAT"
+[problems."GRP478-1"]
+filename = "problems/tptp-full/GRP/GRP478-1.p"
+result = "UNSAT"
+[problems."GRP480-1"]
+filename = "problems/tptp-full/GRP/GRP480-1.p"
+result = "UNSAT"
+[problems."GRP502-1"]
+filename = "problems/tptp-full/GRP/GRP502-1.p"
+result = "UNSAT"
+[problems."GRP505-1"]
+filename = "problems/tptp-full/GRP/GRP505-1.p"
+result = "UNSAT"
+[problems."GRP506-1"]
+filename = "problems/tptp-full/GRP/GRP506-1.p"
+result = "UNSAT"
+[problems."GRP609-1"]
+filename = "problems/tptp-full/GRP/GRP609-1.p"
+result = "UNSAT"
+[problems."GRP654-11"]
+filename = "problems/tptp-full/GRP/GRP654-11.p"
+result = "UNSAT"
+[problems."GRP654-12"]
+filename = "problems/tptp-full/GRP/GRP654-12.p"
+result = "UNSAT"
+[problems."GRP655-10"]
+filename = "problems/tptp-full/GRP/GRP655-10.p"
+result = "UNSAT"
+[problems."GRP655-11"]
+filename = "problems/tptp-full/GRP/GRP655-11.p"
+result = "UNSAT"
+[problems."GRP655-12"]
+filename = "problems/tptp-full/GRP/GRP655-12.p"
+result = "UNSAT"
+[problems."GRP655-14"]
+filename = "problems/tptp-full/GRP/GRP655-14.p"
+result = "UNSAT"
+[problems."GRP660-11"]
+filename = "problems/tptp-full/GRP/GRP660-11.p"
+result = "UNSAT"
+[problems."GRP660-13"]
+filename = "problems/tptp-full/GRP/GRP660-13.p"
+result = "UNSAT"
+[problems."GRP660-14"]
+filename = "problems/tptp-full/GRP/GRP660-14.p"
+result = "UNSAT"
+[problems."GRP663-1"]
+filename = "problems/tptp-full/GRP/GRP663-1.p"
+result = "UNSAT"
+[problems."GRP664-10"]
+filename = "problems/tptp-full/GRP/GRP664-10.p"
+result = "UNSAT"
+[problems."GRP666-4"]
+filename = "problems/tptp-full/GRP/GRP666-4.p"
+result = "UNSAT"
+[problems."GRP666-5"]
+filename = "problems/tptp-full/GRP/GRP666-5.p"
+result = "UNSAT"
+[problems."GRP667-10"]
+filename = "problems/tptp-full/GRP/GRP667-10.p"
+result = "UNSAT"
+[problems."GRP667-4"]
+filename = "problems/tptp-full/GRP/GRP667-4.p"
+result = "UNSAT"
+[problems."GRP668-1"]
+filename = "problems/tptp-full/GRP/GRP668-1.p"
+result = "UNSAT"
+[problems."GRP678-1"]
+filename = "problems/tptp-full/GRP/GRP678-1.p"
+result = "UNSAT"
+[problems."GRP681-1"]
+filename = "problems/tptp-full/GRP/GRP681-1.p"
+result = "UNSAT"
+[problems."GRP688-1"]
+filename = "problems/tptp-full/GRP/GRP688-1.p"
+result = "UNSAT"
+[problems."GRP689-1"]
+filename = "problems/tptp-full/GRP/GRP689-1.p"
+result = "UNSAT"
+[problems."GRP690-1"]
+filename = "problems/tptp-full/GRP/GRP690-1.p"
+result = "UNSAT"
+[problems."GRP691-1"]
+filename = "problems/tptp-full/GRP/GRP691-1.p"
+result = "UNSAT"
+[problems."GRP692-1"]
+filename = "problems/tptp-full/GRP/GRP692-1.p"
+result = "UNSAT"
+[problems."GRP693-1"]
+filename = "problems/tptp-full/GRP/GRP693-1.p"
+result = "UNSAT"
+[problems."GRP694-1"]
+filename = "problems/tptp-full/GRP/GRP694-1.p"
+result = "UNSAT"
+[problems."GRP695-1"]
+filename = "problems/tptp-full/GRP/GRP695-1.p"
+result = "UNSAT"
+[problems."GRP701-1"]
+filename = "problems/tptp-full/GRP/GRP701-1.p"
+result = "UNSAT"
+[problems."GRP706-1"]
+filename = "problems/tptp-full/GRP/GRP706-1.p"
+result = "UNSAT"
+[problems."GRP718-1"]
+filename = "problems/tptp-full/GRP/GRP718-1.p"
+result = "UNSAT"
+[problems."GRP719-1"]
+filename = "problems/tptp-full/GRP/GRP719-1.p"
+result = "UNSAT"
+[problems."GRP725-1"]
+filename = "problems/tptp-full/GRP/GRP725-1.p"
+result = "UNSAT"
+[problems."GRP727-1"]
+filename = "problems/tptp-full/GRP/GRP727-1.p"
+result = "UNSAT"
+[problems."GRP730-1"]
+filename = "problems/tptp-full/GRP/GRP730-1.p"
+result = "UNSAT"
+[problems."GRP751-1"]
+filename = "problems/tptp-full/GRP/GRP751-1.p"
+result = "UNSAT"
+[problems."GRP752-1"]
+filename = "problems/tptp-full/GRP/GRP752-1.p"
+result = "UNSAT"
+[problems."GRP754-1"]
+filename = "problems/tptp-full/GRP/GRP754-1.p"
+result = "UNSAT"
+[problems."GRP764-1"]
+filename = "problems/tptp-full/GRP/GRP764-1.p"
+result = "UNSAT"
+[problems."GRP766-1"]
+filename = "problems/tptp-full/GRP/GRP766-1.p"
+result = "UNSAT"
+[problems."GRP767-1"]
+filename = "problems/tptp-full/GRP/GRP767-1.p"
+result = "UNSAT"
+[problems."GRP768-1"]
+filename = "problems/tptp-full/GRP/GRP768-1.p"
+result = "UNSAT"
+[problems."GRP770-1"]
+filename = "problems/tptp-full/GRP/GRP770-1.p"
+result = "UNSAT"
+[problems."KLE044-10"]
+filename = "problems/tptp-full/KLE/KLE044-10.p"
+result = "UNSAT"
+[problems."KLE084-10"]
+filename = "problems/tptp-full/KLE/KLE084-10.p"
+result = "UNSAT"
+[problems."KLE104-10"]
+filename = "problems/tptp-full/KLE/KLE104-10.p"
+result = "UNSAT"
+[problems."KLE108-10"]
+filename = "problems/tptp-full/KLE/KLE108-10.p"
+result = "UNSAT"
+[problems."KLE110-10"]
+filename = "problems/tptp-full/KLE/KLE110-10.p"
+result = "UNSAT"
+[problems."KLE145-10"]
+filename = "problems/tptp-full/KLE/KLE145-10.p"
+result = "UNSAT"
+[problems."KLE151-10"]
+filename = "problems/tptp-full/KLE/KLE151-10.p"
+result = "UNSAT"
+[problems."KLE169-10"]
+filename = "problems/tptp-full/KLE/KLE169-10.p"
+result = "UNSAT"
+[problems."LAT005-10"]
+filename = "problems/tptp-full/LAT/LAT005-10.p"
+result = "UNSAT"
+[problems."LAT017-1"]
+filename = "problems/tptp-full/LAT/LAT017-1.p"
+result = "UNSAT"
+[problems."LAT018-1"]
+filename = "problems/tptp-full/LAT/LAT018-1.p"
+result = "UNSAT"
+[problems."LAT020-1"]
+filename = "problems/tptp-full/LAT/LAT020-1.p"
+result = "UNSAT"
+[problems."LAT022-1"]
+filename = "problems/tptp-full/LAT/LAT022-1.p"
+result = "UNSAT"
+[problems."LAT023-1"]
+filename = "problems/tptp-full/LAT/LAT023-1.p"
+result = "UNSAT"
+[problems."LAT038-1"]
+filename = "problems/tptp-full/LAT/LAT038-1.p"
+result = "UNSAT"
+[problems."LAT044-1"]
+filename = "problems/tptp-full/LAT/LAT044-1.p"
+result = "UNSAT"
+[problems."LAT072-1"]
+filename = "problems/tptp-full/LAT/LAT072-1.p"
+result = "UNSAT"
+[problems."LAT076-1"]
+filename = "problems/tptp-full/LAT/LAT076-1.p"
+result = "UNSAT"
+[problems."LAT078-1"]
+filename = "problems/tptp-full/LAT/LAT078-1.p"
+result = "UNSAT"
+[problems."LAT082-1"]
+filename = "problems/tptp-full/LAT/LAT082-1.p"
+result = "UNSAT"
+[problems."LAT086-1"]
+filename = "problems/tptp-full/LAT/LAT086-1.p"
+result = "UNSAT"
+[problems."LAT087-1"]
+filename = "problems/tptp-full/LAT/LAT087-1.p"
+result = "UNSAT"
+[problems."LAT092-1"]
+filename = "problems/tptp-full/LAT/LAT092-1.p"
+result = "UNSAT"
+[problems."LAT093-1"]
+filename = "problems/tptp-full/LAT/LAT093-1.p"
+result = "UNSAT"
+[problems."LAT095-1"]
+filename = "problems/tptp-full/LAT/LAT095-1.p"
+result = "UNSAT"
+[problems."LAT096-1"]
+filename = "problems/tptp-full/LAT/LAT096-1.p"
+result = "UNSAT"
+[problems."LAT138-1"]
+filename = "problems/tptp-full/LAT/LAT138-1.p"
+result = "UNSAT"
+[problems."LAT139-1"]
+filename = "problems/tptp-full/LAT/LAT139-1.p"
+result = "UNSAT"
+[problems."LAT142-1"]
+filename = "problems/tptp-full/LAT/LAT142-1.p"
+result = "UNSAT"
+[problems."LAT143-1"]
+filename = "problems/tptp-full/LAT/LAT143-1.p"
+result = "UNSAT"
+[problems."LAT147-1"]
+filename = "problems/tptp-full/LAT/LAT147-1.p"
+result = "UNSAT"
+[problems."LAT148-1"]
+filename = "problems/tptp-full/LAT/LAT148-1.p"
+result = "UNSAT"
+[problems."LAT149-1"]
+filename = "problems/tptp-full/LAT/LAT149-1.p"
+result = "UNSAT"
+[problems."LAT150-1"]
+filename = "problems/tptp-full/LAT/LAT150-1.p"
+result = "UNSAT"
+[problems."LAT151-1"]
+filename = "problems/tptp-full/LAT/LAT151-1.p"
+result = "UNSAT"
+[problems."LAT156-1"]
+filename = "problems/tptp-full/LAT/LAT156-1.p"
+result = "UNSAT"
+[problems."LAT158-1"]
+filename = "problems/tptp-full/LAT/LAT158-1.p"
+result = "UNSAT"
+[problems."LAT159-1"]
+filename = "problems/tptp-full/LAT/LAT159-1.p"
+result = "UNSAT"
+[problems."LAT162-1"]
+filename = "problems/tptp-full/LAT/LAT162-1.p"
+result = "UNSAT"
+[problems."LAT163-1"]
+filename = "problems/tptp-full/LAT/LAT163-1.p"
+result = "UNSAT"
+[problems."LAT165-1"]
+filename = "problems/tptp-full/LAT/LAT165-1.p"
+result = "UNSAT"
+[problems."LAT168-1"]
+filename = "problems/tptp-full/LAT/LAT168-1.p"
+result = "UNSAT"
+[problems."LAT169-1"]
+filename = "problems/tptp-full/LAT/LAT169-1.p"
+result = "UNSAT"
+[problems."LAT172-1"]
+filename = "problems/tptp-full/LAT/LAT172-1.p"
+result = "UNSAT"
+[problems."LAT174-1"]
+filename = "problems/tptp-full/LAT/LAT174-1.p"
+result = "UNSAT"
+[problems."LAT176-1"]
+filename = "problems/tptp-full/LAT/LAT176-1.p"
+result = "UNSAT"
+[problems."LAT177-1"]
+filename = "problems/tptp-full/LAT/LAT177-1.p"
+result = "UNSAT"
+[problems."LAT186-10"]
+filename = "problems/tptp-full/LAT/LAT186-10.p"
+result = "UNSAT"
+[problems."LAT190-10"]
+filename = "problems/tptp-full/LAT/LAT190-10.p"
+result = "UNSAT"
+[problems."LAT222-10"]
+filename = "problems/tptp-full/LAT/LAT222-10.p"
+result = "UNSAT"
+[problems."LAT390-1"]
+filename = "problems/tptp-full/LAT/LAT390-1.p"
+result = "UNSAT"
+[problems."LAT392-1"]
+filename = "problems/tptp-full/LAT/LAT392-1.p"
+result = "UNSAT"
+[problems."LAT393-1"]
+filename = "problems/tptp-full/LAT/LAT393-1.p"
+result = "UNSAT"
+[problems."LAT399-1"]
+filename = "problems/tptp-full/LAT/LAT399-1.p"
+result = "UNSAT"
+[problems."LAT399-2"]
+filename = "problems/tptp-full/LAT/LAT399-2.p"
+result = "UNSAT"
+[problems."LAT400-2"]
+filename = "problems/tptp-full/LAT/LAT400-2.p"
+result = "UNSAT"
+[problems."LAT400-3"]
+filename = "problems/tptp-full/LAT/LAT400-3.p"
+result = "UNSAT"
+[problems."LAT400-4"]
+filename = "problems/tptp-full/LAT/LAT400-4.p"
+result = "UNSAT"
+[problems."LAT401-1"]
+filename = "problems/tptp-full/LAT/LAT401-1.p"
+result = "UNSAT"
+[problems."LAT401-2"]
+filename = "problems/tptp-full/LAT/LAT401-2.p"
+result = "UNSAT"
+[problems."LCL024-10"]
+filename = "problems/tptp-full/LCL/LCL024-10.p"
+result = "UNSAT"
+[problems."LCL026-10"]
+filename = "problems/tptp-full/LCL/LCL026-10.p"
+result = "UNSAT"
+[problems."LCL038-10"]
+filename = "problems/tptp-full/LCL/LCL038-10.p"
+result = "UNSAT"
+[problems."LCL054-10"]
+filename = "problems/tptp-full/LCL/LCL054-10.p"
+result = "UNSAT"
+[problems."LCL060-10"]
+filename = "problems/tptp-full/LCL/LCL060-10.p"
+result = "UNSAT"
+[problems."LCL084-10"]
+filename = "problems/tptp-full/LCL/LCL084-10.p"
+result = "UNSAT"
+[problems."LCL109-10"]
+filename = "problems/tptp-full/LCL/LCL109-10.p"
+result = "UNSAT"
+[problems."LCL109-2"]
+filename = "problems/tptp-full/LCL/LCL109-2.p"
+result = "UNSAT"
+[problems."LCL113-10"]
+filename = "problems/tptp-full/LCL/LCL113-10.p"
+result = "UNSAT"
+[problems."LCL138-1"]
+filename = "problems/tptp-full/LCL/LCL138-1.p"
+result = "UNSAT"
+[problems."LCL160-1"]
+filename = "problems/tptp-full/LCL/LCL160-1.p"
+result = "UNSAT"
+[problems."LCL195-10"]
+filename = "problems/tptp-full/LCL/LCL195-10.p"
+result = "UNSAT"
+[problems."LCL203-10"]
+filename = "problems/tptp-full/LCL/LCL203-10.p"
+result = "UNSAT"
+[problems."LCL211-10"]
+filename = "problems/tptp-full/LCL/LCL211-10.p"
+result = "UNSAT"
+[problems."LCL218-10"]
+filename = "problems/tptp-full/LCL/LCL218-10.p"
+result = "UNSAT"
+[problems."LCL224-10"]
+filename = "problems/tptp-full/LCL/LCL224-10.p"
+result = "UNSAT"
+[problems."LCL225-10"]
+filename = "problems/tptp-full/LCL/LCL225-10.p"
+result = "UNSAT"
+[problems."LCL231-10"]
+filename = "problems/tptp-full/LCL/LCL231-10.p"
+result = "UNSAT"
+[problems."LCL250-10"]
+filename = "problems/tptp-full/LCL/LCL250-10.p"
+result = "UNSAT"
+[problems."LCL265-10"]
+filename = "problems/tptp-full/LCL/LCL265-10.p"
+result = "UNSAT"
+[problems."LCL306-10"]
+filename = "problems/tptp-full/LCL/LCL306-10.p"
+result = "UNSAT"
+[problems."LCL341-10"]
+filename = "problems/tptp-full/LCL/LCL341-10.p"
+result = "UNSAT"
+[problems."LCL384-10"]
+filename = "problems/tptp-full/LCL/LCL384-10.p"
+result = "UNSAT"
+[problems."LCL385-10"]
+filename = "problems/tptp-full/LCL/LCL385-10.p"
+result = "UNSAT"
+[problems."LCL416-10"]
+filename = "problems/tptp-full/LCL/LCL416-10.p"
+result = "UNSAT"
+[problems."LCL890-10"]
+filename = "problems/tptp-full/LCL/LCL890-10.p"
+result = "UNSAT"
+[problems."LCL897-10"]
+filename = "problems/tptp-full/LCL/LCL897-10.p"
+result = "UNSAT"
+[problems."LCL927-10"]
+filename = "problems/tptp-full/LCL/LCL927-10.p"
+result = "UNSAT"
+[problems."MVA003-1"]
+filename = "problems/tptp-full/MVA/MVA003-1.p"
+result = "UNSAT"
+[problems."MVA008-1"]
+filename = "problems/tptp-full/MVA/MVA008-1.p"
+result = "UNSAT"
+[problems."MVA009-1"]
+filename = "problems/tptp-full/MVA/MVA009-1.p"
+result = "UNSAT"
+[problems."MVA011-1"]
+filename = "problems/tptp-full/MVA/MVA011-1.p"
+result = "UNSAT"
+[problems."NUN134-1"]
+filename = "problems/tptp-full/NUN/NUN134-1.p"
+result = "UNSAT"
+[problems."PLA007-10"]
+filename = "problems/tptp-full/PLA/PLA007-10.p"
+result = "UNSAT"
+[problems."PLA017-10"]
+filename = "problems/tptp-full/PLA/PLA017-10.p"
+result = "UNSAT"
+[problems."PUZ039-10"]
+filename = "problems/tptp-full/PUZ/PUZ039-10.p"
+result = "UNSAT"
+[problems."REL004-2"]
+filename = "problems/tptp-full/REL/REL004-2.p"
+result = "UNSAT"
+[problems."REL008-3"]
+filename = "problems/tptp-full/REL/REL008-3.p"
+result = "UNSAT"
+[problems."REL010-1"]
+filename = "problems/tptp-full/REL/REL010-1.p"
+result = "UNSAT"
+[problems."REL011-1"]
+filename = "problems/tptp-full/REL/REL011-1.p"
+result = "UNSAT"
+[problems."REL012-2"]
+filename = "problems/tptp-full/REL/REL012-2.p"
+result = "UNSAT"
+[problems."REL016-1"]
+filename = "problems/tptp-full/REL/REL016-1.p"
+result = "UNSAT"
+[problems."REL016-3"]
+filename = "problems/tptp-full/REL/REL016-3.p"
+result = "UNSAT"
+[problems."REL017-1"]
+filename = "problems/tptp-full/REL/REL017-1.p"
+result = "UNSAT"
+[problems."REL017-3"]
+filename = "problems/tptp-full/REL/REL017-3.p"
+result = "UNSAT"
+[problems."REL019-2"]
+filename = "problems/tptp-full/REL/REL019-2.p"
+result = "UNSAT"
+[problems."REL020-1"]
+filename = "problems/tptp-full/REL/REL020-1.p"
+result = "UNSAT"
+[problems."REL020-2"]
+filename = "problems/tptp-full/REL/REL020-2.p"
+result = "UNSAT"
+[problems."REL021-1"]
+filename = "problems/tptp-full/REL/REL021-1.p"
+result = "UNSAT"
+[problems."REL021-2"]
+filename = "problems/tptp-full/REL/REL021-2.p"
+result = "UNSAT"
+[problems."REL024-1"]
+filename = "problems/tptp-full/REL/REL024-1.p"
+result = "UNSAT"
+[problems."REL024-2"]
+filename = "problems/tptp-full/REL/REL024-2.p"
+result = "UNSAT"
+[problems."REL026-3"]
+filename = "problems/tptp-full/REL/REL026-3.p"
+result = "UNSAT"
+[problems."REL027-1"]
+filename = "problems/tptp-full/REL/REL027-1.p"
+result = "UNSAT"
+[problems."REL028-2"]
+filename = "problems/tptp-full/REL/REL028-2.p"
+result = "UNSAT"
+[problems."REL029-1"]
+filename = "problems/tptp-full/REL/REL029-1.p"
+result = "UNSAT"
+[problems."REL029-3"]
+filename = "problems/tptp-full/REL/REL029-3.p"
+result = "UNSAT"
+[problems."REL030-1"]
+filename = "problems/tptp-full/REL/REL030-1.p"
+result = "UNSAT"
+[problems."REL030-3"]
+filename = "problems/tptp-full/REL/REL030-3.p"
+result = "UNSAT"
+[problems."REL032-2"]
+filename = "problems/tptp-full/REL/REL032-2.p"
+result = "UNSAT"
+[problems."REL033-1"]
+filename = "problems/tptp-full/REL/REL033-1.p"
+result = "UNSAT"
+[problems."REL035-1"]
+filename = "problems/tptp-full/REL/REL035-1.p"
+result = "UNSAT"
+[problems."REL036-1"]
+filename = "problems/tptp-full/REL/REL036-1.p"
+result = "UNSAT"
+[problems."REL037-1"]
+filename = "problems/tptp-full/REL/REL037-1.p"
+result = "UNSAT"
+[problems."REL037-2"]
+filename = "problems/tptp-full/REL/REL037-2.p"
+result = "UNSAT"
+[problems."REL040-10"]
+filename = "problems/tptp-full/REL/REL040-10.p"
+result = "UNSAT"
+[problems."REL040-3"]
+filename = "problems/tptp-full/REL/REL040-3.p"
+result = "UNSAT"
+[problems."REL041-1"]
+filename = "problems/tptp-full/REL/REL041-1.p"
+result = "UNSAT"
+[problems."REL041-2"]
+filename = "problems/tptp-full/REL/REL041-2.p"
+result = "UNSAT"
+[problems."REL042-1"]
+filename = "problems/tptp-full/REL/REL042-1.p"
+result = "UNSAT"
+[problems."REL042-2"]
+filename = "problems/tptp-full/REL/REL042-2.p"
+result = "UNSAT"
+[problems."REL044-1"]
+filename = "problems/tptp-full/REL/REL044-1.p"
+result = "UNSAT"
+[problems."REL044-2"]
+filename = "problems/tptp-full/REL/REL044-2.p"
+result = "UNSAT"
+[problems."REL045-2"]
+filename = "problems/tptp-full/REL/REL045-2.p"
+result = "UNSAT"
+[problems."REL047-1"]
+filename = "problems/tptp-full/REL/REL047-1.p"
+result = "UNSAT"
+[problems."REL050-1"]
+filename = "problems/tptp-full/REL/REL050-1.p"
+result = "UNSAT"
+[problems."RNG001-10"]
+filename = "problems/tptp-full/RNG/RNG001-10.p"
+result = "UNSAT"
+[problems."RNG004-10"]
+filename = "problems/tptp-full/RNG/RNG004-10.p"
+result = "UNSAT"
+[problems."RNG006-10"]
+filename = "problems/tptp-full/RNG/RNG006-10.p"
+result = "UNSAT"
+[problems."RNG009-5"]
+filename = "problems/tptp-full/RNG/RNG009-5.p"
+result = "UNSAT"
+[problems."RNG009-7"]
+filename = "problems/tptp-full/RNG/RNG009-7.p"
+result = "UNSAT"
+[problems."RNG019-6"]
+filename = "problems/tptp-full/RNG/RNG019-6.p"
+result = "UNSAT"
+[problems."RNG019-7"]
+filename = "problems/tptp-full/RNG/RNG019-7.p"
+result = "UNSAT"
+[problems."RNG021-6"]
+filename = "problems/tptp-full/RNG/RNG021-6.p"
+result = "UNSAT"
+[problems."RNG021-7"]
+filename = "problems/tptp-full/RNG/RNG021-7.p"
+result = "UNSAT"
+[problems."RNG025-5"]
+filename = "problems/tptp-full/RNG/RNG025-5.p"
+result = "UNSAT"
+[problems."RNG025-7"]
+filename = "problems/tptp-full/RNG/RNG025-7.p"
+result = "UNSAT"
+[problems."RNG027-5"]
+filename = "problems/tptp-full/RNG/RNG027-5.p"
+result = "UNSAT"
+[problems."RNG027-9"]
+filename = "problems/tptp-full/RNG/RNG027-9.p"
+result = "UNSAT"
+[problems."RNG028-7"]
+filename = "problems/tptp-full/RNG/RNG028-7.p"
+result = "UNSAT"
+[problems."RNG028-9"]
+filename = "problems/tptp-full/RNG/RNG028-9.p"
+result = "UNSAT"
+[problems."RNG029-5"]
+filename = "problems/tptp-full/RNG/RNG029-5.p"
+result = "UNSAT"
+[problems."RNG029-6"]
+filename = "problems/tptp-full/RNG/RNG029-6.p"
+result = "UNSAT"
+[problems."ROB005-1"]
+filename = "problems/tptp-full/ROB/ROB005-1.p"
+result = "UNSAT"
+[problems."ROB006-1"]
+filename = "problems/tptp-full/ROB/ROB006-1.p"
+result = "UNSAT"
+[problems."ROB015-10"]
+filename = "problems/tptp-full/ROB/ROB015-10.p"
+result = "UNSAT"
+[problems."ROB026-1"]
+filename = "problems/tptp-full/ROB/ROB026-1.p"
+result = "UNSAT"
+[problems."ROB031-2"]
+filename = "problems/tptp-full/ROB/ROB031-2.p"
+result = "UNSAT"
+[problems."ROB035-1"]
+filename = "problems/tptp-full/ROB/ROB035-1.p"
+result = "UNSAT"
+[problems."SYN615-10"]
+filename = "problems/tptp-full/SYN/SYN615-10.p"
+result = "UNSAT"
+[problems."SYN708-10"]
+filename = "problems/tptp-full/SYN/SYN708-10.p"
+result = "UNSAT"
+[problems."TOP052-1"]
+filename = "problems/tptp-full/TOP/TOP052-1.p"
+result = "UNSAT"
