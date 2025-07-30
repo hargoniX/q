@@ -806,7 +806,11 @@ impl SuperpositionState<'_> {
 
             let backward_simplified = backward_simplify(&g, self);
 
-            self.insert_active(g.clone());
+            // For situations where we superpose a clause with itself it is crucial, that we submit
+            // a fresh variable copy in order to make sure that the two clauses are considered
+            // distinct.
+            let active_g = g.fresh_variable_clone(self.term_bank);
+            self.insert_active(active_g);
 
             let new_clauses = self.generate(g);
             for mut clause in backward_simplified
