@@ -24,7 +24,8 @@ impl Term {
 
             match (&**matcher, &**target) {
                 (RawTerm::Var { id, .. }, _) => {
-                    // We cannot match propositions with variables!
+                    // We cannot match propositions with variables! This is one of the crucial
+                    // points where we make use of our 2-sortedness to avoid inconsistencies.
                     if term_bank.infer_sort(target) != Sort::Individual {
                         return None;
                     }

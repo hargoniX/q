@@ -1,3 +1,13 @@
+//! This module implements the core reasoning engine of Q, designed similarly to
+//! ["E – A Brainiac Theorem Prover"](https://wwwlehre.dhbw-stuttgart.de/~sschulz/PAPERS/Schulz-AICOM-2002.pdf)
+//! with:
+//! - the DISCOUNT loop
+//! - a subsumption index
+//! - term indices for rewriting and paramodulation
+//! - a couple but not all of the simplification rules
+//!
+//! The key entry point of this module is [search_proof].
+
 use std::{
     cmp::Ordering,
     fs::File,
@@ -28,9 +38,12 @@ use crate::{
 
 use memory_stats::memory_stats;
 
+/// The resource limits that should cause the saturation loop to abort.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ResourceLimitConfig {
+    /// The maximum duration for which the saturation should run.
     pub duration: Option<Duration>,
+    /// The maximum memory the saturation process is allowed to consume.
     pub memory_limit: Option<usize>,
 }
 
@@ -125,12 +138,9 @@ fn ordering_check(
     if ok { Some(new_literals) } else { None }
 }
 
-/*
-Takes a `clause` and an index `check_lit_id` to some literal `check_lit` in `clause` together
-with a substitution `subst`. Then checks whether `subst(check_lit)` is maximal in `subst(clause)`.
-
-Returns `None` if maximality check fails, otherwise `Some(subst(clause) \ subst(check_lit))`
-*/
+/// Takes a `clause` and an index `check_lit_id` to some literal `check_lit` in `clause` together
+/// with a substitution `subst`. Then checks whether `subst(check_lit)` is maximal in `subst(clause)`.
+/// Returns `None` if maximality check fails, otherwise `Some(subst(clause) \ subst(check_lit))`
 fn maximality_check(
     clause: &Clause,
     check_lit_id: LiteralId,
@@ -146,10 +156,10 @@ fn maximality_check(
     )
 }
 
-// Eligiblity for Resolution Check given a non-empty selection:
-// Returns the substituted and filtered literals,
-// if the given literal is maximal in the intersection of the selection
-// with either the positive or negative literalset of the clause with the mgu applied
+/// Eligiblity for Resolution Check given a non-empty selection:
+/// Returns the substituted and filtered literals,
+/// if the given literal is maximal in the intersection of the selection
+/// with either the positive or negative literalset of the clause with the mgu applied
 fn eligible_resolution_with_selection(
     clause: &Clause,
     check_lit_id: LiteralId,
@@ -213,6 +223,7 @@ impl SuperpositionState<'_> {
         }
     }
 
+    /// Insert `clause` into the `active` set, updating all of the term indices to account for it.
     fn insert_active(&mut self, clause: Clause) {
         let clause_id = clause.get_id();
         info!(
@@ -320,8 +331,7 @@ impl SuperpositionState<'_> {
         self.active.insert(clause);
     }
 
-    // remove from the active set
-    // remove from index structures
+    /// Remove `clause` from the `active` set, updating all of the term indices to account for it.
     pub(crate) fn erase_active(&mut self, clause: &Clause) {
         let clause_id = clause.get_id();
         info!("Erasing active: {}", pretty_print(clause, self.term_bank));
@@ -370,6 +380,7 @@ impl SuperpositionState<'_> {
         self.active.remove(clause);
     }
 
+    /// Insert `clause` into the passive set, this is a very cheap operation.
     fn insert_passive(&mut self, clause: Clause) {
         info!(
             "Inserting passive: {}",
@@ -716,6 +727,7 @@ impl SuperpositionState<'_> {
         }
     }
 
+    /// Run all generating inferences, this is the core of the reasoning engine.
     fn generate(&mut self, clause: Clause) -> Vec<Clause> {
         let mut acc = Vec::new();
         self.equality_resolution(&clause, &mut acc);
@@ -724,6 +736,8 @@ impl SuperpositionState<'_> {
         acc
     }
 
+    /// Check if one of the resource exhaustion conditions is met. May cause garbage collection on
+    /// the term bank if the memory limit is almost exhausted.
     fn resources_exhausted(&self) -> Option<UnknownReason> {
         if let Some(time_limit) = self.resource_limits.time_limit {
             let now = Instant::now();
@@ -750,6 +764,7 @@ impl SuperpositionState<'_> {
         None
     }
 
+    /// Check whether `g` is redundant with respect to the active set via subsumption.
     fn redundant(&self, g: &Clause) -> bool {
         for active_clause_id in self.subsumption_index.forward_candidates(g, self.term_bank) {
             let active_clause = self.active.get_by_id(active_clause_id).unwrap();
@@ -763,6 +778,26 @@ impl SuperpositionState<'_> {
             }
         }
         false
+    }
+
+    /// Remove all clauses in the active subsumed by `g` from the active set
+    fn backward_subsumption(&mut self, g: &Clause) {
+        let mut redundant_active = Vec::new();
+        for active_clause_id in self
+            .subsumption_index
+            .backward_candidates(g, self.term_bank)
+        {
+            let active_clause = self.active.get_by_id(active_clause_id).unwrap();
+            if g.subsumes(active_clause, self.term_bank) {
+                info!(
+                    "Backward Subsumption: {} subsumes {}",
+                    pretty_print(g, self.term_bank),
+                    pretty_print(active_clause, self.term_bank),
+                );
+                redundant_active.push(active_clause.clone());
+            }
+        }
+        redundant_active.iter().for_each(|c| self.erase_active(c));
     }
 
     fn run(&mut self) -> SuperpositionResult {
@@ -787,22 +822,7 @@ impl SuperpositionState<'_> {
                 continue;
             }
 
-            let mut redundant_active = Vec::new();
-            for active_clause_id in self
-                .subsumption_index
-                .backward_candidates(&g, self.term_bank)
-            {
-                let active_clause = self.active.get_by_id(active_clause_id).unwrap();
-                if g.subsumes(active_clause, self.term_bank) {
-                    info!(
-                        "Backward Subsumption: {} subsumes {}",
-                        pretty_print(&g, self.term_bank),
-                        pretty_print(active_clause, self.term_bank),
-                    );
-                    redundant_active.push(active_clause.clone());
-                }
-            }
-            redundant_active.iter().for_each(|c| self.erase_active(c));
+            self.backward_subsumption(&g);
 
             let backward_simplified = backward_simplify(&g, self);
 

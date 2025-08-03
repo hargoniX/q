@@ -1,3 +1,8 @@
+//! ## Proof Tracking
+//! This module provides infrastructure to track the derivation history of clauses in order to
+//! enable visual representations of the proof for inspection and debugging purposes. The key
+//! data structure is [ProofLog].
+
 use std::{cell::RefCell, collections::BTreeMap, fmt::Display};
 
 use crate::{

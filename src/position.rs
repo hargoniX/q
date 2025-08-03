@@ -1,3 +1,8 @@
+//! ## Positions within Terms and other Structures
+//! This module contains a series of data structures that describe positions within terms,
+//! literals and clauses, useful for indexing data structures without caring too much about
+//! lifetimes.
+
 use crate::{
     clause::{Clause, ClauseId, ClauseSet, Literal, LiteralId},
     term_bank::{RawTerm, Term, TermBank},

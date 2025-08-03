@@ -1,4 +1,4 @@
-//! ## Clause SImplifier
+//! ## Clause Simplifier
 //! This module contains the implementation of the cheap and the regular simplification algorithm
 //! described in:
 //! ["E – A Brainiac Theorem Prover"](https://wwwlehre.dhbw-stuttgart.de/~sschulz/PAPERS/Schulz-AICOM-2002.pdf)

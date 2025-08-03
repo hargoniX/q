@@ -19,18 +19,21 @@ const VAR_FACTOR: u32 = 1;
 const FUN_FACTOR: u32 = 1;
 
 impl Term {
+    /// Compute the symbolic weight of a term for the clause queue.
     pub fn weight(&self) -> u32 {
         self.function_symbol_count() * FUN_FACTOR + self.variable_count() * VAR_FACTOR
     }
 }
 
 impl Literal {
+    /// Compute the symbolic weight of a literal for the clause queue.
     pub fn weight(&self) -> u32 {
         self.get_lhs().weight() + self.get_rhs().weight()
     }
 }
 
 impl Clause {
+    /// Compute the symbolic weight of a clause for the clause queue.
     pub fn weight(&self) -> u32 {
         self.literals.iter().map(Literal::weight).sum()
     }

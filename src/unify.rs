@@ -59,6 +59,8 @@ impl UnificationProblem {
                             }
                         }
                         (None, _) => {
+                            // This is one of the crucial points where we make use of the
+                            // 2-sortedness of our logic to avoid inconsistencies.
                             if term_bank.infer_sort(&rhs) != Sort::Individual {
                                 // We cannot unify propositions with variables!
                                 UnificationState::Failure

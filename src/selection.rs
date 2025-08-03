@@ -1,3 +1,8 @@
+//! ## Literal Selection
+//! This module contains the implementation of different literal selection heuristics, the two key
+//! things is the kind of heuristics exported as [SelectionStrategy] and the generic selection
+//! function [select_literals].
+
 use bitvec::bitvec;
 use std::cmp::Ordering;
 
