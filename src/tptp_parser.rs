@@ -343,8 +343,6 @@ impl FOLTerm {
     }
 
     // The order of the pulled up quantifiers is important for Skolemnization.
-    // TODO: If there are multiple equisatisfiable versions, picking Exist first is preferable.
-    // It will result in Skolem Functions with less arguments.
     fn pull_quants(self) -> FOLTerm {
         let mut quants = Vec::new();
         let mut result = self.separate_binders(&mut quants);
@@ -534,8 +532,8 @@ pub struct TPTPProblem {
     pub conjectures: Vec<FOLTerm>,
 }
 
-// Parse into structure consisting of two lists: one with assumptions, one with goals (still FoF)
-// FIXME: we don't have any sanity checks for include stuff with conflicting names
+// Parse a TPTP problem into NNF Terms,
+// while separating the axioms from the conjectures
 pub fn parse_file(file: PathBuf) -> TPTPProblem {
     log::info!("Opening {file:?}");
     let mut f = File::open(&file).expect("Unable to open file");
@@ -633,10 +631,9 @@ pub fn parse_file(file: PathBuf) -> TPTPProblem {
 }
 
 // Transform the TPTPProblem into the problem in CNF for our saturation prover:
-// - we conjunct the assumption formulas
-// - we conjunct those with the disjunction of the negated goals
-// - we transform it into CNF
-// - we show False
+// - conjunct the assumption formulas
+// - conjunct those with the disjunction of the negated goals
+// - transform it into CNF
 pub fn transform_problem(problem: TPTPProblem) -> SkolemTerm {
     let mut acc;
     if !problem.conjectures.is_empty() {
@@ -685,8 +682,8 @@ impl TermBankConversionState<'_> {
         }
     }
 
-    // TODO: if the problem contains two identically named functions with different arities
-    // the hashmap doesn't work correctly, but there is an assertion which does track this.
+    // If the problem contains two identically named functions with different arities,
+    // this conversion doesn't work, but there is an assertion at TermBank which would bomb.
     fn get_func_id(&mut self, name: Name, arity: usize, sort: Sort) -> FunctionIdentifier {
         if let Some(func) = self.func_map.get(&name) {
             *func
@@ -867,7 +864,7 @@ impl From<fof::BinaryNonassoc<'_>> for FOLTerm {
 }
 
 // The BNF makes sure that there are atleast two elems in the initial vec
-// the formula vectors `f_or`|`f_and`
+// of the formula vectors `f_or`|`f_and`
 fn convert_op_into_binary(fs: &[fof::UnitFormula<'_>], op: &Op) -> FOLTerm {
     let mut acc = FOLTerm::from(fs[0].clone());
     let op_fn = match op {
@@ -914,16 +911,18 @@ impl From<fof::Term<'_>> for Term {
     }
 }
 
-//%----System terms have system specific interpretations
-//%----<fof_system_atomic_formula>s are used for evaluable predicates that are
-//%----available in particular tools. The predicate names are not controlled by
-//%----the TPTP syntax, so use with due care. Same for <fof_system_term>s.
-// FIXME: unclear if we want to support System Terms and what would be the correct interpretation
 impl From<fof::FunctionTerm<'_>> for Term {
     fn from(t: fof::FunctionTerm) -> Self {
         match t {
             fof::FunctionTerm::Plain(p) => Self::from(p),
-            fof::FunctionTerm::Defined(d) => Self::from(d),
+            // > Defined terms have TPTP specific interpretations
+            // > <distinct_object>s are different from (but may be equal to) other tokens,
+            // > e.g., "cat" is different from 'cat' and cat. Distinct objects are always interpreted as
+            // > themselves, so if they are different they are unequal, e.g., "Apple" != "Microsoft" is implicit.
+            fof::FunctionTerm::Defined(_) => unimplemented!(),
+            // > System terms have system specific interpretations.
+            // > <fof_system_atomic_formula>s are used for evaluable
+            // > predicates that are available in particular tools
             fof::FunctionTerm::System(_) => unimplemented!(),
         }
     }
@@ -941,40 +940,9 @@ impl From<fof::PlainTerm<'_>> for Term {
     }
 }
 
-//%----Defined terms have TPTP specific interpretations
-impl From<fof::DefinedTerm<'_>> for Term {
-    fn from(t: fof::DefinedTerm) -> Self {
-        match t {
-            fof::DefinedTerm::Defined(d) => Self::from(d),
-            fof::DefinedTerm::Atomic(_) => todo!(),
-        }
-    }
-}
-
-//%----Defined terms have TPTP specific interpretations"
-//%----<distinct_object>s are different from (but may be equal to) other tokens,
-//%----e.g., "cat" is different from 'cat' and cat. Distinct objects are always interpreted as
-//%----themselves, so if they are different they are unequal, e.g., "Apple" != "Microsoft" is implicit.
-impl From<tptp::common::DefinedTerm<'_>> for Term {
-    fn from(_: tptp::common::DefinedTerm) -> Self {
-        unimplemented!("There is no support for distinct objects")
-        // TODO: this is most definitely not enough to support it
-        //match t {
-        //    tptp::common::DefinedTerm::Number(n) => {
-        //        Self::Function(Name::Parsed(n.to_string()), Vec::new())
-        //    }
-        //    // These are double-quoted tokens.
-        //    tptp::common::DefinedTerm::Distinct(n) => {
-        //        Self::Function(Name::Parsed(n.to_string()), Vec::new())
-        //    }
-        //}
-    }
-}
-
 impl From<fof::QuantifiedFormula<'_>> for FOLTerm {
     fn from(f: fof::QuantifiedFormula) -> Self {
         match f.quantifier {
-            // FIXME: the reference implementation reversed the order, but I dont understand why
             fof::Quantifier::Forall => {
                 let vars = f
                     .bound
@@ -1037,7 +1005,8 @@ impl From<fof::AtomicFormula<'_>> for FOLTerm {
         match f {
             fof::AtomicFormula::Plain(p) => Self::from(p),
             fof::AtomicFormula::Defined(d) => Self::from(d),
-            fof::AtomicFormula::System(_) => todo!(),
+            // see: `fof::FunctionTerm::System(_)`
+            fof::AtomicFormula::System(_) => unimplemented!(),
         }
     }
 }
