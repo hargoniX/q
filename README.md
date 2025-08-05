@@ -17,6 +17,9 @@ bash benchmark/runner.sh pelletier 3 no-sel
 bash benchmark/plotter.sh
 ```
 
+The runner benchmarks the problem set with 16 threads and a memory limit of 1GB per thread.
+These default settings are only directly editable through the global variables within `benchmark/runner.py`.
+
 ## Problem Sets
 ### Simple TPTP Examples
 Copied from the Test Problems section of <https://tptp.org/UserDocs/QuickGuide/>:
