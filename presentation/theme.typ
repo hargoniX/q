@@ -168,7 +168,12 @@
   ),
   header-right: self => self.info.logo,
   footer: none,
-  footer-right: context utils.slide-counter.display() + " / " + utils.last-slide-number,
+  footer-right: self => context{
+    let curr = utils.slide-counter.display()
+    let last = utils.last-slide-counter.display()
+    if curr > last []
+    else [#utils.slide-counter.display() / #utils.last-slide-number]
+  },
   footer-progress: true,
   ..args,
   body,

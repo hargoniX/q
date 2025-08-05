@@ -297,21 +297,6 @@ Initially used the pelletier problems, which are easy but are very broad.
   ) <comparison_counter_sat>]
 )
 
-#show: lmu-theme.with(
-  aspect-ratio: "16-9",
-  footer: self => self.info.author,
-  header-right: none,
-  footer-progress: false,
-  footer-right: none,
-  config-info(
-    title: [Q - A Superposition Prover],
-    subtitle: [Master Practical: Automated Theorem Provers],
-    author: [Henrik Böving, Daniel Soukup],
-    date: target_date.display("[day].[month].[year]"),
-    institution: text(14pt, smallcaps("Ludwig-Maximilians-Universität München")),
-    logo: image("lmu-sigillium.svg", height: 25%),
-  ),
-)
 #show: appendix
 
 = Bibliography
