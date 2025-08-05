@@ -172,7 +172,7 @@
     let curr = utils.slide-counter.display()
     let last = utils.last-slide-counter.display()
     if curr > last []
-    else [#utils.slide-counter.display() / #utils.last-slide-number]
+    else [#curr / #utils.last-slide-number]
   },
   footer-progress: true,
   ..args,
