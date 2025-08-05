@@ -51,6 +51,11 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                 )
             ]
         else:
+            categories = (
+                [CASCCategory.FOF]
+                if mode is Mode.COMP
+                else [CASCCategory.FOF, CASCCategory.FNT]
+            )
             experiments = [
                 Experiment(
                     variant=variant,
@@ -58,7 +63,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                     category=category,
                     basename=None,
                 )
-                for category in [CASCCategory.FOF, CASCCategory.FNT]
+                for category in categories
             ]
 
         for experiment in experiments:
@@ -79,7 +84,10 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                 else:
                     label = f"{sel_strategy.value}"
             else:
-                label = f"{experiment.category.value.upper()}: {sel_strategy.value}"
+                if mode is Mode.COMP:
+                    label = f"q_{sel_strategy.value}"
+                else:
+                    label = f"{experiment.category.value.upper()}: {sel_strategy.value}"
             if sel_strategy is SelectionStrategy.NOSELECTION:
                 marker = "o"
             elif sel_strategy is SelectionStrategy.SELECTFIRSTNEGLIT:
@@ -121,7 +129,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                 if experiment.variant is Variant.CUSTOM:
                     label = prefix
                 else:
-                    label = f"{experiment.category.value.upper()}: {prefix}"
+                    label = f"{prefix}"
                 if idx == 0:
                     marker = "v"
                 elif idx == 1:
@@ -146,11 +154,11 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
     ax.set_ylabel("Solved Problems")
     ax.set_xlim(xmin=0, xmax=duration)
     # ax.set_yscale("log")
-    if variant is Variant.CUSTOM:
-        ax.legend(loc="lower right")
+    if mode is Mode.TIME and variant is not Variant.CUSTOM:
+        ax.legend(loc="center right")
     else:
-        # ax.legend(loc="center")
-        ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        # ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.legend(loc="lower right")
     plt.tight_layout()
 
     first_experiment = experiments[0]
@@ -164,7 +172,12 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
             title_var = f"TPTP '{basename}' ({problem_size} problems)"
     else:
         name = f"../presentation/{mode_name}_{first_experiment.variant.value}.svg"
-        title_var = f"{first_experiment.variant.value.upper()} ({fof_problem_size} FOF, {fnt_problem_size} FNT)"
+        if mode is Mode.COMP:
+            title_var = (
+                f"{first_experiment.variant.value.upper()} ({fof_problem_size} FOF)"
+            )
+        else:
+            title_var = f"{first_experiment.variant.value.upper()} ({fof_problem_size} FOF, {fnt_problem_size} FNT)"
     ax.set_title(f"{title_var} w/ 1GB mem limit")
     fig.savefig(name, bbox_inches="tight")
     plt.close()
