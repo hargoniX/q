@@ -2,7 +2,7 @@
 
 #import "@preview/numbly:0.1.0": numbly
 
-#let target_date = datetime(year: 2025, month: 8, day: 8)
+#let target_date = datetime(year: 2025, month: 8, day: 7)
 #show: lmu-theme.with(
   aspect-ratio: "16-9",
   footer: self => self.info.author,
@@ -187,6 +187,7 @@ Based on @queue, uses `10SC11/FIFO-PI`:
 
 = Reasoning Engine
 Basic DISCOUNT loop from @braniac:
++ CNF conversion
 + select given clause
 + forward simplification
 + forward subsumption
@@ -241,25 +242,6 @@ Heuristic based on @subsume:
 - uses a feature vector index for forward/backward substitution
 
 = Performance
-== TPTP - Thousands of Problems for Theorem Proving
-Standardized way to formulate problems for ATP @tptplib:
-- first-order, higher-order
-- typed, untyped
-- subtheories: equational, arithmetic, ..
-
-// TODO: cite https://tptp.org/cgi-bin/TPTP2T
-We are solely interested in FOF problems without theories:
-// TODO: cite tptp crate
-//
-- #link("https://docs.rs/tptp/latest/tptp/")[`tptp`]: Rust Crate, which can parse the relevant subset of TPTP
-
-== Creating the problem statement
-How to turn the derivation into the desired CNF saturation problem statement?
-  - NNF: Initial saturation problem statement through simple transformation
-  - PNF: Renaming all the quantifiers, then pulling them up (scoped substitution)
-  - SNF: Replace existential with a skolem function symbol with all the binders it was in scope for
-  - CNF: Naive Distribution (todo: tests with E as CNF transformer)
-
 == Benchmarks
 Ran TPTP Problems on privately owned hardware:
 - CPU AMD Ryzen 7 9700X 8-Core Processor
@@ -315,6 +297,8 @@ Initially used the pelletier problems, which are easy but are very broad.
     image("comp_counter_satisfiable.svg", width: 100%),
   ) <comparison_counter_sat>]
 )
+
+#show: appendix
 
 = Bibliography
 #bibliography("literature.bib", title: none)
