@@ -187,7 +187,6 @@ Based on @queue, uses `10SC11/FIFO-PI`:
 
 = Reasoning Engine
 Basic DISCOUNT loop from @braniac:
-+ CNF conversion
 + select given clause
 + forward simplification
 + forward subsumption
