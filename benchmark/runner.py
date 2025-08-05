@@ -16,7 +16,7 @@ MEM_LIMIT = 10**9
 
 
 class Variant(Enum):
-    PELLETIER = "pelletier"
+    CUSTOM = "custom"
     CASC24 = "casc24"
     CASC29 = "casc29"
 
@@ -240,10 +240,10 @@ def main():
     os.chdir(root_dir)
     build()
     variant = args.mode
-    if variant is Variant.PELLETIER:
-        assert args.file is not None, "No config file given for pelletier variant!"
+    if variant is Variant.CUSTOM:
+        assert args.file is not None, "No config file given for custom variant!"
         problems = get_problems(args.file)
-        print(f"Start Testsuite 'pelletier' with '{args.file}'")
+        print(f"Start Testsuite 'custom' with '{args.file}'")
     elif variant in [Variant.CASC24, Variant.CASC29]:
         print(f"Start Testsuite '{variant.value}' for category '{args.category.value}'")
         problems = get_problems_casc(variant, args.category)

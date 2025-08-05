@@ -40,7 +40,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
         strategies = [SelectionStrategy.SELECTFIRSTNEGLIT]
 
     for sel_strategy in strategies:
-        if variant is Variant.PELLETIER:
+        if variant is Variant.CUSTOM:
             basename = os.path.splitext(os.path.basename(filename))[0]
             experiments = [
                 Experiment(
@@ -73,7 +73,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
             for _, row in df.iterrows():
                 if row["expected_result"] == row["result"]:
                     times.append(row["duration"])
-            if experiment.variant is Variant.PELLETIER:
+            if experiment.variant is Variant.CUSTOM:
                 if mode is Mode.COMP:
                     label = f"q_{sel_strategy.value}"
                 else:
@@ -118,7 +118,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
                 for _, row in df.iterrows():
                     if row["expected_result"] == row["result"]:
                         times.append(row["duration"])
-                if experiment.variant is Variant.PELLETIER:
+                if experiment.variant is Variant.CUSTOM:
                     label = prefix
                 else:
                     label = f"{experiment.category.value.upper()}: {prefix}"
@@ -146,7 +146,7 @@ def plot(mode: Mode, variant: Variant, duration: int, filename: Optional[str]):
     ax.set_ylabel("Solved Problems")
     ax.set_xlim(xmin=0, xmax=duration)
     # ax.set_yscale("log")
-    if variant is Variant.PELLETIER:
+    if variant is Variant.CUSTOM:
         ax.legend(loc="lower right")
     else:
         # ax.legend(loc="center")
