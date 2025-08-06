@@ -199,9 +199,9 @@ Basic DISCOUNT loop from @braniac:
 Knuth Bendix Order:
 - efficient version based on @kbo
 - efficiently extended to literals like duper
-- function symbol precende like in @braniac:
+- precedence between function symbols like in @braniac:
   - higher arity wins
-  - same arity use arbitrary order from term bank
+  - same arity: arbitrary order, here: index within term bank
 
 Unification:
 - the naive algorithm from the lecture
@@ -235,7 +235,7 @@ For tautology checking:
 
 == Subsumption
 Heuristic based on @subsume:
-- order literals to work likely harder ones earlier
+- order literals by likelihood to work: harder ones earlier
 - afterwards bruteforce using an efficient backtracking
   scheme like in @zipperposition
 - uses a feature vector index for forward/backward substitution
@@ -248,11 +248,9 @@ Ran TPTP Problems on privately owned hardware:
 - Memory Limit of 1GB
 - 16 Instances in parallel
 
-CASC runs the problems sequentially on one CPU socket with a lot higher memory limit,
-but it is not feasible for us while testing with private hardware.
-
-// TODO: cite or delete
-Initially used the pelletier problems, which are easy but are very broad.
+CASC:
+- sequential runs on one CPU socket with a lot higher memory limit
+- infeasible for us while testing with private hardware
 
 == CASC
 #grid(
