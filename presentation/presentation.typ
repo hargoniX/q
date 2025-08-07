@@ -238,7 +238,7 @@ Heuristic based on @subsume:
 - order literals by likelihood to work: harder ones earlier
 - afterwards bruteforce using an efficient backtracking
   scheme like in @zipperposition
-- uses a feature vector index for forward/backward substitution
+- uses a feature vector index for forward/backward subsumption
 
 = Performance
 == Benchmarks
